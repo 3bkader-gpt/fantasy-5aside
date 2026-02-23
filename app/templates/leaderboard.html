@@ -3,6 +3,15 @@
 {% block content %}
 <h1>🏆 ترتيب دوري الأبطال</h1>
 
+<!-- Leaderboard Category Tabs -->
+<div class="tabs-container"
+    style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+    <button class="tab-btn active" data-sort="points">الترتيب العام</button>
+    <button class="tab-btn" data-sort="goals">الهدافين</button>
+    <button class="tab-btn" data-sort="assists">صناع اللعب</button>
+    <button class="tab-btn" data-sort="saves">الحراس</button>
+</div>
+
 <div class="table-responsive">
     <table>
         <thead>
@@ -17,10 +26,11 @@
                 <th>شباك نظيفة</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="leaderboard-body">
             {% for player in players %}
-            <tr>
-                <td data-label="المركز">
+            <tr data-points="{{ player.total_points }}" data-goals="{{ player.total_goals }}"
+                data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}">
+                <td data-label="المركز" class="rank-col">
                     {{ loop.index }}
                     {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% endif %}
                 </td>
@@ -40,4 +50,61 @@
         </tbody>
     </table>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tab-btn");
+        const tbody = document.getElementById("leaderboard-body");
+
+        tabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+                // Update active state
+                tabs.forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+
+                // Get sort metric
+                const sortMetric = tab.getAttribute("data-sort");
+
+                // Sort rows
+                const rows = Array.from(tbody.querySelectorAll("tr"));
+                rows.sort((a, b) => {
+                    const valA = parseInt(a.getAttribute(`data-${sortMetric}`)) || 0;
+                    const valB = parseInt(b.getAttribute(`data-${sortMetric}`)) || 0;
+                    // If sorting by metric is tied, sort by points implicitly (optional fallback)
+                    if (valB === valA && sortMetric !== 'points') {
+                        const pointsA = parseInt(a.getAttribute('data-points')) || 0;
+                        const pointsB = parseInt(b.getAttribute('data-points')) || 0;
+                        return pointsB - pointsA;
+                    }
+                    return valB - valA;
+                });
+
+                // Re-append sorted rows and update ranks dynamically
+                tbody.innerHTML = "";
+                rows.forEach((row, index) => {
+                    const rankText = index + 1;
+                    const rankPrefix = rankText === 1 ? '🥇' : rankText === 2 ? '🥈' : rankText === 3 ? '🥉' : '';
+
+                    // Update the visible rank column
+                    const rankCell = row.querySelector(".rank-col");
+                    if (rankCell) {
+                        rankCell.innerHTML = `${rankText} ${rankPrefix}`;
+                    }
+
+                    // Keep the crown logic only for the first row
+                    const nameLink = row.querySelector("td[data-label='اللاعب']");
+                    if (nameLink) {
+                        const existingCrown = nameLink.querySelector(".crown");
+                        if (existingCrown) existingCrown.remove();
+                        if (rankText === 1 && sortMetric === 'points') {
+                            nameLink.insertAdjacentHTML('beforeend', '<span class="crown">👑</span>');
+                        }
+                    }
+
+                    tbody.appendChild(row);
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

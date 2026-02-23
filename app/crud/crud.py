@@ -282,12 +282,30 @@ def get_player_analytics(db: Session, player_id: int, league_id: int):
     # Sort history properly by match date
     history.sort(key=lambda s: s.match.date, reverse=True)
 
+    # Dynamic Badges Calculation
+    badges = []
+    has_hattrick = any(stat.goals >= 3 for stat in history)
+    if has_hattrick:
+        badges.append("هاتريك ⚽⚽⚽")
+        
+    has_playmaker = any(stat.assists >= 3 for stat in history)
+    if has_playmaker:
+        badges.append("مايسترو 🪄")
+        
+    has_octopus = any(stat.saves >= 5 for stat in history)
+    if has_octopus:
+        badges.append("أخطبوط 🐙")
+        
+    if total_matches >= 3 and win_rate > 70.0:
+        badges.append("عقلية الفوز 🏆")
+
     return {
         "player": player,
         "history": history,
         "total_matches": total_matches,
         "win_rate": round(win_rate, 2),
-        "ga_per_match": round(ga_per_match, 2)
+        "ga_per_match": round(ga_per_match, 2),
+        "badges": badges
     }
 
 def delete_match(db: Session, match_id: int, league_id: int):
