@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="cup-container" style="max-width: 800px; margin: 0 auto; padding-bottom: 50px;">
+    <h1 style="text-align: center; margin-bottom: 2rem;">🏆 كأس الشهر (Head-to-Head)</h1>
+
+    {% if matchups %}
+    <div class="cup-bracket">
+        {% set current_round = None %}
+        {% for matchup in matchups %}
+        {% if current_round != matchup.round_name %}
+        <h2
+            style="background: #2c3e50; color: white; padding: 10px; border-radius: 8px; margin-top: 30px; font-size: 1.2rem; text-align: center;">
+            {{ matchup.round_name }}
+        </h2>
+        {% set current_round = matchup.round_name %}
+        {% endif %}
+
+        <div class="matchup-card {% if matchup.is_active %}active-matchup{% else %}resolved-matchup{% endif %}"
+            style="background: white; border-radius: 12px; margin-bottom: 15px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
+
+            <div class="player player1 {% if not matchup.is_active and matchup.winner_id != matchup.player1_id %}loser{% endif %}"
+                style="flex: 1; text-align: center;">
+                <div class="player-name {% if matchup.winner_id == matchup.player1_id %}winner-name{% endif %}"
+                    style="font-weight: bold; font-size: 1.2rem;">
+                    {{ matchup.player1.name }}
+                    {% if matchup.winner_id == matchup.player1_id %} 🏆 {% endif %}
+                </div>
+                <div style="font-size: 0.9rem; color: #666;">إجمالي النقاط: {{ matchup.player1.total_points }}</div>
+            </div>
+
+            <div class="vs" style="padding: 0 20px; font-weight: bold; text-align: center;">
+                {% if matchup.is_active %}
+                <span class="vs-badge active-vs">VS<br><small>قيد الانتظار</small></span>
+                {% else %}
+                <span class="vs-badge resolved-vs">انتهت</span>
+                {% endif %}
+            </div>
+
+            <div class="player player2 {% if not matchup.is_active and matchup.winner_id != matchup.player2_id %}loser{% endif %}"
+                style="flex: 1; text-align: center;">
+                <div class="player-name {% if matchup.winner_id == matchup.player2_id %}winner-name{% endif %}"
+                    style="font-weight: bold; font-size: 1.2rem;">
+                    {% if matchup.winner_id == matchup.player2_id %} 🏆 {% endif %}
+                    {{ matchup.player2.name }}
+                </div>
+                <div style="font-size: 0.9rem; color: #666;">إجمالي النقاط: {{ matchup.player2.total_points }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: #666; background: white; border-radius: 12px;">
+        <p>لا توجد قرعة نشطة حالياً. يرجى الانتظار لحين بدء الموسم الجديد!</p>
+    </div>
+    {% endif %}
+
+    <div
+        style="margin-top: 40px; padding: 20px; background: #e8f4fd; border-radius: 8px; border-right: 5px solid #3498db;">
+        <h4 style="margin-top: 0;">📜 ملاحظات الكأس:</h4>
+        <ul style="font-size: 0.9rem; margin-bottom: 0; padding-right: 20px;">
+            <li>يتم تأهيل أعلى 10 لاعبين في الترتيب العام.</li>
+            <li>المواجهات تتم بنظام خروج المغلوب (Head-to-Head).</li>
+            <li><strong>يتم حسم المواجهة تلقائياً</strong> متى لعب الطرفان معاً في نفس المباراة، والنقطة الأعلى تقرر
+                الفائز!</li>
+            <li>في حالة التعادل في مواجهة الكأس، يتأهل صاحب النقاط الأعلى في الترتيب العام لحسم الموقف.</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+        }
+
+        70% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+        }
+
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+        }
+    }
+
+    .active-matchup {
+        border-right: 5px solid #f39c12;
+    }
+
+    .resolved-matchup {
+        border-right: 5px solid #27ae60;
+    }
+
+    .loser {
+        opacity: 0.5;
+        filter: grayscale(100%);
+    }
+
+    .player-name {
+        color: #2c3e50;
+    }
+
+    .winner-name {
+        color: #27ae60;
+    }
+
+    .vs-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+    }
+
+    .active-vs {
+        background: #e74c3c;
+        color: white;
+        font-size: 0.9rem;
+        animation: pulse 2s infinite;
+    }
+
+    .resolved-vs {
+        color: #7f8c8d;
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}

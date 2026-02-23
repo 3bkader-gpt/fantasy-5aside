@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>📝 تسجيل نتيجة مباراة (للمحترفين)</h1>
+
+<div class="admin-actions"
+    style="margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h3>🏆 إدارة الكأس</h3>
+    <form action="/l/{{ league.slug }}/admin/cup/generate" method="POST">
+        <button type="submit" class="btn-primary"
+            style="background-color: #f39c12; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            إنشاء قرعة الكأس (أعلى 10 لاعبين)
+        </button>
+    </form>
+    <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">* سيتم اختيار أفضل 10 لاعبين في الترتيب الحالي وتسكينهم
+        في مواجهات ربع النهائي.</p>
+</div>
+
+<div class="admin-actions"
+    style="margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #e74c3c;">
+    <h3 style="color: #e74c3c;">🚨 إنهاء الشهر الحالي</h3>
+    <form action="/l/{{ league.slug }}/admin/season/end" method="POST"
+        onsubmit="return confirm('هل أنت متأكد من إنهاء الشهر؟ سيتم إضافة المتصدر إلى لوحة الشرف وتصفير جميع النقاط الحالية!');">
+        <input type="text" name="month_name" placeholder="اسم الشهر (مثال: أغسطس 2026)" required
+            style="padding: 10px; width: 250px; border: 1px solid #ccc; border-radius: 5px; margin-left: 10px;">
+        <button type="submit" class="btn-primary"
+            style="background-color: #e74c3c; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            إنهاء الشهر والأرشفة
+        </button>
+    </form>
+</div>
+
+<div class="match-form">
+    <h3>كلمة سر الدوري (لتأكيد الصلاحية)</h3>
+    <input type="password" id="admin_password" placeholder="كلمة سر إدارة الدوري" required
+        style="padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 20px;">
+
+    <button id="add-player-btn" class="btn-primary"
+        style="margin-bottom: 20px; width: auto; background-color: #3498db;">+ إضافة لاعب</button>
+
+    <div class="table-responsive">
+        <table id="match-table">
+            <thead>
+                <tr>
+                    <th style="min-width: 150px;">اسم اللاعب</th>
+                    <th>أهداف</th>
+                    <th>أسيست</th>
+                    <th>حارس؟</th>
+                    <th>تصديات</th>
+                    <th>أهداف عليه</th>
+                    <th>فائز؟</th>
+                    <th>CS</th>
+                    <th>MVP</th>
+                    <th>كابتن (x2)</th>
+                    <th>حذف</th>
+                </tr>
+            </thead>
+            <tbody id="match-table-body">
+                <!-- Rows will be added dynamically here -->
+            </tbody>
+        </table>
+    </div>
+
+    <button id="save-match-btn" class="btn-primary">💾 حفظ المباراة</button>
+</div>
+
+<!-- Template for a new row (hidden) -->
+<template id="player-row-template">
+    <tr class="player-row">
+        <td data-label="اسم اللاعب">
+            <input type="text" class="player-name-input" placeholder="اسم اللاعب"
+                style="width: 100%; text-align: right; padding: 5px;">
+        </td>
+
+        <td data-label="أهداف">
+            <input type="number" class="goals-input" value="0" min="0">
+        </td>
+
+        <td data-label="أسيست">
+            <input type="number" class="assists-input" value="0" min="0">
+        </td>
+
+        <td data-label="حارس؟">
+            <input type="checkbox" class="is-gk-check">
+        </td>
+
+        <td data-label="تصديات">
+            <input type="number" class="saves-input" value="0" min="0" disabled style="background-color: #f0f0f0;">
+        </td>
+
+        <td data-label="أهداف عليه">
+            <input type="number" class="conceded-input" value="0" min="0">
+        </td>
+
+        <td data-label="فائز؟">
+            <input type="checkbox" class="winner-check">
+        </td>
+
+        <td data-label="CS">
+            <input type="checkbox" class="clean-sheet-check">
+        </td>
+
+        <td data-label="MVP">
+            <input type="checkbox" class="mvp-check">
+        </td>
+
+        <td data-label="كابتن (x2)">
+            <input type="checkbox" class="captain-check">
+        </td>
+
+        <td data-label="حذف">
+            <button class="remove-row-btn"
+                style="background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">X</button>
+        </td>
+    </tr>
+</template>
+
+<script>
+    const tableBody = document.getElementById('match-table-body');
+    const template = document.getElementById('player-row-template');
+
+    // Function to add a new row
+    function addPlayerRow() {
+        const clone = template.content.cloneNode(true);
+
+        // Add Remove functionality to the new button
+        clone.querySelector('.remove-row-btn').addEventListener('click', function () {
+            this.closest('tr').remove();
+        });
+
+        // Add GK toggle functionality
+        const gkCheck = clone.querySelector('.is-gk-check');
+        const savesInput = clone.querySelector('.saves-input');
+
+        gkCheck.addEventListener('change', function () {
+            savesInput.disabled = !this.checked;
+            if (this.checked) {
+                savesInput.style.backgroundColor = 'white';
+                savesInput.focus();
+            } else {
+                savesInput.style.backgroundColor = '#f0f0f0';
+                savesInput.value = 0;
+            }
+        });
+
+        tableBody.appendChild(clone);
+    }
+
+    // Add 10 initial rows for convenience
+    for (let i = 0; i < 10; i++) {
+        addPlayerRow();
+    }
+
+    document.getElementById('add-player-btn').addEventListener('click', addPlayerRow);
+
+    document.getElementById('save-match-btn').addEventListener('click', async () => {
+        const adminPassword = document.getElementById('admin_password').value;
+        if (!adminPassword) {
+            alert('⚠️ يرجى إدخال كلمة سر الإدارة الخاص بالدوري.');
+            return;
+        }
+
+        const stats = [];
+        const rows = document.querySelectorAll('.player-row');
+
+        rows.forEach(row => {
+            const nameInput = row.querySelector('.player-name-input');
+            const name = nameInput.value.trim();
+
+            // Only process rows with a name
+            if (name) {
+                const goals = parseInt(row.querySelector('.goals-input').value) || 0;
+                const assists = parseInt(row.querySelector('.assists-input').value) || 0;
+                const saves = parseInt(row.querySelector('.saves-input').value) || 0;
+                const conceded = parseInt(row.querySelector('.conceded-input').value) || 0;
+
+                const isGk = row.querySelector('.is-gk-check').checked;
+                const isWinner = row.querySelector('.winner-check').checked;
+                const cleanSheet = row.querySelector('.clean-sheet-check').checked;
+                const isMvp = row.querySelector('.mvp-check').checked;
+                const isCaptain = row.querySelector('.captain-check').checked;
+
+                stats.push({
+                    player_name: name,
+                    goals: goals,
+                    assists: assists,
+                    saves: saves,
+                    goals_conceded: conceded,
+                    is_gk: isGk,
+                    is_winner: isWinner,
+                    clean_sheet: cleanSheet,
+                    mvp: isMvp,
+                    is_captain: isCaptain
+                });
+            }
+        });
+
+        if (stats.length === 0) {
+            alert('⚠️ يرجى إدخال اسم لاعب واحد على الأقل.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/l/{{ league.slug }}/admin/match', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ stats: stats, admin_password: adminPassword })
+            });
+
+            if (response.ok) {
+                alert('✅ تم حفظ المباراة بنجاح!');
+                window.location.reload();
+            } else {
+                const errorData = await response.json();
+                alert('❌ حدث خطأ: ' + (errorData.detail || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ تعذر الاتصال بالخادم.');
+        }
+    });
+</script>
+{% endblock %}

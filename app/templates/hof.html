@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; text-align: center; padding: 40px 20px;">
+    <h1 style="color: #2c3e50; font-size: 2.5rem; margin-bottom: 10px;">🎖️ لوحة الشرف (Hall of Fame)</h1>
+    <p style="color: #7f8c8d; font-size: 1.1rem; margin-bottom: 40px;">سجل الشرف لأبطال الخماسي عبر الأشهر</p>
+
+    {% if hof_records %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+        {% for record in hof_records %}
+        <div
+            style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 25px rgba(241, 196, 15, 0.2); position: relative; overflow: hidden; border-bottom: 6px solid #f1c40f;">
+            <div style="position: absolute; top: -15px; right: -15px; font-size: 5rem; opacity: 0.1;">🏆</div>
+
+            <h3 style="color: #e67e22; margin-top: 0; font-size: 1.3rem;">{{ record.month_year }}</h3>
+
+            <div style="font-size: 2rem; font-weight: bold; color: #2c3e50; margin: 15px 0;">
+                <a href="/player/{{ record.player.id }}" style="text-decoration: none; color: inherit;">
+                    {{ record.player.name }}
+                </a>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; color: #7f8c8d;">
+                <span style="font-size: 1.5rem;">🔥</span>
+                <span style="font-weight: bold; font-size: 1.2rem; color: #e74c3c;">{{ record.points_scored }}</span>
+                نقطة
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="background: white; padding: 50px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="font-size: 4rem; margin-bottom: 20px;">📭</div>
+        <h2 style="color: #95a5a6;">لا توجد سجلات حتى الآن</h2>
+        <p style="color: #7f8c8d;">سيتم إضافة بطل الشهر هنا عند نهاية الموسم الحالي.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
