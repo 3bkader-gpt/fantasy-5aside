@@ -2,7 +2,7 @@
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border_box;
+    box-sizing: border-box;
 }
 
 body {
@@ -12,6 +12,8 @@ body {
     line-height: 1.6;
     direction: rtl;
     text-align: right;
+    /* Fluid typography base */
+    font-size: clamp(14px, 2vw, 16px);
 }
 
 a {
@@ -25,25 +27,40 @@ nav {
     color: #fff;
     padding: 1rem;
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap; /* Allows wrapping on small screens */
+    gap: 1rem;
+    justify-content: center; /* Center on mobile */
     align-items: center;
+}
+
+@media (min-width: 768px) {
+    nav {
+        justify-content: space-between; /* Space out on desktop */
+    }
 }
 
 nav .brand {
     font-weight: 700;
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
 }
 
 nav ul {
     list-style: none;
     display: flex;
-    gap: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
 }
 
 nav ul li a {
     color: #ecf0f1;
     font-weight: 400;
     transition: color 0.3s;
+    /* Increase touch target padding for mobile */
+    padding: 0.5rem;
+    display: inline-block;
+    min-height: 44px; /* Touch-friendly size */
+    line-height: 28px;
 }
 
 nav ul li a:hover {
@@ -52,25 +69,35 @@ nav ul li a:hover {
 
 /* Container */
 .container {
+    width: 100%;
     max-width: 1200px;
-    margin: 2rem auto;
+    margin: 1.5rem auto;
     padding: 0 1rem;
 }
 
-h1, h2 {
-    margin-bottom: 1.5rem;
+h1, h2, h3 {
+    margin-bottom: 1rem;
     color: #2c3e50;
 }
 
-/* Tables */
+h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); }
+h2 { font-size: clamp(1.3rem, 3vw, 1.8rem); }
+
+/* Tables - Responsive Wrapper */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    background-color: #fff;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 2rem;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    overflow: hidden;
+    min-width: 600px; /* Forces scroll on very small screens instead of squishing */
 }
 
 thead {
@@ -80,89 +107,138 @@ thead {
 
 th, td {
     padding: 12px 15px;
-    text-align: right;
+    text-align: right; /* Default RTL */
     border-bottom: 1px solid #ddd;
+    white-space: nowrap; /* Prevent wrapping inside cells on small screens */
 }
 
 tbody tr:hover {
     background-color: #f1f1f1;
 }
 
-/* Responsive Table */
-@media (max-width: 768px) {
-    table, thead, tbody, th, td, tr {
-        display: block;
-    }
-    
-    thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
-    }
-    
-    tr {
-        margin-bottom: 1rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background-color: #fff;
-    }
-    
-    td {
-        border: none;
-        position: relative;
-        padding-right: 50%;
-        text-align: left;
-    }
-    
-    td:before {
-        position: absolute;
-        top: 12px;
-        right: 15px;
-        width: 45%;
-        padding-right: 10px;
-        white-space: nowrap;
-        font-weight: bold;
-        text-align: right;
-        content: attr(data-label);
-    }
+/* Forms & Inputs (Mobile First) */
+.form-group {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Forms & Inputs */
-input[type="number"] {
-    padding: 8px;
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select {
+    width: 100%; /* Full width on mobile */
+    min-height: 44px; /* Touch-friendly size */
+    padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 60px;
-    text-align: center;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1rem;
+    background-color: #fff;
+}
+
+/* Keep number inputs a reasonable size if they are intended to be inline, but wrap them flexably */
+.inline-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.inline-input-group input[type="number"] {
+    width: auto;
+    min-width: 60px;
+    flex: 1;
 }
 
 input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     vertical-align: middle;
     cursor: pointer;
+    margin-inline-end: 8px; /* RTL safe margin */
 }
 
-button.btn-primary {
-    display: block;
-    width: 100%;
+button, .btn, .btn-primary {
+    display: inline-block;
+    width: 100%; /* Full width by default on mobile */
+    min-height: 44px;
     padding: 12px;
     background-color: #27ae60;
     color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    font-family: inherit;
 }
 
-button.btn-primary:hover {
+@media (min-width: 768px) {
+    button, .btn, .btn-primary {
+        width: auto; /* Hug content on larger screens */
+        padding-inline-start: 2rem;
+        padding-inline-end: 2rem;
+    }
+}
+
+button:hover, .btn:hover, .btn-primary:hover {
     background-color: #2ecc71;
 }
 
+button.btn-danger {
+    background-color: #e74c3c;
+}
+
+button.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+/* Cards & Sections */
+.card {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+/* Admin Dashboard Specific Layouts */
+.admin-player-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.admin-player-row h4 {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+@media (min-width: 768px) {
+    .admin-player-row {
+        flex-wrap: nowrap;
+    }
+    .admin-player-row h4 {
+        width: 150px;
+        margin-bottom: 0;
+    }
+}
+
+/* Icons and specific statuses */
 .crown {
-    margin-right: 5px;
+    margin-inline-end: 5px; /* RTL safe */
     font-size: 1.2rem;
 }
 
@@ -170,3 +246,10 @@ button.btn-primary:hover {
     opacity: 0.5;
     background-color: #f9f9f9;
 }
+
+/* General Layout helpers */
+.text-center { text-align: center; }
+.mt-1 { margin-top: 1rem; }
+.mt-2 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 2rem; }

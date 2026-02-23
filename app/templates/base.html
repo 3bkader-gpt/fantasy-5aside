@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>دوري الخماسي - Fantasy Football</title>
 
     <!-- Google Fonts: Cairo -->
@@ -32,10 +32,27 @@
         </ul>
     </nav>
 
-    <div class="container">
+    <main class="container">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
+    <!-- Auto-wrap all tables to guarantee mobile responsiveness (horizontal swipe) without editing every child template -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const tables = document.querySelectorAll("table");
+            tables.forEach(table => {
+                // If the table is not already wrapped by a developer manually
+                if (!table.parentElement.classList.contains("table-responsive")) {
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "table-responsive";
+                    // Insert wrapper before table in the DOM tree
+                    table.parentNode.insertBefore(wrapper, table);
+                    // Move table inside wrapper
+                    wrapper.appendChild(table);
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
