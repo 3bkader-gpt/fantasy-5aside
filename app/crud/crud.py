@@ -289,3 +289,26 @@ def get_player_analytics(db: Session, player_id: int, league_id: int):
         "win_rate": round(win_rate, 2),
         "ga_per_match": round(ga_per_match, 2)
     }
+
+def delete_match(db: Session, match_id: int, league_id: int):
+    match = db.query(models.Match).filter(
+        models.Match.id == match_id,
+        models.Match.league_id == league_id
+    ).first()
+    
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+        
+    for stat in match.stats:
+        player = stat.player
+        player.total_points = max(0, player.total_points - stat.points_earned)
+        player.total_goals = max(0, player.total_goals - stat.goals)
+        player.total_assists = max(0, player.total_assists - stat.assists)
+        player.total_saves = max(0, player.total_saves - stat.saves)
+        if stat.clean_sheet:
+            player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
+        db.add(player)
+        
+    db.delete(match)
+    db.commit()
+    return True

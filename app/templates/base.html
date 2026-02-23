@@ -29,6 +29,11 @@
             {% else %}
             <li><a href="/">الرئيسية</a></li>
             {% endif %}
+            <li>
+                <button id="theme-toggle"
+                    style="background:none; border:none; color:inherit; font-size:1.2rem; cursor:pointer;"
+                    aria-label="تبديل الوضع الليلي">🌙</button>
+            </li>
         </ul>
     </nav>
 
@@ -39,15 +44,31 @@
     <!-- Auto-wrap all tables to guarantee mobile responsiveness (horizontal swipe) without editing every child template -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Theme setup
+            const THEME_KEY = "fantasy_theme";
+            const toggleBtn = document.getElementById("theme-toggle");
+
+            if (localStorage.getItem(THEME_KEY) === "dark") {
+                document.body.classList.add("dark-mode");
+                toggleBtn.textContent = "☀️";
+            } else {
+                toggleBtn.textContent = "🌙";
+            }
+
+            toggleBtn.addEventListener("click", () => {
+                document.body.classList.toggle("dark-mode");
+                const isDark = document.body.classList.contains("dark-mode");
+                localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+                toggleBtn.textContent = isDark ? "☀️" : "🌙";
+            });
+
+            // Table setup
             const tables = document.querySelectorAll("table");
             tables.forEach(table => {
-                // If the table is not already wrapped by a developer manually
                 if (!table.parentElement.classList.contains("table-responsive")) {
                     const wrapper = document.createElement("div");
                     wrapper.className = "table-responsive";
-                    // Insert wrapper before table in the DOM tree
                     table.parentNode.insertBefore(wrapper, table);
-                    // Move table inside wrapper
                     wrapper.appendChild(table);
                 }
             });

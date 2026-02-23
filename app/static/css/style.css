@@ -1,3 +1,34 @@
+/* CSS Variables for Theming */
+:root {
+    --bg-color: #f4f4f9;
+    --text-color: #333;
+    --card-bg: #fff;
+    --border-color: #ddd;
+    --nav-bg: #2c3e50;
+    --heading-color: #2c3e50;
+    --accent-color: #3498db;
+    --accent-hover: #2980b9;
+    --positive-color: #27ae60;
+    --negative-color: #e74c3c;
+    --hover-bg: #f1f1f1;
+    --input-bg: #fff;
+}
+
+.dark-mode {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --card-bg: #1e1e1e;
+    --border-color: #333;
+    --nav-bg: #1a1a2e;
+    --heading-color: #f4f4f9;
+    --accent-color: #4da8da;
+    --accent-hover: #3498db;
+    --positive-color: #2ecc71;
+    --negative-color: #ff6b6b;
+    --hover-bg: #2c2c2c;
+    --input-bg: #2c2c2c;
+}
+
 /* Basic Reset */
 * {
     margin: 0;
@@ -7,13 +38,13 @@
 
 body {
     font-family: 'Cairo', sans-serif;
-    background-color: #f4f4f9;
-    color: #333;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     line-height: 1.6;
     direction: rtl;
     text-align: right;
-    /* Fluid typography base */
     font-size: clamp(14px, 2vw, 16px);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 a {
@@ -23,19 +54,23 @@ a {
 
 /* Navbar */
 nav {
-    background-color: #2c3e50;
+    background-color: var(--nav-bg);
     color: #fff;
     padding: 1rem;
     display: flex;
-    flex-wrap: wrap; /* Allows wrapping on small screens */
+    flex-wrap: wrap;
+    /* Allows wrapping on small screens */
     gap: 1rem;
-    justify-content: center; /* Center on mobile */
+    justify-content: center;
+    /* Center on mobile */
     align-items: center;
+    transition: background-color 0.3s ease;
 }
 
 @media (min-width: 768px) {
     nav {
-        justify-content: space-between; /* Space out on desktop */
+        justify-content: space-between;
+        /* Space out on desktop */
     }
 }
 
@@ -50,6 +85,7 @@ nav ul {
     flex-wrap: wrap;
     gap: 0.5rem;
     justify-content: center;
+    align-items: center;
 }
 
 nav ul li a {
@@ -59,12 +95,13 @@ nav ul li a {
     /* Increase touch target padding for mobile */
     padding: 0.5rem;
     display: inline-block;
-    min-height: 44px; /* Touch-friendly size */
+    min-height: 44px;
+    /* Touch-friendly size */
     line-height: 28px;
 }
 
 nav ul li a:hover {
-    color: #3498db;
+    color: var(--accent-color);
 }
 
 /* Container */
@@ -75,13 +112,21 @@ nav ul li a:hover {
     padding: 0 1rem;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
     margin-bottom: 1rem;
-    color: #2c3e50;
+    color: var(--heading-color);
+    transition: color 0.3s ease;
 }
 
-h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); }
-h2 { font-size: clamp(1.3rem, 3vw, 1.8rem); }
+h1 {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+}
+
+h2 {
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+}
 
 /* Tables - Responsive Wrapper */
 .table-responsive {
@@ -90,30 +135,37 @@ h2 { font-size: clamp(1.3rem, 3vw, 1.8rem); }
     -webkit-overflow-scrolling: touch;
     margin-bottom: 2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    background-color: var(--card-bg);
+    transition: background-color 0.3s ease;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px; /* Forces scroll on very small screens instead of squishing */
+    min-width: 600px;
+    /* Forces scroll on very small screens instead of squishing */
 }
 
 thead {
-    background-color: #3498db;
+    background-color: var(--accent-color);
     color: #fff;
+    transition: background-color 0.3s ease;
 }
 
-th, td {
+th,
+td {
     padding: 12px 15px;
-    text-align: right; /* Default RTL */
-    border-bottom: 1px solid #ddd;
-    white-space: nowrap; /* Prevent wrapping inside cells on small screens */
+    text-align: right;
+    /* Default RTL */
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+    /* Prevent wrapping inside cells on small screens */
+    transition: border-color 0.3s ease;
 }
 
 tbody tr:hover {
-    background-color: #f1f1f1;
+    background-color: var(--hover-bg);
 }
 
 /* Forms & Inputs (Mobile First) */
@@ -127,14 +179,18 @@ input[type="text"],
 input[type="password"],
 input[type="number"],
 select {
-    width: 100%; /* Full width on mobile */
-    min-height: 44px; /* Touch-friendly size */
+    width: 100%;
+    /* Full width on mobile */
+    min-height: 44px;
+    /* Touch-friendly size */
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     font-family: inherit;
     font-size: 1rem;
-    background-color: #fff;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 /* Keep number inputs a reasonable size if they are intended to be inline, but wrap them flexably */
@@ -156,15 +212,19 @@ input[type="checkbox"] {
     height: 24px;
     vertical-align: middle;
     cursor: pointer;
-    margin-inline-end: 8px; /* RTL safe margin */
+    margin-inline-end: 8px;
+    /* RTL safe margin */
 }
 
-button, .btn, .btn-primary {
+button,
+.btn,
+.btn-primary {
     display: inline-block;
-    width: 100%; /* Full width by default on mobile */
+    width: 100%;
+    /* Full width by default on mobile */
     min-height: 44px;
     padding: 12px;
-    background-color: #27ae60;
+    background-color: var(--positive-color);
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -172,38 +232,41 @@ button, .btn, .btn-primary {
     font-weight: 700;
     text-align: center;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease;
     margin-top: 0.5rem;
     font-family: inherit;
 }
 
 @media (min-width: 768px) {
-    button, .btn, .btn-primary {
-        width: auto; /* Hug content on larger screens */
+
+    button,
+    .btn,
+    .btn-primary {
+        width: auto;
+        /* Hug content on larger screens */
         padding-inline-start: 2rem;
         padding-inline-end: 2rem;
     }
 }
 
-button:hover, .btn:hover, .btn-primary:hover {
-    background-color: #2ecc71;
+button:hover,
+.btn:hover,
+.btn-primary:hover {
+    filter: brightness(1.1);
 }
 
 button.btn-danger {
-    background-color: #e74c3c;
-}
-
-button.btn-danger:hover {
-    background-color: #c0392b;
+    background-color: var(--negative-color);
 }
 
 /* Cards & Sections */
 .card {
-    background: #fff;
+    background: var(--card-bg);
     padding: 1.5rem;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     margin-bottom: 1.5rem;
+    transition: background-color 0.3s ease;
 }
 
 /* Admin Dashboard Specific Layouts */
@@ -212,24 +275,26 @@ button.btn-danger:hover {
     flex-wrap: wrap;
     gap: 1rem;
     align-items: center;
-    background: #fff;
+    background: var(--card-bg);
     padding: 1rem;
     border-radius: 8px;
     margin-bottom: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
 }
 
 .admin-player-row h4 {
     width: 100%;
     margin-bottom: 0.5rem;
     font-size: 1.1rem;
-    color: #2c3e50;
+    color: var(--heading-color);
 }
 
 @media (min-width: 768px) {
     .admin-player-row {
         flex-wrap: nowrap;
     }
+
     .admin-player-row h4 {
         width: 150px;
         margin-bottom: 0;
@@ -238,18 +303,33 @@ button.btn-danger:hover {
 
 /* Icons and specific statuses */
 .crown {
-    margin-inline-end: 5px; /* RTL safe */
+    margin-inline-end: 5px;
+    /* RTL safe */
     font-size: 1.2rem;
 }
 
 .player-row.inactive {
     opacity: 0.5;
-    background-color: #f9f9f9;
+    background-color: var(--hover-bg);
 }
 
 /* General Layout helpers */
-.text-center { text-align: center; }
-.mt-1 { margin-top: 1rem; }
-.mt-2 { margin-top: 2rem; }
-.mb-1 { margin-bottom: 1rem; }
-.mb-2 { margin-bottom: 2rem; }
+.text-center {
+    text-align: center;
+}
+
+.mt-1 {
+    margin-top: 1rem;
+}
+
+.mt-2 {
+    margin-top: 2rem;
+}
+
+.mb-1 {
+    margin-bottom: 1rem;
+}
+
+.mb-2 {
+    margin-bottom: 2rem;
+}

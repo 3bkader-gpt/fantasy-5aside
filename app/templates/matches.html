@@ -16,6 +16,10 @@
                 }}</span>
             <span style="position: absolute; top: 10px; left: 15px; font-size: 0.85rem; color: #bdc3c7;">{{
                 match.date.strftime('%Y-%m-%d %H:%M') }}</span>
+            <button class="delete-match-btn" data-match-id="{{ match.id }}" title="حذف المباراة"
+                style="position: absolute; bottom: 10px; right: 15px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #e74c3c; z-index: 10;">
+                🗑️
+            </button>
 
             <h2
                 style="margin: 0; display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
@@ -126,4 +130,34 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+    document.querySelectorAll('.delete-match-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const matchId = this.getAttribute('data-match-id');
+            const adminPw = prompt("الرجاء إدخال كلمة سر الإدارة لحذف المباراة:");
+
+            if (adminPw) {
+                try {
+                    const response = await fetch(`/l/{{ league.slug }}/admin/match/${matchId}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ admin_password: adminPw })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert('✅ ' + data.message);
+                        window.location.reload();
+                    } else {
+                        alert('❌ خطأ: ' + (data.detail || 'حدث خطأ غير معروف'));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('❌ تعذر الاتصال بالخادم');
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

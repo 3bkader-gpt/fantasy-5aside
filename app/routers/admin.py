@@ -64,3 +64,21 @@ def end_season(slug: str, month_name: str = Form(...), db: Session = Depends(get
         return RedirectResponse(url=f"/l/{slug}/admin", status_code=303)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/match/{match_id}")
+def delete_match(slug: str, match_id: int, payload: dict, db: Session = Depends(get_db)):
+    league = crud.get_league_by_slug(db, slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+        
+    admin_password = payload.get("admin_password")
+    if league.admin_password != admin_password:
+        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
+        
+    try:
+        crud.delete_match(db, match_id, league.id)
+        return {"message": "تم حذف المباراة بنجاح"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
