@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>📝 تسجيل نتيجة مباراة (للمحترفين)</h1>
+<h1>📝 تسجيل نتيجة مباراة (اللوحة التكتيكية)</h1>
 
 <div class="admin-actions"
     style="margin-bottom: 30px; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -30,105 +30,151 @@
     </form>
 </div>
 
-<div class="match-form">
-    <h3>كلمة سر الدوري (لتأكيد الصلاحية)</h3>
-    <input type="password" id="admin_password" placeholder="كلمة سر إدارة الدوري" required
-        style="padding: 10px; width: 100%; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 20px;">
-
-    <button id="add-player-btn" class="btn-primary"
-        style="margin-bottom: 20px; width: auto; background-color: #3498db;">+ إضافة لاعب</button>
-
-    <div class="table-responsive">
-        <table id="match-table">
-            <thead>
-                <tr>
-                    <th style="min-width: 150px;">اسم اللاعب</th>
-                    <th>أهداف</th>
-                    <th>أسيست</th>
-                    <th>حارس؟</th>
-                    <th>تصديات</th>
-                    <th>أهداف عليه</th>
-                    <th>فائز؟</th>
-                    <th>CS</th>
-                    <th>MVP</th>
-                    <th>كابتن (x2)</th>
-                    <th>حذف</th>
-                </tr>
-            </thead>
-            <tbody id="match-table-body">
-                <!-- Rows will be added dynamically here -->
-            </tbody>
-        </table>
+<div class="match-form"
+    style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+    <div style="margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px;">
+        <h3 style="margin-top:0;">تأكيد الإدارة</h3>
+        <input type="password" id="admin_password" placeholder="أدخل كلمة سر إدارة الدوري لحفظ المباراة" required
+            style="padding: 12px; width: 100%; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
     </div>
 
-    <button id="save-match-btn" class="btn-primary">💾 حفظ المباراة</button>
+    <!-- Tactical Board -->
+    <div class="tactical-board" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+
+        <!-- Team A -->
+        <div class="team-container"
+            style="flex: 1; min-width: 320px; background: #f0f8ff; padding: 15px; border-radius: 12px; border: 2px solid #3498db;">
+            <input type="text" id="team_a_name" value="فريق أ"
+                style="font-size: 1.5rem; font-weight: bold; width: 100%; border: none; background: transparent; border-bottom: 2px solid #3498db; margin-bottom: 15px; text-align: center; color: #2c3e50;">
+            <button id="add-player-a-btn" class="btn-primary"
+                style="width: 100%; margin-bottom: 15px; background: #3498db;">+ إضافة لاعب للفريق</button>
+            <div class="table-responsive" style="margin-bottom: 0;">
+                <table style="min-width: 700px;">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 120px;">اسم اللاعب</th>
+                            <th>⚽ أهداف</th>
+                            <th>👟 أسيست</th>
+                            <th>🧤 حارس؟</th>
+                            <th>✋ تصديات</th>
+                            <th>❌ عليه</th>
+                            <th>🛡️ CS</th>
+                            <th>⭐ MVP</th>
+                            <th>©️ كابتن</th>
+                            <th>تبديل/حذف</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-a-body">
+                        <!-- Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Team B -->
+        <div class="team-container"
+            style="flex: 1; min-width: 320px; background: #fff5f0; padding: 15px; border-radius: 12px; border: 2px solid #e67e22;">
+            <input type="text" id="team_b_name" value="فريق ب"
+                style="font-size: 1.5rem; font-weight: bold; width: 100%; border: none; background: transparent; border-bottom: 2px solid #e67e22; margin-bottom: 15px; text-align: center; color: #2c3e50;">
+            <button id="add-player-b-btn" class="btn-primary"
+                style="width: 100%; margin-bottom: 15px; background: #e67e22;">+ إضافة لاعب للفريق</button>
+            <div class="table-responsive" style="margin-bottom: 0;">
+                <table style="min-width: 700px;">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 120px;">اسم اللاعب</th>
+                            <th>⚽ أهداف</th>
+                            <th>👟 أسيست</th>
+                            <th>🧤 حارس؟</th>
+                            <th>✋ تصديات</th>
+                            <th>❌ عليه</th>
+                            <th>🛡️ CS</th>
+                            <th>⭐ MVP</th>
+                            <th>©️ كابتن</th>
+                            <th>تبديل/حذف</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-b-body">
+                        <!-- Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <button id="save-match-btn" class="btn-primary"
+        style="width: 100%; padding: 15px; font-size: 1.2rem; background: #27ae60;">💾 حفظ المباراة وإقرار
+        النتيجة</button>
 </div>
 
 <!-- Template for a new row (hidden) -->
 <template id="player-row-template">
     <tr class="player-row">
-        <td data-label="اسم اللاعب">
+        <td data-label="الاسم">
             <input type="text" class="player-name-input" placeholder="اسم اللاعب"
-                style="width: 100%; text-align: right; padding: 5px;">
+                style="width: 100%; text-align: right; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
         </td>
-
         <td data-label="أهداف">
-            <input type="number" class="goals-input" value="0" min="0">
+            <input type="number" class="goals-input" value="0" min="0" style="width: 50px;">
         </td>
-
         <td data-label="أسيست">
-            <input type="number" class="assists-input" value="0" min="0">
+            <input type="number" class="assists-input" value="0" min="0" style="width: 50px;">
         </td>
-
         <td data-label="حارس؟">
             <input type="checkbox" class="is-gk-check">
         </td>
-
         <td data-label="تصديات">
-            <input type="number" class="saves-input" value="0" min="0" disabled style="background-color: #f0f0f0;">
+            <input type="number" class="saves-input" value="0" min="0" disabled
+                style="width: 50px; background-color: #f0f0f0;">
         </td>
-
         <td data-label="أهداف عليه">
-            <input type="number" class="conceded-input" value="0" min="0">
+            <input type="number" class="conceded-input" value="0" min="0" style="width: 50px;">
         </td>
-
-        <td data-label="فائز؟">
-            <input type="checkbox" class="winner-check">
-        </td>
-
         <td data-label="CS">
             <input type="checkbox" class="clean-sheet-check">
         </td>
-
         <td data-label="MVP">
             <input type="checkbox" class="mvp-check">
         </td>
-
         <td data-label="كابتن (x2)">
             <input type="checkbox" class="captain-check">
         </td>
-
-        <td data-label="حذف">
-            <button class="remove-row-btn"
+        <td data-label="الإجراء" style="white-space: nowrap;">
+            <button class="swap-row-btn" title="انقل اللاعب للفريق الآخر"
+                style="background-color: #9b59b6; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px;">🔄</button>
+            <button class="remove-row-btn" title="حذف"
                 style="background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">X</button>
         </td>
     </tr>
 </template>
 
 <script>
-    const tableBody = document.getElementById('match-table-body');
+    const teamABody = document.getElementById('team-a-body');
+    const teamBBody = document.getElementById('team-b-body');
     const template = document.getElementById('player-row-template');
 
     // Function to add a new row
-    function addPlayerRow() {
+    function addPlayerRow(targetBody) {
         const clone = template.content.cloneNode(true);
+        const tr = clone.querySelector('tr');
 
-        // Add Remove functionality to the new button
+        // Remove
         clone.querySelector('.remove-row-btn').addEventListener('click', function () {
             this.closest('tr').remove();
         });
 
-        // Add GK toggle functionality
+        // Swap
+        clone.querySelector('.swap-row-btn').addEventListener('click', function () {
+            const currentRow = this.closest('tr');
+            if (currentRow.parentElement.id === 'team-a-body') {
+                teamBBody.appendChild(currentRow);
+            } else {
+                teamABody.appendChild(currentRow);
+            }
+        });
+
+        // GK logic
         const gkCheck = clone.querySelector('.is-gk-check');
         const savesInput = clone.querySelector('.saves-input');
 
@@ -143,15 +189,17 @@
             }
         });
 
-        tableBody.appendChild(clone);
+        targetBody.appendChild(clone);
     }
 
-    // Add 10 initial rows for convenience
-    for (let i = 0; i < 10; i++) {
-        addPlayerRow();
+    // Add 5 initial rows for each team
+    for (let i = 0; i < 5; i++) {
+        addPlayerRow(teamABody);
+        addPlayerRow(teamBBody);
     }
 
-    document.getElementById('add-player-btn').addEventListener('click', addPlayerRow);
+    document.getElementById('add-player-a-btn').addEventListener('click', () => addPlayerRow(teamABody));
+    document.getElementById('add-player-b-btn').addEventListener('click', () => addPlayerRow(teamBBody));
 
     document.getElementById('save-match-btn').addEventListener('click', async () => {
         const adminPassword = document.getElementById('admin_password').value;
@@ -160,45 +208,29 @@
             return;
         }
 
+        const teamAName = document.getElementById('team_a_name').value.trim() || 'فريق أ';
+        const teamBName = document.getElementById('team_b_name').value.trim() || 'فريق ب';
         const stats = [];
-        const rows = document.querySelectorAll('.player-row');
 
-        rows.forEach(row => {
-            const nameInput = row.querySelector('.player-name-input');
-            const name = nameInput.value.trim();
+        // Parse Team A
+        const rowsA = teamABody.querySelectorAll('.player-row');
+        rowsA.forEach(row => collectRowStats(row, 'A', stats));
 
-            // Only process rows with a name
-            if (name) {
-                const goals = parseInt(row.querySelector('.goals-input').value) || 0;
-                const assists = parseInt(row.querySelector('.assists-input').value) || 0;
-                const saves = parseInt(row.querySelector('.saves-input').value) || 0;
-                const conceded = parseInt(row.querySelector('.conceded-input').value) || 0;
-
-                const isGk = row.querySelector('.is-gk-check').checked;
-                const isWinner = row.querySelector('.winner-check').checked;
-                const cleanSheet = row.querySelector('.clean-sheet-check').checked;
-                const isMvp = row.querySelector('.mvp-check').checked;
-                const isCaptain = row.querySelector('.captain-check').checked;
-
-                stats.push({
-                    player_name: name,
-                    goals: goals,
-                    assists: assists,
-                    saves: saves,
-                    goals_conceded: conceded,
-                    is_gk: isGk,
-                    is_winner: isWinner,
-                    clean_sheet: cleanSheet,
-                    mvp: isMvp,
-                    is_captain: isCaptain
-                });
-            }
-        });
+        // Parse Team B
+        const rowsB = teamBBody.querySelectorAll('.player-row');
+        rowsB.forEach(row => collectRowStats(row, 'B', stats));
 
         if (stats.length === 0) {
-            alert('⚠️ يرجى إدخال اسم لاعب واحد على الأقل.');
+            alert('⚠️ يرجى إدخال بيانات لاعب واحد على الأقل.');
             return;
         }
+
+        const payload = {
+            team_a_name: teamAName,
+            team_b_name: teamBName,
+            stats: stats,
+            admin_password: adminPassword
+        };
 
         try {
             const response = await fetch('/l/{{ league.slug }}/admin/match', {
@@ -206,11 +238,11 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ stats: stats, admin_password: adminPassword })
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
-                alert('✅ تم حفظ المباراة بنجاح!');
+                alert('✅ تم حفظ المباراة بنجاح وإحتساب النقاط تلقائياً لكل فريق!');
                 window.location.reload();
             } else {
                 const errorData = await response.json();
@@ -221,5 +253,25 @@
             alert('❌ تعذر الاتصال بالخادم.');
         }
     });
+
+    function collectRowStats(row, teamIdentifier, statsArray) {
+        const nameInput = row.querySelector('.player-name-input');
+        const name = nameInput.value.trim();
+
+        if (name) {
+            statsArray.push({
+                player_name: name,
+                team: teamIdentifier,
+                goals: parseInt(row.querySelector('.goals-input').value) || 0,
+                assists: parseInt(row.querySelector('.assists-input').value) || 0,
+                saves: parseInt(row.querySelector('.saves-input').value) || 0,
+                goals_conceded: parseInt(row.querySelector('.conceded-input').value) || 0,
+                is_gk: row.querySelector('.is-gk-check').checked,
+                clean_sheet: row.querySelector('.clean-sheet-check').checked,
+                mvp: row.querySelector('.mvp-check').checked,
+                is_captain: row.querySelector('.captain-check').checked
+            });
+        }
+    }
 </script>
 {% endblock %}

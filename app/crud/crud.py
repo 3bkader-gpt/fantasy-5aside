@@ -7,6 +7,9 @@ from ..services import points
 def get_league_by_slug(db: Session, slug: str):
     return db.query(models.League).filter(models.League.slug == slug).first()
 
+def get_all_leagues(db: Session):
+    return db.query(models.League).order_by(models.League.created_at.desc()).all()
+
 def get_leaderboard(db: Session, league_id: int):
     """
     Retrieve all players for a specific league ordered by total_points descending, 
@@ -54,8 +57,18 @@ def register_match(db: Session, match_data: schemas.MatchCreate, league_id: int)
     if not league or league.admin_password != match_data.admin_password:
         raise HTTPException(status_code=401, detail="كلمة سر الإدارة غير صحيحة")
 
+    # Calculate Teams Scores
+    team_a_score = sum(s.goals for s in match_data.stats if s.team == 'A')
+    team_b_score = sum(s.goals for s in match_data.stats if s.team == 'B')
+
     # Create the Match record
-    db_match = models.Match(league_id=league_id)
+    db_match = models.Match(
+        league_id=league_id,
+        team_a_name=match_data.team_a_name,
+        team_b_name=match_data.team_b_name,
+        team_a_score=team_a_score,
+        team_b_score=team_b_score
+    )
     db.add(db_match)
     db.commit()
     db.refresh(db_match)
@@ -74,11 +87,18 @@ def register_match(db: Session, match_data: schemas.MatchCreate, league_id: int)
             db.commit()
             db.refresh(player)
             
+        # Determine is_winner Dynamically
+        is_winner = False
+        if stat_data.team == 'A' and team_a_score > team_b_score:
+            is_winner = True
+        elif stat_data.team == 'B' and team_b_score > team_a_score:
+            is_winner = True
+            
         # Calculate points for this specific performance
         points_earned = points.calculate_player_points(
             goals=stat_data.goals,
             assists=stat_data.assists,
-            is_winner=stat_data.is_winner,
+            is_winner=is_winner,
             is_gk=stat_data.is_gk,
             clean_sheet=stat_data.clean_sheet,
             mvp=stat_data.mvp,
@@ -91,11 +111,12 @@ def register_match(db: Session, match_data: schemas.MatchCreate, league_id: int)
         db_stat = models.MatchStat(
             match_id=db_match.id,
             player_id=player.id,
+            team=stat_data.team,
             goals=stat_data.goals,
             assists=stat_data.assists,
             saves=stat_data.saves,
             goals_conceded=stat_data.goals_conceded,
-            is_winner=stat_data.is_winner,
+            is_winner=is_winner,
             is_gk=stat_data.is_gk,
             clean_sheet=stat_data.clean_sheet,
             mvp=stat_data.mvp,

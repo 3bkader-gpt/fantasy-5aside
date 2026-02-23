@@ -47,6 +47,10 @@ class Match(Base):
     id = Column(Integer, primary_key=True, index=True)
     league_id = Column(Integer, ForeignKey("leagues.id"))
     date = Column(DateTime(timezone=True), server_default=func.now())
+    team_a_name = Column(String, default="Team A")
+    team_b_name = Column(String, default="Team B")
+    team_a_score = Column(Integer, default=0)
+    team_b_score = Column(Integer, default=0)
 
     league = relationship("League", back_populates="matches")
     stats = relationship("MatchStat", back_populates="match", cascade="all, delete")
@@ -58,6 +62,7 @@ class MatchStat(Base):
     id = Column(Integer, primary_key=True, index=True)
     player_id = Column(Integer, ForeignKey("players.id"))
     match_id = Column(Integer, ForeignKey("matches.id"))
+    team = Column(String, default="A")
     
     # Performance Stats
     goals = Column(Integer, default=0)

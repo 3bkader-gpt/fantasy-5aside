@@ -19,10 +19,11 @@ def get_db():
         db.close()
 
 @router.get("/")
-def read_root(request: Request):
+def read_root(request: Request, db: Session = Depends(get_db)):
+    leagues = crud.get_all_leagues(db)
     return templates.TemplateResponse(
         "landing.html", 
-        {"request": request}
+        {"request": request, "leagues": leagues}
     )
 
 @router.post("/create-league")

@@ -11,7 +11,7 @@
     </div>
 
     <div
-        style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 5px solid #3498db;">
+        style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 5px solid #3498db; margin-bottom: 40px;">
         <h2 style="margin-top: 0; color: #3498db; margin-bottom: 30px;">إنشاء دوري جديد الآن</h2>
 
         {% if error %}
@@ -53,5 +53,23 @@
             </button>
         </form>
     </div>
+
+    {% if leagues %}
+    <div
+        style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: right;">
+        <h2 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">الدوريات
+            المتاحة 🏆</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+            {% for league in leagues %}
+            <a href="/l/{{ league.slug }}"
+                style="display: block; padding: 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; color: #2c3e50; font-weight: bold; transition: all 0.3s ease; text-decoration: none;">
+                <span style="font-size: 1.1rem; display: block; margin-bottom: 5px;">{{ league.name }}</span>
+                <span style="font-size: 0.85rem; color: #7f8c8d; font-weight: normal;">/l/{{ league.slug }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}
