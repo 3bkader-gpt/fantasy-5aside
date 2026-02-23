@@ -8,65 +8,116 @@
     {% for match in matches %}
     <div class="match-card"
         style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <div class="match-header"
-            style="border-bottom: 2px solid #f0f0f0; padding-bottom: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0; font-size: 1.2rem; color: #444;">
-                📅 {{ match.date.strftime('%Y-%m-%d %H:%M') }}
+
+        <!-- Scoreboard Header -->
+        <div class="scoreboard"
+            style="text-align: center; background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; position: relative;">
+            <span style="position: absolute; top: 10px; right: 15px; font-size: 0.85rem; color: #bdc3c7;">#{{ match.id
+                }}</span>
+            <span style="position: absolute; top: 10px; left: 15px; font-size: 0.85rem; color: #bdc3c7;">{{
+                match.date.strftime('%Y-%m-%d %H:%M') }}</span>
+
+            <h2
+                style="margin: 0; display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+                <span style="flex: 1; text-align: left; color: #3498db; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">{{
+                    match.team_a_name }}</span>
+                <span
+                    style="font-size: 2.5rem; background: rgba(255,255,255,0.1); padding: 5px 20px; border-radius: 8px;">
+                    <span style="color: #3498db">{{ match.team_a_score }}</span>
+                    <span style="color: #666; font-size: 1.5rem;">-</span>
+                    <span style="color: #e67e22">{{ match.team_b_score }}</span>
+                </span>
+                <span style="flex: 1; text-align: right; color: #e67e22; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">{{
+                    match.team_b_name }}</span>
             </h2>
-            <span class="match-id"
-                style="background: #eee; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.9rem;">
-                مباراة #{{ match.id }}
-            </span>
         </div>
 
-        <div class="table-container">
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: #f8f9fa;">
-                        <th style="padding: 0.8rem; text-align: right;">اللاعب</th>
-                        <th style="padding: 0.8rem; text-align: center;">النتيجة</th>
-                        <th style="padding: 0.8rem; text-align: center;">أهداف</th>
-                        <th style="padding: 0.8rem; text-align: center;">أسيست</th>
-                        <th style="padding: 0.8rem; text-align: center;">تصديات</th>
-                        <th style="padding: 0.8rem; text-align: center;">نقاط المباراة</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in match.stats %}
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 0.8rem;">
-                            <strong>{{ stat.player.name }}</strong>
-                            {% if stat.mvp %}
-                            <span title="MVP" style="margin-right: 5px;">⭐</span>
+        <!-- Teams Tables -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+
+            <!-- Team A Stats -->
+            <div style="flex: 1; min-width: 300px;">
+                <h4 style="color: #3498db; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                    تشكيلة {{ match.team_a_name }}</h4>
+                <div class="table-responsive">
+                    <table style="width: 100%; font-size: 0.9rem;">
+                        <thead style="background: #f0f8ff;">
+                            <tr>
+                                <th>اللاعب</th>
+                                <th>⚽</th>
+                                <th>👟</th>
+                                <th>✋</th>
+                                <th>النقاط</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in match.stats %}
+                            {% if stat.team == 'A' %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td>
+                                    <strong>{{ stat.player.name }}</strong>
+                                    {% if stat.is_captain %}<span title="Captain">©️</span>{% endif %}
+                                    {% if stat.mvp %}<span title="MVP">⭐</span>{% endif %}
+                                    {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
+                                </td>
+                                <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
+                                <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
+                                <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
+                                {% if stat.is_winner %}
+                                <td style="font-weight: bold; color: #27ae60;">{{ stat.points_earned }}</td>
+                                {% else %}
+                                <td style="font-weight: bold; color: #7f8c8d;">{{ stat.points_earned }}</td>
+                                {% endif %}
+                            </tr>
                             {% endif %}
-                            {% if stat.clean_sheet %}
-                            <span title="Clean Sheet" style="margin-right: 5px;">🛡️</span>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Team B Stats -->
+            <div style="flex: 1; min-width: 300px;">
+                <h4 style="color: #e67e22; margin-bottom: 10px; border-bottom: 2px solid #e67e22; padding-bottom: 5px;">
+                    تشكيلة {{ match.team_b_name }}</h4>
+                <div class="table-responsive">
+                    <table style="width: 100%; font-size: 0.9rem;">
+                        <thead style="background: #fff5f0;">
+                            <tr>
+                                <th>اللاعب</th>
+                                <th>⚽</th>
+                                <th>👟</th>
+                                <th>✋</th>
+                                <th>النقاط</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in match.stats %}
+                            {% if stat.team == 'B' %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td>
+                                    <strong>{{ stat.player.name }}</strong>
+                                    {% if stat.is_captain %}<span title="Captain">©️</span>{% endif %}
+                                    {% if stat.mvp %}<span title="MVP">⭐</span>{% endif %}
+                                    {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
+                                </td>
+                                <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
+                                <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
+                                <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
+                                {% if stat.is_winner %}
+                                <td style="font-weight: bold; color: #27ae60;">{{ stat.points_earned }}</td>
+                                {% else %}
+                                <td style="font-weight: bold; color: #7f8c8d;">{{ stat.points_earned }}</td>
+                                {% endif %}
+                            </tr>
                             {% endif %}
-                        </td>
-                        <td style="padding: 0.8rem; text-align: center;">
-                            {% if stat.is_winner %}
-                            <span style="color: green; font-weight: bold;">فائز</span>
-                            {% else %}
-                            <span style="color: red;">خاسر</span>
-                            {% endif %}
-                        </td>
-                        <td style="padding: 0.8rem; text-align: center;">
-                            {% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}
-                        </td>
-                        <td style="padding: 0.8rem; text-align: center;">
-                            {% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}
-                        </td>
-                        <td style="padding: 0.8rem; text-align: center;">
-                            {% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}
-                        </td>
-                        <td style="padding: 0.8rem; text-align: center; font-weight: bold; color: #3b82f6;">
-                            {{ stat.points_earned }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div> <!-- End Flex Container -->
     </div>
     {% endfor %}
     {% else %}
