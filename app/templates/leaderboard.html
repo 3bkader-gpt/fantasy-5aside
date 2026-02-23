@@ -3,53 +3,59 @@
 {% block content %}
 <h1>🏆 ترتيب دوري الأبطال</h1>
 
-<!-- Leaderboard Category Tabs -->
-<div class="tabs-container"
-    style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-    <button class="tab-btn active" data-sort="points">الترتيب العام</button>
-    <button class="tab-btn" data-sort="goals">الهدافين</button>
-    <button class="tab-btn" data-sort="assists">صناع اللعب</button>
-    <button class="tab-btn" data-sort="saves">الحراس</button>
+<div style="text-align: center; margin-bottom: 20px;">
+    <button id="share-leaderboard" class="btn btn-share">مشاركة الترتيب 📤📸</button>
 </div>
 
-<div class="table-responsive">
-    <table>
-        <thead>
-            <tr>
-                <th>المركز</th>
-                <th>اللاعب</th>
-                <th>الفورمة</th>
-                <th>النقاط</th>
-                <th>الأهداف</th>
-                <th>الأسيست</th>
-                <th>التصديات</th>
-                <th>شباك نظيفة</th>
-            </tr>
-        </thead>
-        <tbody id="leaderboard-body">
-            {% for player in players %}
-            <tr data-points="{{ player.total_points }}" data-goals="{{ player.total_goals }}"
-                data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}">
-                <td data-label="المركز" class="rank-col">
-                    {{ loop.index }}
-                    {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% endif %}
-                </td>
-                <td data-label="اللاعب">
-                    <a href="/player/{{ player.id }}"
-                        style="text-decoration: none; color: inherit; font-weight: bold;">{{ player.name }}</a>
-                    {% if loop.index == 1 %}<span class="crown">👑</span>{% endif %}
-                </td>
-                <td data-label="الفورمة">{{ player.form }}</td>
-                <td data-label="النقاط"><strong>{{ player.total_points }}</strong></td>
-                <td data-label="الأهداف">{{ player.total_goals }}</td>
-                <td data-label="الأسيست">{{ player.total_assists }}</td>
-                <td data-label="التصديات">{{ player.total_saves }}</td>
-                <td data-label="شباك نظيفة">{{ player.total_clean_sheets }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<div id="capture-area" style="padding: 10px; border-radius: 8px;">
+    <!-- Leaderboard Category Tabs -->
+    <div class="tabs-container"
+        style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <button class="tab-btn active" data-sort="points">الترتيب العام</button>
+        <button class="tab-btn" data-sort="goals">الهدافين</button>
+        <button class="tab-btn" data-sort="assists">صناع اللعب</button>
+        <button class="tab-btn" data-sort="saves">الحراس</button>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>المركز</th>
+                    <th>اللاعب</th>
+                    <th>الفورمة</th>
+                    <th>النقاط</th>
+                    <th>الأهداف</th>
+                    <th>الأسيست</th>
+                    <th>التصديات</th>
+                    <th>شباك نظيفة</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                {% for player in players %}
+                <tr data-points="{{ player.total_points }}" data-goals="{{ player.total_goals }}"
+                    data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}">
+                    <td data-label="المركز" class="rank-col">
+                        {{ loop.index }}
+                        {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% endif %}
+                    </td>
+                    <td data-label="اللاعب">
+                        <a href="/player/{{ player.id }}"
+                            style="text-decoration: none; color: inherit; font-weight: bold;">{{ player.name }}</a>
+                        {% if loop.index == 1 %}<span class="crown">👑</span>{% endif %}
+                    </td>
+                    <td data-label="الفورمة">{{ player.form }}</td>
+                    <td data-label="النقاط"><strong>{{ player.total_points }}</strong></td>
+                    <td data-label="الأهداف">{{ player.total_goals }}</td>
+                    <td data-label="الأسيست">{{ player.total_assists }}</td>
+                    <td data-label="التصديات">{{ player.total_saves }}</td>
+                    <td data-label="شباك نظيفة">{{ player.total_clean_sheets }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div> <!-- End capture-area -->
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
