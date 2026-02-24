@@ -28,16 +28,61 @@ class OctopusBadge(BadgeRule):
         return None
 
 class WinningMentalityBadge(BadgeRule):
-    def evaluate(self, player: models.Player, history: List[models.MatchStat], total_matches: int, win_rate: float) -> Optional[str]:
+    def evaluate(self, player, history, total_matches, win_rate):
         if total_matches >= 3 and win_rate > 70.0:
             return "عقلية الفوز 🏆"
+        return None
+
+class WallBadge(BadgeRule):
+    """3+ clean sheets as goalkeeper."""
+    def evaluate(self, player, history, total_matches, win_rate):
+        clean_sheets = sum(1 for stat in history if stat.is_gk and stat.clean_sheet)
+        if clean_sheets >= 3:
+            return "الحائط 🛡️"
+        return None
+
+class RocketBadge(BadgeRule):
+    """Scored in 3+ consecutive matches."""
+    def evaluate(self, player, history, total_matches, win_rate):
+        if len(history) < 3:
+            return None
+        # History is sorted by date desc, reverse for chronological
+        chronological = list(reversed(history))
+        max_streak = 0
+        current_streak = 0
+        for stat in chronological:
+            if stat.goals and stat.goals > 0:
+                current_streak += 1
+                max_streak = max(max_streak, current_streak)
+            else:
+                current_streak = 0
+        if max_streak >= 3:
+            return "الصاروخ ⚡"
+        return None
+
+class SniperBadge(BadgeRule):
+    """5+ goals in the current month."""
+    def evaluate(self, player, history, total_matches, win_rate):
+        if player.total_goals >= 5:
+            return "القناص 🔫"
+        return None
+
+class TopAssistsBadge(BadgeRule):
+    """5+ assists in the current month."""
+    def evaluate(self, player, history, total_matches, win_rate):
+        if player.total_assists >= 5:
+            return "عمود الوسط 🎯"
         return None
 
 default_badge_rules = [
     HatTrickBadge(),
     PlaymakerBadge(),
     OctopusBadge(),
-    WinningMentalityBadge()
+    WinningMentalityBadge(),
+    WallBadge(),
+    RocketBadge(),
+    SniperBadge(),
+    TopAssistsBadge(),
 ]
 
 class BadgeCalculator:
