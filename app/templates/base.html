@@ -4,7 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>دوري الخماسي - Fantasy Football</title>
+    <title>{% if league %}{{ league.name }} - دوري الخماسي{% else %}دوري الخماسي - Fantasy Football{% endif %}</title>
+    <meta name="description"
+        content="{% if league %}تابع ترتيب لاعبي {{ league.name }} وإحصائياتهم في دوري الخماسي{% else %}أنشئ دوري الخماسي الخاص بك وتابع الإحصائيات{% endif %}">
+
+    <!-- OpenGraph / WhatsApp / Telegram Previews -->
+    <meta property="og:type" content="website">
+    <meta property="og:title"
+        content="{% if league %}{{ league.name }} ⚽{% else %}دوري الخماسي - Fantasy Football{% endif %}">
+    <meta property="og:description"
+        content="{% if league %}تابع ترتيب اللاعبين والإحصائيات في {{ league.name }}{% else %}أنشئ دوري الخماسي الخاص بك{% endif %}">
+    <meta property="og:site_name" content="Fantasy 5-a-Side">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{% if league %}{{ league.name }} ⚽{% else %}دوري الخماسي{% endif %}">
+    <meta name="twitter:description"
+        content="{% if league %}ترتيب وإحصائيات {{ league.name }}{% else %}أنشئ دوري الخماسي الخاص بك{% endif %}">
 
     <!-- Google Fonts: Cairo -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
