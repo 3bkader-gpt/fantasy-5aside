@@ -4,7 +4,13 @@
 <div class="cup-container" style="max-width: 800px; margin: 0 auto; padding-bottom: 50px;">
     <h1 style="text-align: center; margin-bottom: 2rem;">🏆 كأس الشهر (Head-to-Head)</h1>
 
-    {% if matchups %}
+    {% if not matchups %}
+    <div class="empty-state">
+        <div class="icon">😴</div>
+        <h3>الكأس في فترة راحة</h3>
+        <p>لا توجد منافسات كأس حالياً. استمر في اللعب حتى يتم إطلاق البطولة القادمة!</p>
+    </div>
+    {% else %}
     <div class="cup-bracket">
         {% set current_round = None %}
         {% for matchup in matchups %}

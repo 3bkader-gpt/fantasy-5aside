@@ -47,6 +47,16 @@ def get_all_matches(db: Session, league_id: int):
         joinedload(models.Match.stats).joinedload(models.MatchStat.player)
     ).order_by(models.Match.date.desc()).all()
 
+def _snapshot_ranks(db: Session, league_id: int):
+    players = db.query(models.Player).filter(models.Player.league_id == league_id).order_by(
+        models.Player.total_points.desc(),
+        models.Player.total_goals.desc()
+    ).all()
+    for index, player in enumerate(players):
+        player.previous_rank = index + 1
+        db.add(player)
+    db.commit()
+
 def register_match(db: Session, match_data: schemas.MatchCreate, league_id: int):
     """
     Create a new match, handle dynamic players within the league, calculate points, 
@@ -57,9 +67,11 @@ def register_match(db: Session, match_data: schemas.MatchCreate, league_id: int)
     if not league or league.admin_password != match_data.admin_password:
         raise HTTPException(status_code=401, detail="كلمة سر الإدارة غير صحيحة")
 
-    # Calculate Teams Scores
     team_a_score = sum(s.goals for s in match_data.stats if s.team == 'A')
     team_b_score = sum(s.goals for s in match_data.stats if s.team == 'B')
+
+    # Snapshot rankings before applying any changes
+    _snapshot_ranks(db, league_id)
 
     # Create the Match record
     db_match = models.Match(
@@ -316,6 +328,8 @@ def delete_match(db: Session, match_id: int, league_id: int):
     
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
+        
+    _snapshot_ranks(db, league_id)
         
     for stat in match.stats:
         player = stat.player

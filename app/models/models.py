@@ -29,6 +29,7 @@ class Player(Base):
     total_assists = Column(Integer, default=0)
     total_saves = Column(Integer, default=0)
     total_clean_sheets = Column(Integer, default=0)
+    previous_rank = Column(Integer, default=0)
 
     # All-time stats
     all_time_points = Column(Integer, default=0)

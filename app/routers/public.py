@@ -58,9 +58,13 @@ def read_leaderboard(slug: str, request: Request, db: Session = Depends(get_db))
         raise HTTPException(status_code=404, detail="League not found")
         
     players = crud.get_leaderboard(db, league.id)
+    
+    latest_hof = db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league.id).order_by(models.HallOfFame.id.desc()).first()
+    next_cup = db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league.id, models.CupMatchup.is_active == True).first()
+    
     return templates.TemplateResponse(
         "leaderboard.html", 
-        {"request": request, "league": league, "players": players}
+        {"request": request, "league": league, "players": players, "latest_hof": latest_hof, "next_cup": next_cup}
     )
 
 @router.get("/l/{slug}/matches")

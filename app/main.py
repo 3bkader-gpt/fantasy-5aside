@@ -8,7 +8,20 @@ from .database import engine, Base
 # Create tables if not already created (though seed.py does this too)
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="5-a-side Fantasy Football")
+from sqlalchemy import text
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Manual schema migrations
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE players ADD COLUMN previous_rank INTEGER DEFAULT 0;"))
+        except Exception:
+            pass
+    yield
+
+app = FastAPI(title="5-a-side Fantasy Football", lifespan=lifespan)
 
 # CORS
 app.add_middleware(

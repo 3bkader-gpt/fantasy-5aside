@@ -4,7 +4,13 @@
 <div class="matches-container">
     <h1 style="text-align: center; margin-bottom: 2rem;">سجل المباريات</h1>
 
-    {% if matches %}
+    {% if not matches %}
+    <div class="empty-state">
+        <div class="icon">🥅</div>
+        <h3>الشباك عذراء!</h3>
+        <p>لم تُلعب أي مباريات في هذا الدوري حتى الآن. كن أول من يسجل التاريخ!</p>
+    </div>
+    {% else %}
     {% for match in matches %}
     <div class="match-card" id="match-{{ match.id }}"
         style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -140,27 +146,28 @@
     document.querySelectorAll('.delete-match-btn').forEach(btn => {
         btn.addEventListener('click', async function () {
             const matchId = this.getAttribute('data-match-id');
-            const adminPw = prompt("الرجاء إدخال كلمة سر الإدارة لحذف المباراة:");
+            const password = await showPromptModal("حذف مباراة", "أدخل كلمة مرور الآدمن لحذف المباراة رقم #" + matchId + " :");
+            if (!password) return;
 
-            if (adminPw) {
-                try {
-                    const response = await fetch(`/l/{{ league.slug }}/admin/match/${matchId}`, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ admin_password: adminPw })
-                    });
+            try {
+                const formData = new FormData();
+                formData.append('password', password);
 
-                    const data = await response.json();
-                    if (response.ok) {
-                        alert('✅ ' + data.message);
-                        window.location.reload();
-                    } else {
-                        alert('❌ خطأ: ' + (data.detail || 'حدث خطأ غير معروف'));
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('❌ تعذر الاتصال بالخادم');
+                const response = await fetch(`/admin/match/${matchId}`, {
+                    method: 'DELETE',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('تم حذف المباراة بنجاح!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(result.detail || 'حدث خطأ.', 'error');
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('حدث خطأ أثناء الاتصال بالخادم.', 'error');
             }
         });
     });

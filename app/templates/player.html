@@ -80,45 +80,147 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <h2 style="margin-bottom: 20px; color: #2c3e50;">📜 سجل المباريات الخاص باللاعب</h2>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>تاريخ المباراة</th>
-                    <th>النقاط</th>
-                    <th>حالة الفوز</th>
-                    <th>أهداف</th>
-                    <th>أسيست</th>
-                    <th>شباك نظيفة</th>
-                    <th>جوائز</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stat in history %}
-                <tr>
-                    <td data-label="تاريخ المباراة">{{ stat.match.date.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td data-label="النقاط"><strong>{{ stat.points_earned }}</strong></td>
-                    <td data-label="حالة الفوز">{% if stat.is_winner %}<span
-                            style="color: #27ae60; font-weight: bold;">فوز</span>{% else %}<span
-                            style="color: #e74c3c;">خسارة</span>{% endif %}</td>
-                    <td data-label="أهداف">{{ stat.goals }}</td>
-                    <td data-label="أسيست">{{ stat.assists }}</td>
-                    <td data-label="شباك نظيفة">{% if stat.clean_sheet %}🛡️{% else %}-{% endif %}</td>
-                    <td data-label="جوائز">
-                        {% if stat.mvp %}🌟 MVP{% endif %}
-                        {% if stat.is_captain %}👑 كابتن{% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" style="text-align: center; color: #999;">لا توجد مباريات مسجلة.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <!-- Analytics Chart -->
+        {% if history and history|length >= 2 %}
+        <div
+            style="background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid var(--border-color);">
+            <h3 style="color: var(--text-color); margin-top: 0; margin-bottom: 20px;">📈 الانخفاض والارتفاع في المستوى
+                (المباريات السابقة)</h3>
+            <canvas id="performanceChart" height="100"
+                data-labels="{% for stat in history|reverse %}{{ stat.match.date.strftime('%m-%d') }}{% if not loop.last %},{% endif %}{% endfor %}"
+                data-points="{% for stat in history|reverse %}{{ stat.points_earned }}{% if not loop.last %},{% endif %}{% endfor %}"
+                data-goals="{% for stat in history|reverse %}{{ stat.goals }}{% if not loop.last %},{% endif %}{% endfor %}"
+                data-assists="{% for stat in history|reverse %}{{ stat.assists }}{% if not loop.last %},{% endif %}{% endfor %}">
+            </canvas>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const canvas = document.getElementById('performanceChart');
+                const ctx = canvas.getContext('2d');
+
+                const labels = canvas.getAttribute('data-labels').split(',');
+                const pointsData = canvas.getAttribute('data-points').split(',').map(Number);
+                const goalsData = canvas.getAttribute('data-goals').split(',').map(Number);
+                const assistsData = canvas.getAttribute('data-assists').split(',').map(Number);
+
+                const textColor = getComputedStyle(document.body).getPropertyValue('--text-color').trim();
+                const gridColor = getComputedStyle(document.body).getPropertyValue('--border-color').trim();
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'النقاط',
+                                data: pointsData,
+                                borderColor: '#3498db',
+                                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.3,
+                                fill: true,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'الأهداف',
+                                data: goalsData,
+                                type: 'bar',
+                                backgroundColor: 'rgba(46, 204, 113, 0.6)',
+                                yAxisID: 'y1'
+                            },
+                            {
+                                label: 'الأسيست',
+                                data: assistsData,
+                                type: 'bar',
+                                backgroundColor: 'rgba(155, 89, 182, 0.6)',
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: textColor, font: { family: 'Cairo' } }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: textColor },
+                                grid: { color: gridColor },
+                                title: { display: true, text: 'المباريات', color: textColor }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: { display: true, text: 'النقاط', color: textColor },
+                                ticks: { color: textColor },
+                                grid: { color: gridColor },
+                                min: 0,
+                                suggestedMax: 15
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: 'الأهداف / الأسيست', color: textColor },
+                                ticks: { color: textColor, stepSize: 1 },
+                                grid: { drawOnChartArea: false },
+                                min: 0,
+                                suggestedMax: 5
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+        {% endif %}
+
+        <h2 style="margin-bottom: 20px; color: #2c3e50;">📜 سجل المباريات الخاص باللاعب</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>تاريخ المباراة</th>
+                        <th>النقاط</th>
+                        <th>حالة الفوز</th>
+                        <th>أهداف</th>
+                        <th>أسيست</th>
+                        <th>شباك نظيفة</th>
+                        <th>جوائز</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in history %}
+                    <tr>
+                        <td data-label="تاريخ المباراة">{{ stat.match.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td data-label="النقاط"><strong>{{ stat.points_earned }}</strong></td>
+                        <td data-label="حالة الفوز">{% if stat.is_winner %}<span
+                                style="color: #27ae60; font-weight: bold;">فوز</span>{% else %}<span
+                                style="color: #e74c3c;">خسارة</span>{% endif %}</td>
+                        <td data-label="أهداف">{{ stat.goals }}</td>
+                        <td data-label="أسيست">{{ stat.assists }}</td>
+                        <td data-label="شباك نظيفة">{% if stat.clean_sheet %}🛡️{% else %}-{% endif %}</td>
+                        <td data-label="جوائز">
+                            {% if stat.mvp %}🌟 MVP{% endif %}
+                            {% if stat.is_captain %}👑 كابتن{% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #999;">لا توجد مباريات مسجلة.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
-{% endblock %}
+    {% endblock %}

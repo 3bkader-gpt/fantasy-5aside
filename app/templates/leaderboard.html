@@ -8,6 +8,32 @@
 </div>
 
 <div id="capture-area" style="padding: 10px; border-radius: 8px;">
+
+    <!-- Dynamic Banners -->
+    <div class="banners-container" style="margin-bottom: 20px;">
+        {% if latest_hof %}
+        <div class="banner-card"
+            style="background: linear-gradient(135deg, #f1c40f, #e67e22); color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            🌟 بطل شهر {{ latest_hof.month_year }}: {{ latest_hof.player.name }} ({{ latest_hof.points_scored }} نقطة)
+            🌟
+        </div>
+        {% endif %}
+
+        {% if next_cup %}
+        <div class="banner-card"
+            style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            🏆 موعد الكأس القادم: {{ next_cup.player1.name }} 🆚 {{ next_cup.player2.name }} 🏆
+        </div>
+        {% endif %}
+    </div>
+
+    {% if not players %}
+    <div class="empty-state">
+        <div class="icon">🏜️</div>
+        <h3>لا يوجد لاعبين بعد</h3>
+        <p>الساحة خالية! ابدأ بتسجيل أول مباراة من لوحة التحكم لتبدأ الإثارة.</p>
+    </div>
+    {% else %}
     <!-- Leaderboard Category Tabs -->
     <div class="tabs-container"
         style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
@@ -36,6 +62,17 @@
                 <tr data-points="{{ player.total_points }}" data-goals="{{ player.total_goals }}"
                     data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}">
                     <td data-label="المركز" class="rank-col">
+                        <span class="trend-indicator" style="margin-left: 5px;">
+                            {% if player.previous_rank == 0 or player.previous_rank == loop.index %}
+                            <span style="color: grey; font-size:0.8rem;">➖</span>
+                            {% elif loop.index < player.previous_rank %} <span
+                                style="color: var(--positive-color); font-size:0.8rem;"
+                                title="صعد {{ player.previous_rank - loop.index }} مركز">⬆️</span>
+                        {% else %}
+                        <span style="color: var(--negative-color); font-size:0.8rem;"
+                            title="تراجع {{ loop.index - player.previous_rank }} مركز">⬇️</span>
+                        {% endif %}
+                        </span>
                         {{ loop.index }}
                         {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% endif %}
                     </td>
@@ -55,6 +92,7 @@
             </tbody>
         </table>
     </div>
+    {% endif %}
 </div> <!-- End capture-area -->
 
 <script>
