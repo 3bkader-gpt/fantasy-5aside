@@ -263,3 +263,9 @@ class HallOfFameRepository(IHallOfFameRepository):
         self.db.commit()
         self.db.refresh(hof_record)
         return hof_record
+
+    def delete(self, hof_id: int) -> None:
+        record = self.db.query(models.HallOfFame).filter(models.HallOfFame.id == hof_id).first()
+        if record:
+            self.db.delete(record)
+            self.db.commit()

@@ -25,6 +25,12 @@
             إنهاء الشهر والأرشفة
         </button>
     </form>
+    <form action="/l/{{ league.slug }}/admin/season/undo" method="POST" style="margin-top: 0.75rem;"
+        onsubmit="return confirm('هل أنت متأكد من التراجع عن إنهاء الشهر؟ سيتم استعادة النقاط وحذف آخر تسجيل من لوحة الشرف.');">
+        <button type="submit" class="btn" style="background: #7f8c8d; color: white; font-size: 0.85rem;">
+            ↩️ تراجع عن إنهاء الشهر الأخير
+        </button>
+    </form>
 </div>
 
 <div class="card mb-2" style="border-right: 5px solid var(--info-color, #3498db);">

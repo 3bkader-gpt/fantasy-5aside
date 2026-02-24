@@ -116,3 +116,7 @@ class IHallOfFameRepository(ABC):
     @abstractmethod
     def save(self, hof_record: models.HallOfFame) -> models.HallOfFame:
         pass
+
+    @abstractmethod
+    def delete(self, hof_id: int) -> None:
+        pass

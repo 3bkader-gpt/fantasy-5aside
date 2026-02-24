@@ -96,6 +96,22 @@ def end_season(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/season/undo")
+def undo_end_season(
+    slug: str, 
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league_service: ILeagueService = Depends(get_league_service)
+):
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+        
+    try:
+        league_service.undo_end_season(league.id)
+        return RedirectResponse(url=f"/l/{slug}/admin", status_code=303)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.post("/settings/update")
 def update_league_settings(
     slug: str, 
