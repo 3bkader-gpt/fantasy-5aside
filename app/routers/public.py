@@ -102,9 +102,6 @@ def read_cup(
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
         
-    matchups = cup_repo.get_active_matchups(league.id) + cup_repo.get_resolved_matchups(league.id)
-    # The previous logic in crud.get_active_cup_matchups actually retrieved both active and resolved so I combined them.
-    # Wait let me just see what crud did: crud.get_active_cup_matchups grabbed ALL matchups for the league. I should fetch all.
     matchups = cup_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
         "cup.html",

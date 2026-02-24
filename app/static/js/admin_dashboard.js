@@ -31,10 +31,12 @@ document.addEventListener('DOMContentLoaded', function () {
         gkCheck.addEventListener('change', function () {
             savesInput.disabled = !this.checked;
             if (this.checked) {
-                savesInput.style.backgroundColor = 'white';
+                savesInput.style.backgroundColor = '';
+                savesInput.style.opacity = '1';
                 savesInput.focus();
             } else {
-                savesInput.style.backgroundColor = '#f0f0f0';
+                savesInput.style.backgroundColor = '';
+                savesInput.style.opacity = '0.5';
                 savesInput.value = 0;
             }
         });
