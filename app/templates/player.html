@@ -6,6 +6,25 @@
         <h1 class="mb-0" style="font-size: 2.5rem;">{{ player.name }}</h1>
         <p style="font-size: 1.2rem; opacity: 0.9;" class="mb-0 mt-1">ملف إحصائيات اللاعب</p>
 
+        {% if history %}
+        <div class="flex-center gap-2 mt-1" style="flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 0.85rem; opacity: 0.8; margin-left: 0.5rem;">الفورمة:</span>
+            {% for stat in history[:5] %}
+            <span title="{{ 'فوز' if stat.is_winner else 'خسارة' }} — {{ stat.match.date.strftime('%m/%d') }}" style="
+                display: inline-block;
+                width: 28px; height: 28px;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                line-height: 28px;
+                font-weight: bold;
+                background: {{ '#27ae60' if stat.is_winner else '#e74c3c' }};
+                color: white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            ">{{ 'W' if stat.is_winner else 'L' }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% if badges %}
         <div class="flex-center gap-2 mt-1" style="flex-wrap: wrap;">
             {% for badge in badges %}
@@ -91,7 +110,8 @@
             data-labels="{% for stat in history|reverse %}{{ stat.match.date.strftime('%m-%d') }}{% if not loop.last %},{% endif %}{% endfor %}"
             data-points="{% for stat in history|reverse %}{{ stat.points_earned }}{% if not loop.last %},{% endif %}{% endfor %}"
             data-goals="{% for stat in history|reverse %}{{ stat.goals }}{% if not loop.last %},{% endif %}{% endfor %}"
-            data-assists="{% for stat in history|reverse %}{{ stat.assists }}{% if not loop.last %},{% endif %}{% endfor %}">
+            data-assists="{% for stat in history|reverse %}{{ stat.assists }}{% if not loop.last %},{% endif %}{% endfor %}"
+            data-outcomes="{% for stat in history|reverse %}{{ 'W' if stat.is_winner else 'L' }}{% if not loop.last %},{% endif %}{% endfor %}">
         </canvas>
     </div>
 

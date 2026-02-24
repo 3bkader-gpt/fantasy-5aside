@@ -8,6 +8,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const goalsData = canvas.getAttribute('data-goals').split(',').map(Number);
     const assistsData = canvas.getAttribute('data-assists').split(',').map(Number);
 
+    // Parse outcomes for color-coding
+    const outcomesRaw = canvas.getAttribute('data-outcomes');
+    const outcomes = outcomesRaw ? outcomesRaw.split(',') : [];
+    const pointColors = outcomes.map(o => o.trim() === 'W' ? '#27ae60' : '#e74c3c');
+    const pointBorderColors = outcomes.map(o => o.trim() === 'W' ? '#1e8449' : '#c0392b');
+
     const textColor = getComputedStyle(document.body).getPropertyValue('--text-color').trim();
     const gridColor = getComputedStyle(document.body).getPropertyValue('--border-color').trim();
 
@@ -24,7 +30,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     borderWidth: 3,
                     tension: 0.3,
                     fill: true,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
+                    pointBackgroundColor: pointColors.length ? pointColors : '#3498db',
+                    pointBorderColor: pointBorderColors.length ? pointBorderColors : '#2980b9',
+                    pointRadius: 6,
+                    pointHoverRadius: 9,
+                    pointBorderWidth: 2
                 },
                 {
                     label: 'الأهداف',
@@ -51,6 +62,16 @@ document.addEventListener("DOMContentLoaded", function () {
             plugins: {
                 legend: {
                     labels: { color: textColor, font: { family: 'Cairo' } }
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function (context) {
+                            if (context.datasetIndex === 0 && outcomes.length) {
+                                return outcomes[context.dataIndex].trim() === 'W' ? '✅ فوز' : '❌ خسارة';
+                            }
+                            return '';
+                        }
+                    }
                 }
             },
             scales: {
