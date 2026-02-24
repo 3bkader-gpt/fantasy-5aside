@@ -260,30 +260,40 @@
     </tr>
 </template>
 
-<script>
-    window.LEAGUE_SLUG = "{{ league.slug }}";
-    window.MATCHES_DATA = {
-        {% for match in matches %}
+<script id="matches-data-json" type="application/json">
+{
+    {% for match in matches %}
     "{{ match.id }}": {
         "team_a_name": "{{ match.team_a_name }}",
-            "team_b_name": "{{ match.team_b_name }}",
-                "stats": [
-                    {% for stat in match.stats %}
-    {
-        "player_name": "{{ stat.player.name }}",
-            "team": "{{ stat.team }}",
-                "goals": parseInt("{{ stat.goals }}") || 0,
-                    "assists": parseInt("{{ stat.assists }}") || 0,
-                        "saves": parseInt("{{ stat.saves }}") || 0,
-                            "goals_conceded": parseInt("{{ stat.goals_conceded }}") || 0,
-                                "is_gk": {% if stat.is_gk %} true{% else %} false{% endif %},
-        "clean_sheet": {% if stat.clean_sheet %} true{% else %} false{% endif %}
-    } {% if not loop.last %}, {% endif %}
+        "team_b_name": "{{ match.team_b_name }}",
+        "stats": [
+            {% for stat in match.stats %}
+            {
+                "player_name": "{{ stat.player.name }}",
+                "team": "{{ stat.team }}",
+                "goals": {{ stat.goals or 0 }},
+                "assists": {{ stat.assists or 0 }},
+                "saves": {{ stat.saves or 0 }},
+                "goals_conceded": {{ stat.goals_conceded or 0 }},
+                "is_gk": {{ 'true' if stat.is_gk else 'false' }},
+                "clean_sheet": {{ 'true' if stat.clean_sheet else 'false' }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }{% if not loop.last %},{% endif %}
     {% endfor %}
-            ]
-        }{% if not loop.last %}, {% endif %}
-    {% endfor %}
-    };
+}
+</script>
+
+<script>
+    window.LEAGUE_SLUG = "{{ league.slug }}";
+    try {
+        const matchesDataText = document.getElementById('matches-data-json').textContent;
+        window.MATCHES_DATA = JSON.parse(matchesDataText);
+    } catch (e) {
+        console.error("Match data parsing error:", e);
+        window.MATCHES_DATA = {};
+    }
 </script>
 <script src="/static/js/matches.js"></script>
 {% endblock %}
