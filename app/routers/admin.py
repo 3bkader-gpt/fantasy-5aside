@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request, HTTPException, Form
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
 from ..schemas import schemas
@@ -233,3 +233,55 @@ def edit_match(
         raise e
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/export/stats")
+def export_stats_csv(
+    slug: str,
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+):
+    """Export all player stats as a CSV file with Arabic-compatible encoding."""
+    import csv
+    import io
+    from datetime import datetime
+
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+
+    players = player_repo.get_leaderboard(league.id)
+
+    output = io.StringIO()
+    # utf-8-sig BOM so Excel opens Arabic correctly
+    output.write('\ufeff')
+    writer = csv.writer(output)
+
+    writer.writerow([
+        'المركز', 'اسم اللاعب', 'النقاط', 'الأهداف', 'الأسيست',
+        'التصديات', 'شباك نظيفة', 'الفورمة',
+        'النقاط التاريخية', 'الأهداف التاريخية', 'الأسيست التاريخية'
+    ])
+
+    for idx, player in enumerate(players, 1):
+        writer.writerow([
+            idx,
+            player.name,
+            player.total_points,
+            player.total_goals,
+            player.total_assists,
+            player.total_saves,
+            player.total_clean_sheets,
+            getattr(player, 'form', '➖'),
+            player.all_time_points,
+            player.all_time_goals,
+            player.all_time_assists,
+        ])
+
+    output.seek(0)
+    filename = f"{league.name}_stats_{datetime.now().strftime('%Y-%m-%d')}.csv"
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv; charset=utf-8-sig",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
