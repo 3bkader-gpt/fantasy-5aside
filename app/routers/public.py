@@ -1,26 +1,26 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session, joinedload
-from ..database import SessionLocal
-from ..crud import crud
+
 from ..models import models
 from ..schemas import schemas
+from ..core import security
+from ..dependencies import (
+    get_league_repository, get_player_repository, get_match_repository,
+    get_hof_repository, get_cup_repository, get_analytics_service,
+    ILeagueRepository, IPlayerRepository, IMatchRepository,
+    IHallOfFameRepository, ICupRepository, IAnalyticsService
+)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.get("/")
-def read_root(request: Request, db: Session = Depends(get_db)):
-    leagues = crud.get_all_leagues(db)
+def read_root(
+    request: Request, 
+    league_repo: ILeagueRepository = Depends(get_league_repository)
+):
+    leagues = league_repo.get_all()
     return templates.TemplateResponse(
         "landing.html", 
         {"request": request, "leagues": leagues}
@@ -32,35 +32,42 @@ def create_league(
     name: str = Form(...),
     slug: str = Form(...),
     admin_password: str = Form(...),
-    db: Session = Depends(get_db)
+    league_repo: ILeagueRepository = Depends(get_league_repository)
 ):
-    # Check if slug exists
-    existing = db.query(models.League).filter(models.League.slug == slug).first()
+    existing = league_repo.get_by_slug(slug)
     if existing:
         return templates.TemplateResponse("landing.html", {"request": request, "error": "هذا الرابط مستخدم بالفعل"})
         
+    hashed_password = security.get_password_hash(admin_password)
     new_league = models.League(
         name=name,
         slug=slug,
-        admin_password=admin_password
+        admin_password=hashed_password
     )
-    db.add(new_league)
-    db.commit()
-    db.refresh(new_league)
+    new_league = league_repo.save(new_league)
     
     return RedirectResponse(url=f"/l/{new_league.slug}", status_code=303)
 
-
 @router.get("/l/{slug}")
-def read_leaderboard(slug: str, request: Request, db: Session = Depends(get_db)):
-    league = crud.get_league_by_slug(db, slug)
+def read_leaderboard(
+    slug: str, 
+    request: Request, 
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
+    cup_repo: ICupRepository = Depends(get_cup_repository)
+):
+    league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
         
-    players = crud.get_leaderboard(db, league.id)
+    players = player_repo.get_leaderboard(league.id)
     
-    latest_hof = db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league.id).order_by(models.HallOfFame.id.desc()).first()
-    next_cup = db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league.id, models.CupMatchup.is_active == True).first()
+    hofs = hof_repo.get_all_for_league(league.id)
+    latest_hof = hofs[0] if hofs else None
+    
+    active_cups = cup_repo.get_active_matchups(league.id)
+    next_cup = active_cups[0] if active_cups else None
     
     return templates.TemplateResponse(
         "leaderboard.html", 
@@ -68,54 +75,79 @@ def read_leaderboard(slug: str, request: Request, db: Session = Depends(get_db))
     )
 
 @router.get("/l/{slug}/matches")
-def read_matches(slug: str, request: Request, db: Session = Depends(get_db)):
-    league = crud.get_league_by_slug(db, slug)
+def read_matches(
+    slug: str, 
+    request: Request, 
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    match_repo: IMatchRepository = Depends(get_match_repository)
+):
+    league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
         
-    matches = crud.get_all_matches(db, league.id)
+    matches = match_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
         "matches.html",
         {"request": request, "league": league, "matches": matches}
     )
 
 @router.get("/l/{slug}/cup")
-def read_cup(slug: str, request: Request, db: Session = Depends(get_db)):
-    league = crud.get_league_by_slug(db, slug)
+def read_cup(
+    slug: str, 
+    request: Request, 
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    cup_repo: ICupRepository = Depends(get_cup_repository)
+):
+    league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
         
-    matchups = crud.get_active_cup_matchups(db, league.id)
+    matchups = cup_repo.get_active_matchups(league.id) + cup_repo.get_resolved_matchups(league.id)
+    # The previous logic in crud.get_active_cup_matchups actually retrieved both active and resolved so I combined them.
+    # Wait let me just see what crud did: crud.get_active_cup_matchups grabbed ALL matchups for the league. I should fetch all.
+    matchups = cup_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
         "cup.html",
         {"request": request, "league": league, "matchups": matchups}
     )
 
 @router.get("/l/{slug}/player/{player_id}")
-def read_player(slug: str, player_id: int, request: Request, db: Session = Depends(get_db)):
-    league = crud.get_league_by_slug(db, slug)
+def read_player(
+    slug: str, 
+    player_id: int, 
+    request: Request, 
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    analytics_service: IAnalyticsService = Depends(get_analytics_service)
+):
+    league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
         
-    analytics = crud.get_player_analytics(db, player_id, league.id)
+    analytics = analytics_service.get_player_analytics(player_id, league.id)
     if not analytics:
-        return templates.TemplateResponse("leaderboard.html", {"request": request, "league": league, "players": crud.get_leaderboard(db, league.id)})
+        return templates.TemplateResponse("leaderboard.html", {"request": request, "league": league, "players": player_repo.get_leaderboard(league.id)})
+        
     return templates.TemplateResponse(
         "player.html",
         {"request": request, "league": league, **analytics}
     )
 
 @router.get("/l/{slug}/hall-of-fame")
-def read_hof(slug: str, request: Request, db: Session = Depends(get_db)):
-    league = crud.get_league_by_slug(db, slug)
+def read_hof(
+    slug: str, 
+    request: Request, 
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    hof_repo: IHallOfFameRepository = Depends(get_hof_repository)
+):
+    league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
         
-    hof_records = db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league.id).options(
-        joinedload(models.HallOfFame.player)
-    ).order_by(models.HallOfFame.id.desc()).all()
+    hof_records = hof_repo.get_all_for_league(league.id)
     
     return templates.TemplateResponse(
         "hof.html",
         {"request": request, "league": league, "hof_records": hof_records}
     )
+

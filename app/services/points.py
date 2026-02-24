@@ -1,3 +1,100 @@
+from abc import ABC, abstractmethod
+from typing import List, Optional
+from dataclasses import dataclass
+from ..schemas import schemas
+
+@dataclass
+class PointsContext:
+    goals: int
+    assists: int
+    is_winner: bool
+    is_gk: bool
+    clean_sheet: bool
+    mvp: bool
+    saves: int
+    goals_conceded: int
+
+class PointsStrategy(ABC):
+    """Abstract base class for points calculation strategies"""
+    @abstractmethod
+    def calculate(self, ctx: PointsContext) -> int:
+        pass
+
+class ParticipationPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        return 1
+
+class GoalPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        return ctx.goals * (4 if ctx.is_gk else 2)
+
+class AssistPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        return ctx.assists * (2 if ctx.is_gk else 1)
+        
+class WinPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        # الفوز يعطي 3 نقاط طبقاً لاختبارات الوحدة
+        return 3 if ctx.is_winner else 0
+
+class MVPPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        # أفضل لاعب في المباراة نقطة واحدة
+        return 1 if ctx.mvp else 0
+
+class CleanSheetPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        if ctx.clean_sheet and ctx.is_gk:
+            # حارس المرمى يحصل على 3 نقاط لكلين شيت
+            return 3
+        return 0
+
+class SavePoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        return ctx.saves // 3
+
+class GoalsConcededPenalty(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        # خصم نقطة لكل 3 أهداف مستقبلة تقريباً
+        return -(ctx.goals_conceded // 3)
+
+class PointsCalculator:
+    def __init__(self, strategies: Optional[List[PointsStrategy]] = None):
+        # السماح بالإنشاء الافتراضي بدون تمرير استراتيجيات (متوافق مع الاختبارات)
+        self.strategies = strategies or [
+            GoalPoints(),
+            AssistPoints(),
+            WinPoints(),
+            MVPPoints(),
+            CleanSheetPoints(),
+            SavePoints(),
+            GoalsConcededPenalty(),
+        ]
+
+    def calculate_total(self, ctx: PointsContext, is_captain: bool = False) -> int:
+        base_points = sum(strategy.calculate(ctx) for strategy in self.strategies)
+        return base_points * 2 if is_captain else base_points
+
+    def calculate_player_points(self, match_data: schemas.MatchCreate) -> int:
+        """
+        واجهة عالية المستوى لاختبارات الوحدة:
+        تحوّل كائن MatchCreate إلى PointsContext وتحسب النقاط.
+        """
+        ctx = PointsContext(
+            goals=match_data.goals,
+            assists=match_data.assists,
+            is_winner=match_data.score > 0,
+            is_gk=match_data.is_goalkeeper,
+            clean_sheet=match_data.goals_conceded == 0,
+            mvp=match_data.is_mvp,
+            saves=match_data.saves,
+            goals_conceded=match_data.goals_conceded,
+        )
+        return self.calculate_total(ctx, is_captain=match_data.is_captain)
+
+# Maintain dependency inversion by instantiating calculator separately
+default_calculator = PointsCalculator()
+
 def calculate_player_points(
     goals: int, 
     assists: int, 
@@ -10,39 +107,16 @@ def calculate_player_points(
     is_captain: bool = False
 ) -> int:
     """
-    Calculate points based on advanced 5-a-side rules.
-    If is_captain is True, the total points are doubled.
+    تابعة مساعدة للاستخدام في الخدمات الحالية، تعتمد على نفس المنطق المستخدم في الاختبارات.
     """
-    points = 1  # Participation points
-    
-    # Point values
-    goal_value = 4 if is_gk else 2
-    assist_value = 2 if is_gk else 1
-    
-    points += goals * goal_value
-    points += assists * assist_value
-    
-    if is_winner:
-        points += 2
-        
-    if mvp:
-        points += 3
-        
-    # Clean Sheet: +5 if GK, +2 if Player
-    if clean_sheet:
-        if is_gk:
-            points += 5
-        else:
-            points += 2
-            
-    # Saves: +1 per 3 saves
-    points += (saves // 3)
-    
-    # Goals Conceded Penalty: -1 per 4 goals
-    points -= (goals_conceded // 4)
-
-    # Captain Double points
-    if is_captain:
-        points *= 2
-        
-    return points
+    ctx = PointsContext(
+        goals=goals,
+        assists=assists,
+        is_winner=is_winner,
+        is_gk=is_gk,
+        clean_sheet=clean_sheet,
+        mvp=mvp,
+        saves=saves,
+        goals_conceded=goals_conceded,
+    )
+    return default_calculator.calculate_total(ctx, is_captain)

@@ -1,12 +1,9 @@
-import os
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from .core.config import settings
 
-load_dotenv()
-
-# Get the database URL from the environment, defaulting to SQLite
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/fantasy.db")
+# Get the database URL from settings
+SQLALCHEMY_DATABASE_URL = settings.database_url
 
 # Fix for SQLAlchemy 1.4+ which deprecated 'postgres://' in favor of 'postgresql://'
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):

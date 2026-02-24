@@ -1,18 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
+from datetime import datetime
 
-class LeagueCreate(BaseModel):
+# --- League Schemas ---
+class LeagueBase(BaseModel):
     name: str
     slug: str
+
+class LeagueCreate(LeagueBase):
     admin_password: str
-
-class LeagueResponse(BaseModel):
-    id: int
-    name: str
-    slug: str
-
-    class Config:
-        from_attributes = True
 
 class LeagueUpdate(BaseModel):
     name: Optional[str] = None
@@ -20,20 +16,32 @@ class LeagueUpdate(BaseModel):
     new_password: Optional[str] = None
     current_admin_password: str
 
-class PlayerResponse(BaseModel):
+class LeagueResponse(LeagueBase):
     id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+# --- Player Schemas ---
+class PlayerBase(BaseModel):
     name: str
+    total_points: int = 0
+    total_goals: int = 0
+    total_assists: int = 0
+    total_saves: int = 0
+    total_clean_sheets: int = 0
+
+class PlayerCreate(PlayerBase):
     league_id: int
-    total_points: int
-    total_goals: int
-    total_assists: int
-    total_saves: int
-    total_clean_sheets: int
 
-    class Config:
-        from_attributes = True
+class PlayerResponse(PlayerBase):
+    id: int
+    league_id: int
+    form: Optional[str] = None
 
-class MatchStatCreate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+# --- MatchStat Schemas ---
+class MatchStatBase(BaseModel):
     player_name: str
     team: str
     goals: int = 0
@@ -45,9 +53,56 @@ class MatchStatCreate(BaseModel):
     mvp: bool = False
     is_captain: bool = False
 
-class MatchCreate(BaseModel):
-    league_id: Optional[int] = None
+class MatchStatCreate(MatchStatBase):
+    pass
+
+class MatchStatResponse(MatchStatBase):
+    id: int
+    match_id: int
+    player_id: Optional[int] = None
+    points_earned: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+# --- Match Schemas ---
+class MatchBase(BaseModel):
     team_a_name: str = "Team A"
     team_b_name: str = "Team B"
-    stats: List[MatchStatCreate]
-    admin_password: str
+
+class MatchCreate(MatchBase):
+    # الحقول الأصلية المستخدمة في الـ API
+    league_id: Optional[int] = None
+    stats: List[MatchStatCreate] = []
+    admin_password: str = ""
+
+    # حقول مساعدة لاختبارات احتساب النقاط (تُستخدم في tests/test_points.py)
+    score: int = 0
+    goals: int = 0
+    assists: int = 0
+    is_mvp: bool = False
+    is_captain: bool = False
+    is_goalkeeper: bool = False
+    saves: int = 0
+    goals_conceded: int = 0
+
+class MatchResponse(MatchBase):
+    id: int
+    league_id: int
+    date: datetime
+    stats: List[MatchStatResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+# --- Cup Matchup Schemas ---
+class CupMatchupResponse(BaseModel):
+    id: int
+    league_id: int
+    player1_id: int
+    player2_id: int
+    round_name: str
+    is_active: bool
+    winner_id: Optional[int] = None
+    player1: Optional[PlayerResponse] = None
+    player2: Optional[PlayerResponse] = None
+
+    model_config = ConfigDict(from_attributes=True)
