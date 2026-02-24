@@ -23,37 +23,27 @@ class PointsStrategy(ABC):
 
 class GoalPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        # هدف = 2 نقطة للاعب عادي، 4 نقاط للحارس
-        return ctx.goals * (4 if ctx.is_gk else 2)
+        return ctx.goals * (6 if ctx.is_gk else 3)
 
 
 class AssistPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        # أسيست = 1 نقطة للاعب عادي، 2 نقطة للحارس
-        return ctx.assists * (2 if ctx.is_gk else 1)
+        return ctx.assists * (4 if ctx.is_gk else 2)
 
 
 class WinPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        # فوز = 3 نقاط، تعادل = 1 نقطة
         if ctx.is_winner:
-            return 3
+            return 2
         elif ctx.is_draw:
             return 1
         return 0
 
 
-class MVPPoints(PointsStrategy):
-    def calculate(self, ctx: PointsContext) -> int:
-        # أفضل لاعب في المباراة = 1 نقطة إضافية
-        return 1 if ctx.mvp else 0
-
-
 class CleanSheetPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        # كلين شيت = 3 نقاط للحارس فقط
         if ctx.clean_sheet and ctx.is_gk:
-            return 3
+            return 10
         return 0
 
 class SavePoints(PointsStrategy):
@@ -75,7 +65,6 @@ class PointsCalculator:
             GoalPoints(),
             AssistPoints(),
             WinPoints(),
-            MVPPoints(),
             CleanSheetPoints(),
             SavePoints(),
             GoalsConcededPenalty(),
@@ -83,8 +72,8 @@ class PointsCalculator:
 
     def calculate_total(self, ctx: PointsContext, is_captain: bool = False) -> int:
         base_points = sum(strategy.calculate(ctx) for strategy in self.strategies)
-        final_points = base_points * 2 if is_captain else base_points
-        return max(0, final_points)
+        # Captain multiplier is no longer part of the new BPS system
+        return max(0, base_points)
 
     def calculate_player_points(self, match_data: schemas.MatchCreate) -> int:
         """
