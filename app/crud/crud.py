@@ -10,6 +10,42 @@ def get_league_by_slug(db: Session, slug: str):
 def get_all_leagues(db: Session):
     return db.query(models.League).order_by(models.League.created_at.desc()).all()
 
+def update_league(db: Session, league_id: int, update_data: schemas.LeagueUpdate):
+    league = db.query(models.League).filter(models.League.id == league_id).first()
+    if not league or league.admin_password != update_data.current_admin_password:
+        raise HTTPException(status_code=403, detail="كلمة السر الحالية غير صحيحة")
+        
+    if update_data.name:
+        league.name = update_data.name
+    if update_data.slug:
+        existing_league = db.query(models.League).filter(models.League.slug == update_data.slug).first()
+        if existing_league and existing_league.id != league_id:
+            raise HTTPException(status_code=400, detail="هذا الرابط (Slug) مستخدم بالفعل لدوري آخر")
+        league.slug = update_data.slug
+    if update_data.new_password:
+        league.admin_password = update_data.new_password
+        
+    db.add(league)
+    db.commit()
+    db.refresh(league)
+    return league
+
+def delete_league(db: Session, league_id: int, admin_password: str):
+    league = db.query(models.League).filter(models.League.id == league_id).first()
+    if not league or league.admin_password != admin_password:
+        raise HTTPException(status_code=403, detail="كلمة السر غير صحيحة. لا يمكن الحذف.")
+
+    # CRITICAL: Delete all associated records first to avoid Foreign Key constraint errors
+    db.query(models.MatchStat).filter(models.MatchStat.match.has(league_id=league_id)).delete(synchronize_session=False)
+    db.query(models.Match).filter(models.Match.league_id == league_id).delete(synchronize_session=False)
+    db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id).delete(synchronize_session=False)
+    db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league_id).delete(synchronize_session=False)
+    db.query(models.Player).filter(models.Player.league_id == league_id).delete(synchronize_session=False)
+    
+    db.delete(league)
+    db.commit()
+    return True
+
 def get_leaderboard(db: Session, league_id: int):
     """
     Retrieve all players for a specific league ordered by total_points descending, 

@@ -101,6 +101,43 @@
         النتيجة</button>
 </div>
 
+<!-- New Section: League Settings -->
+<div class="card mb-4" style="border-right: 5px solid var(--primary-color);">
+    <h3 style="color: var(--heading-color);">⚙️ إعدادات الدوري</h3>
+    <form action="/l/{{ league.slug }}/admin/settings/update" method="POST">
+        <div class="form-group mb-1">
+            <label>اسم الدوري الجديد (اختياري)</label>
+            <input type="text" name="name" class="form-control" placeholder="{{ league.name }}">
+        </div>
+        <div class="form-group mb-1">
+            <label>الرابط (Slug) الجديد (اختياري)</label>
+            <input type="text" name="new_slug" class="form-control" value="{{ league.slug }}">
+        </div>
+        <div class="form-group mb-1">
+            <label>كلمة السر الجديدة (اختياري)</label>
+            <input type="password" name="new_password" class="form-control"
+                placeholder="أدخل كلمة سر جديدة إذا أردت تغييرها">
+        </div>
+        <div class="form-group mb-2">
+            <label style="color: var(--danger-color); font-weight: bold;">كلمة السر الحالية (مطلوب للحفظ) *</label>
+            <input type="password" name="current_admin_password" class="form-control" required
+                placeholder="يجب إدخال كلمة السر الحالية لتأكيد الهوية">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">حفظ التعديلات الشاملة</button>
+    </form>
+</div>
+
+<!-- Danger Zone -->
+<div class="card mb-4" style="border: 2px solid var(--danger-color); background: rgba(231, 76, 60, 0.05);">
+    <h3 style="color: var(--danger-color);">⚠️ منطقة الخطر (Danger Zone)</h3>
+    <p class="text-secondary mb-2">حذف الدوري سيؤدي إلى مسح جميع اللاعبين، المباريات، والإحصائيات وتاريخ الكأس الخاص
+        بالدوري نهائياً. لا يمكن التراجع عن هذا الإجراء تحت أي ظرف.</p>
+    <button type="button" class="btn delete-league-btn" data-league-slug="{{ league.slug }}"
+        style="background-color: var(--danger-color); color: white; width: 100%;">
+        🗑️ حذف الدوري نهائياً
+    </button>
+</div>
+
 <!-- Template for a new row (hidden) -->
 <template id="player-row-template">
     <tr class="player-row">
@@ -268,5 +305,34 @@
             });
         }
     }
+
+    // Delete League Logic
+    document.querySelector('.delete-league-btn').addEventListener('click', async function () {
+        const slug = this.getAttribute('data-league-slug');
+        const password = await showPromptModal("حذف الدوري نهائياً", "أدخل كلمة مرور الآدمن لتأكيد الحذف النهائي ولا يمكن التراجع عن ذلك:");
+        if (!password) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('admin_password', password);
+
+            const response = await fetch(`/l/${slug}/admin/settings/delete`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success && result.redirect_url) {
+                showToast('تم حذف الدوري بنجاح. جاري التوجيه...', 'success');
+                setTimeout(() => window.location.href = result.redirect_url, 1500);
+            } else {
+                showToast(result.detail || 'حدث خطأ أثناء الحذف.', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('حدث خطأ أثناء الاتصال بالخادم.', 'error');
+        }
+    });
+
 </script>
 {% endblock %}

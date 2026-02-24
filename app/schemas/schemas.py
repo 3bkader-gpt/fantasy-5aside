@@ -14,6 +14,12 @@ class LeagueResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class LeagueUpdate(BaseModel):
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    new_password: Optional[str] = None
+    current_admin_password: str
+
 class PlayerResponse(BaseModel):
     id: int
     name: str

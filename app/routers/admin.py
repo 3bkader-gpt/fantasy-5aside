@@ -65,6 +65,53 @@ def end_season(slug: str, month_name: str = Form(...), db: Session = Depends(get
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/settings/update")
+def update_league_settings(
+    slug: str, 
+    name: str = Form(None), 
+    new_slug: str = Form(None), 
+    new_password: str = Form(None), 
+    current_admin_password: str = Form(...), 
+    db: Session = Depends(get_db)
+):
+    league = crud.get_league_by_slug(db, slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+
+    update_data = schemas.LeagueUpdate(
+        name=name,
+        slug=new_slug,
+        new_password=new_password,
+        current_admin_password=current_admin_password
+    )
+    
+    try:
+        updated_league = crud.update_league(db, league.id, update_data)
+        # Redirect to the new slug if it was changed
+        return RedirectResponse(url=f"/l/{updated_league.slug}/admin", status_code=303)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/settings/delete")
+def delete_league_entirely(
+    slug: str, 
+    admin_password: str = Form(...), 
+    db: Session = Depends(get_db)
+):
+    league = crud.get_league_by_slug(db, slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+
+    try:
+        crud.delete_league(db, league.id, admin_password)
+        return {"success": True, "redirect_url": "/?msg=deleted"}
+    except HTTPException as e:
+        return {"success": False, "detail": e.detail}
+    except Exception as e:
+        return {"success": False, "detail": str(e)}
+
 @router.delete("/match/{match_id}")
 def delete_match(slug: str, match_id: int, payload: dict, db: Session = Depends(get_db)):
     league = crud.get_league_by_slug(db, slug)
