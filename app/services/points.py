@@ -11,7 +11,6 @@ class PointsContext:
     is_draw: bool
     is_gk: bool
     clean_sheet: bool
-    mvp: bool
     saves: int
     goals_conceded: int
 
@@ -70,9 +69,8 @@ class PointsCalculator:
             GoalsConcededPenalty(),
         ]
 
-    def calculate_total(self, ctx: PointsContext, is_captain: bool = False) -> int:
+    def calculate_total(self, ctx: PointsContext) -> int:
         base_points = sum(strategy.calculate(ctx) for strategy in self.strategies)
-        # Captain multiplier is no longer part of the new BPS system
         return max(0, base_points)
 
     def calculate_player_points(self, match_data: schemas.MatchCreate) -> int:
@@ -88,26 +86,23 @@ class PointsCalculator:
             is_draw=is_draw,
             is_gk=getattr(match_data, "is_goalkeeper", False),
             clean_sheet=match_data.goals_conceded == 0,
-            mvp=getattr(match_data, "is_mvp", False),
             saves=match_data.saves,
             goals_conceded=match_data.goals_conceded,
         )
-        return self.calculate_total(ctx, is_captain=getattr(match_data, "is_captain", False))
+        return self.calculate_total(ctx)
 
 # Maintain dependency inversion by instantiating calculator separately
 default_calculator = PointsCalculator()
 
 def calculate_player_points(
-    goals: int, 
-    assists: int, 
-    is_winner: bool, 
+    goals: int,
+    assists: int,
+    is_winner: bool,
     is_draw: bool,
     is_gk: bool,
     clean_sheet: bool,
-    mvp: bool,
     saves: int,
     goals_conceded: int,
-    is_captain: bool = False,
 ) -> int:
     """
     تابعة مساعدة للاستخدام في الخدمات الحالية.
@@ -119,11 +114,10 @@ def calculate_player_points(
         is_draw=is_draw,
         is_gk=is_gk,
         clean_sheet=clean_sheet,
-        mvp=mvp,
         saves=saves,
         goals_conceded=goals_conceded,
     )
-    return default_calculator.calculate_total(ctx, is_captain=is_captain)
+    return default_calculator.calculate_total(ctx)
 
 def calculate_bonus_points(team_a_stats: List[dict], team_b_stats: List[dict]) -> dict:
     """
