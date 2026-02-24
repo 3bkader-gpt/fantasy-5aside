@@ -1,4 +1,5 @@
 from typing import List, Optional
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from ..models import models
@@ -14,7 +15,25 @@ class LeagueRepository(ILeagueRepository):
         self.db = db
 
     def get_by_slug(self, slug: str) -> Optional[models.League]:
-        return self.db.query(models.League).filter(models.League.slug == slug).first()
+        if not slug:
+            return None
+
+        # Prefer exact match first (important if legacy duplicates exist with different casing)
+        exact = (
+            self.db.query(models.League)
+            .filter(models.League.slug == slug)
+            .first()
+        )
+        if exact:
+            return exact
+
+        slug_lc = slug.lower()
+        return (
+            self.db.query(models.League)
+            .filter(func.lower(models.League.slug) == slug_lc)
+            .order_by(models.League.slug.asc())
+            .first()
+        )
         
     def get_by_id(self, league_id: int) -> Optional[models.League]:
         return self.db.query(models.League).filter(models.League.id == league_id).first()
@@ -30,10 +49,16 @@ class LeagueRepository(ILeagueRepository):
         if update_data.name:
             league.name = update_data.name
         if update_data.slug:
-            existing_league = self.db.query(models.League).filter(models.League.slug == update_data.slug).first()
+            cleaned_slug = update_data.slug.strip()
+            slug_lc = cleaned_slug.lower()
+            existing_league = (
+                self.db.query(models.League)
+                .filter(func.lower(models.League.slug) == slug_lc)
+                .first()
+            )
             if existing_league and existing_league.id != league_id:
                 raise HTTPException(status_code=400, detail="هذا الرابط (Slug) مستخدم بالفعل لدوري آخر")
-            league.slug = update_data.slug
+            league.slug = cleaned_slug
         if update_data.new_password:
             league.admin_password = security.get_password_hash(update_data.new_password)
             
@@ -61,7 +86,7 @@ class LeagueRepository(ILeagueRepository):
     def create(self, league_in: schemas.LeagueCreate, hashed_password: str) -> models.League:
         league = models.League(
             name=league_in.name,
-            slug=league_in.slug,
+            slug=league_in.slug.strip(),
             admin_password=hashed_password
         )
         self.db.add(league)

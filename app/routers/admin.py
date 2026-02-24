@@ -15,6 +15,17 @@ from ..dependencies import (
 router = APIRouter(prefix="/l/{slug}/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
 
+
+def _canonical_admin_redirect(request: Request, provided_slug: str, canonical_slug: str) -> RedirectResponse:
+    path = request.url.path
+    from_prefix = f"/l/{provided_slug}/admin"
+    to_prefix = f"/l/{canonical_slug}/admin"
+    new_path = path.replace(from_prefix, to_prefix, 1)
+    query = request.url.query
+    url = f"{new_path}?{query}" if query else new_path
+    return RedirectResponse(url=url, status_code=308)
+
+
 @router.get("/")
 def admin_dashboard(
     slug: str, 
@@ -25,6 +36,8 @@ def admin_dashboard(
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_admin_redirect(request, slug, league.slug)
         
     players = player_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
@@ -96,6 +109,9 @@ def update_league_settings(
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+
+    if new_slug is not None:
+        new_slug = new_slug.strip()
 
     update_data = schemas.LeagueUpdate(
         name=name,

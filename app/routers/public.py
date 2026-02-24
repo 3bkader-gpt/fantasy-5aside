@@ -15,6 +15,17 @@ from ..dependencies import (
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
+
+def _canonical_league_redirect(request: Request, provided_slug: str, canonical_slug: str) -> RedirectResponse:
+    path = request.url.path
+    from_prefix = f"/l/{provided_slug}"
+    to_prefix = f"/l/{canonical_slug}"
+    new_path = path.replace(from_prefix, to_prefix, 1)
+    query = request.url.query
+    url = f"{new_path}?{query}" if query else new_path
+    return RedirectResponse(url=url, status_code=308)
+
+
 @router.get("/")
 def read_root(
     request: Request, 
@@ -34,6 +45,7 @@ def create_league(
     admin_password: str = Form(...),
     league_repo: ILeagueRepository = Depends(get_league_repository)
 ):
+    slug = slug.strip()
     existing = league_repo.get_by_slug(slug)
     if existing:
         return templates.TemplateResponse("landing.html", {"request": request, "error": "هذا الرابط مستخدم بالفعل"})
@@ -60,6 +72,8 @@ def read_leaderboard(
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_league_redirect(request, slug, league.slug)
         
     players = player_repo.get_leaderboard(league.id)
     
@@ -84,6 +98,8 @@ def read_matches(
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_league_redirect(request, slug, league.slug)
         
     matches = match_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
@@ -101,6 +117,8 @@ def read_cup(
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_league_redirect(request, slug, league.slug)
         
     matchups = cup_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
@@ -120,6 +138,8 @@ def read_player(
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_league_redirect(request, slug, league.slug)
         
     analytics = analytics_service.get_player_analytics(player_id, league.id)
     if not analytics:
@@ -140,6 +160,8 @@ def read_hof(
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_league_redirect(request, slug, league.slug)
         
     hof_records = hof_repo.get_all_for_league(league.id)
     
