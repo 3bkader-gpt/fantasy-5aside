@@ -303,14 +303,12 @@ nav {
     justify-content: center;
     align-items: center;
     position: relative;
-    /* for relative brand flow */
     transition: background-color 0.3s ease;
 }
 
 @media (min-width: 768px) {
     nav {
         justify-content: space-between;
-        /* Space out on desktop */
     }
 }
 
@@ -344,6 +342,9 @@ nav ul li a:hover {
     color: var(--accent-color);
 }
 
+/* =========================================
+   MOBILE BOTTOM NAV - FIXED & CLEAN
+   ========================================= */
 @media (max-width: 768px) {
     nav ul {
         position: fixed;
@@ -352,29 +353,54 @@ nav ul li a:hover {
         right: 0;
         background-color: var(--nav-bg);
         z-index: 1000;
-        padding: 10px 5px;
+        padding: 6px 2px;
         justify-content: space-around;
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
         margin: 0;
-        padding-bottom: env(safe-area-inset-bottom, 10px);
-        /* For iOS rounded corners */
+        padding-bottom: env(safe-area-inset-bottom, 6px);
         transition: background-color 0.3s ease;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 0;
     }
 
     body {
-        padding-bottom: 80px;
-        /* Push content up */
+        padding-bottom: 70px;
+    }
+
+    nav ul li {
+        flex: 1;
+        min-width: 0;
     }
 
     nav ul li a {
         flex-direction: column;
-        gap: 4px;
-        font-size: 0.70rem;
-        padding: 5px;
+        gap: 2px;
+        font-size: 0.6rem;
+        padding: 4px 2px;
+        text-align: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     nav ul li a span.icon {
-        font-size: 1.4rem;
+        font-size: 1.2rem;
+    }
+
+    nav ul li a span.text {
+        font-size: 0.6rem;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Theme toggle button in bottom nav */
+    nav ul li button.icon-btn {
+        font-size: 1.2rem;
+        padding: 4px 2px;
     }
 }
 
@@ -384,6 +410,13 @@ nav ul li a:hover {
     max-width: 1200px;
     margin: 1.5rem auto;
     padding: 0 1rem;
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 0.5rem;
+        margin: 0.75rem auto;
+    }
 }
 
 h1,
@@ -417,8 +450,7 @@ h2 {
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 600px;
-    /* Forces scroll on very small screens instead of squishing */
+    min-width: 400px;
 }
 
 thead {
@@ -429,13 +461,20 @@ thead {
 
 th,
 td {
-    padding: 12px 15px;
+    padding: 10px 12px;
     text-align: right;
-    /* Default RTL */
     border-bottom: 1px solid var(--border-color);
     white-space: nowrap;
-    /* Prevent wrapping inside cells on small screens */
     transition: border-color 0.3s ease;
+}
+
+@media (max-width: 480px) {
+
+    th,
+    td {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+    }
 }
 
 tbody tr:hover {
@@ -454,9 +493,7 @@ input[type="password"],
 input[type="number"],
 select {
     width: 100%;
-    /* Full width on mobile */
     min-height: 44px;
-    /* Touch-friendly size */
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -487,7 +524,6 @@ input[type="checkbox"] {
     vertical-align: middle;
     cursor: pointer;
     margin-inline-end: 8px;
-    /* RTL safe margin */
 }
 
 button,
@@ -495,7 +531,6 @@ button,
 .btn-primary {
     display: inline-block;
     width: 100%;
-    /* Full width by default on mobile */
     min-height: 44px;
     padding: 12px;
     background-color: var(--positive-color);
@@ -517,7 +552,6 @@ button,
     .btn,
     .btn-primary {
         width: auto;
-        /* Hug content on larger screens */
         padding-inline-start: 2rem;
         padding-inline-end: 2rem;
     }
@@ -567,6 +601,12 @@ button.btn-danger {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     margin-bottom: 1.5rem;
     transition: background-color 0.3s ease;
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1rem 0.75rem;
+    }
 }
 
 /* Admin Dashboard Specific Layouts */
@@ -652,6 +692,7 @@ button.btn-danger {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+    padding: 1rem;
 }
 
 .modal-overlay.active {
@@ -662,14 +703,23 @@ button.btn-danger {
 .modal-content {
     background: var(--card-bg);
     color: var(--text-color);
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 12px;
-    width: 90%;
+    width: 100%;
     max-width: 400px;
     text-align: center;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     transform: translateY(-20px);
     transition: transform 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        padding: 1rem;
+        border-radius: 10px;
+    }
 }
 
 .modal-overlay.active .modal-content {
@@ -738,7 +788,6 @@ button.btn-danger {
 /* Icons and specific statuses */
 .crown {
     margin-inline-end: 5px;
-    /* RTL safe */
     font-size: 1.2rem;
 }
 
@@ -812,7 +861,6 @@ button.btn-danger {
     border-start-end-radius: 0;
     border-end-end-radius: 0;
     border-inline-end: 0;
-    /* RTL specific */
 }
 
 .input-group .form-control {
@@ -1123,4 +1171,134 @@ button.btn-danger {
 
 .dark-mode .highlight-gk td:last-child {
     color: var(--text-color);
+}
+
+
+/* =========================================
+   MOBILE RESPONSIVE FIXES (SCOREBOARD)
+   ========================================= */
+
+/* --- Scoreboard on Mobile --- */
+@media (max-width: 480px) {
+    .scoreboard {
+        padding: 0.75rem !important;
+        min-height: 120px;
+    }
+
+    /* Match number and date: stack them */
+    .scoreboard>span[style*="position: absolute"] {
+        position: relative !important;
+        display: block;
+        text-align: center;
+        font-size: 0.75rem !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        margin-bottom: 4px;
+    }
+
+    /* Scoreboard flex heading */
+    .scoreboard h2.flex-center {
+        flex-direction: column;
+        gap: 0.25rem !important;
+        font-size: 1rem;
+    }
+
+    /* Team names */
+    .scoreboard h2>span[style*="flex: 1"] {
+        flex: unset !important;
+        text-align: center !important;
+        font-size: 1rem;
+        width: 100%;
+    }
+
+    /* Score box */
+    .scoreboard h2>span[style*="font-size: 2.5rem"] {
+        font-size: 1.8rem !important;
+        padding: 4px 14px !important;
+        order: -1;
+    }
+
+    /* Action buttons (delete, edit) */
+    .scoreboard button[style*="position: absolute"][style*="bottom"] {
+        position: relative !important;
+        bottom: auto !important;
+        right: auto !important;
+        display: inline-block;
+    }
+
+    /* Share button on scoreboard */
+    .scoreboard .btn-outline.btn-sm {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        display: block;
+        margin: 6px auto;
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        width: fit-content;
+    }
+
+    /* Team tables: force min-width smaller */
+    .matches-container div[style*="min-width: 300px"] {
+        min-width: 100% !important;
+    }
+
+    .matches-container table {
+        min-width: unset !important;
+        font-size: 0.8rem !important;
+    }
+
+    .matches-container table th,
+    .matches-container table td {
+        padding: 6px 4px !important;
+        font-size: 0.8rem !important;
+    }
+}
+
+/* --- Tabs on small screens --- */
+@media (max-width: 480px) {
+    .tabs-container {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+    }
+
+    .tab-btn {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+}
+
+/* --- Leaderboard table on mobile --- */
+@media (max-width: 480px) {
+    .table-responsive table {
+        min-width: 360px;
+    }
+}
+
+/* --- General inline styles override on mobile --- */
+@media (max-width: 480px) {
+
+    /* Fix any flex container with min-width: 300px to be full width */
+    div[style*="min-width: 300px"] {
+        min-width: 100% !important;
+    }
+
+    /* Reduce heading sizes further on tiny screens */
+    h1 {
+        font-size: 1.3rem;
+    }
+
+    h2 {
+        font-size: 1.15rem;
+    }
+
+    h3 {
+        font-size: 1rem;
+    }
 }

@@ -16,40 +16,48 @@
 
         <!-- Scoreboard Header -->
         <div class="scoreboard text-center"
-            style="background: #2c3e50; color: white; padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; position: relative;">
-            <button class="btn btn-outline btn-sm share-match-btn" data-target="#match-{{ match.id }}"
-                title="مشاركة المباراة"
-                style="position: absolute; top: 10px; right: 80px; font-size: 0.85rem; color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.4);">
-                مشاركة 📤📸
-            </button>
-            <span
-                style="position: absolute; top: 10px; right: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">#{{
-                match.id
-                }}</span>
-            <span
-                style="position: absolute; top: 10px; left: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">{{
-                match.date.strftime('%Y-%m-%d %H:%M') if match.date else 'تاريخ غير معروف' }}</span>
-            <button class="delete-match-btn" data-match-id="{{ match.id }}" title="حذف المباراة"
-                style="position: absolute; bottom: 10px; right: 15px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #ff6b6b; z-index: 10;">
-                🗑️
-            </button>
-            <button class="edit-match-btn" data-match-id="{{ match.id }}" title="تعديل المباراة"
-                style="position: absolute; bottom: 10px; right: 45px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #4da8da; z-index: 10;">
-                ✏️
-            </button>
+            style="background: #2c3e50; color: white; padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+            <!-- Top row: match number + date -->
+            <div class="scoreboard-meta"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 0.8rem; color: rgba(255,255,255,0.6);">
+                <span>#{{ match.id }}</span>
+                <span>{{ match.date.strftime('%Y-%m-%d %H:%M') if match.date else 'تاريخ غير معروف' }}</span>
+            </div>
 
-            <h2 class="flex-center gap-2 mb-0" style="flex-wrap: wrap;">
-                <span style="flex: 1; text-align: left; color: #4da8da;">{{
+            <!-- Score row: Team A - Score - Team B -->
+            <div class="scoreboard-score"
+                style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span class="scoreboard-team"
+                    style="flex: 1; text-align: center; color: #4da8da; font-size: clamp(0.9rem, 3vw, 1.3rem); font-weight: 700;">{{
                     match.team_a_name }}</span>
-                <span
-                    style="font-size: 2.5rem; background: rgba(255,255,255,0.1); padding: 5px 20px; border-radius: var(--radius-md);">
+                <span class="scoreboard-result"
+                    style="font-size: clamp(1.5rem, 5vw, 2.5rem); background: rgba(255,255,255,0.1); padding: 4px 16px; border-radius: var(--radius-md); white-space: nowrap;">
                     <span style="color: #4da8da;">{{ match.team_a_score }}</span>
-                    <span style="color: rgba(255,255,255,0.5); font-size: 1.5rem;">-</span>
+                    <span style="color: rgba(255,255,255,0.5); font-size: 0.7em;">-</span>
                     <span style="color: #f39c12;">{{ match.team_b_score }}</span>
                 </span>
-                <span style="flex: 1; text-align: right; color: #f39c12;">{{
+                <span class="scoreboard-team"
+                    style="flex: 1; text-align: center; color: #f39c12; font-size: clamp(0.9rem, 3vw, 1.3rem); font-weight: 700;">{{
                     match.team_b_name }}</span>
-            </h2>
+            </div>
+
+            <!-- Bottom row: action buttons -->
+            <div class="scoreboard-actions"
+                style="display: flex; justify-content: center; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap;">
+                <button class="btn btn-outline btn-sm share-match-btn" data-target="#match-{{ match.id }}"
+                    title="مشاركة المباراة"
+                    style="font-size: 0.8rem; color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.4); padding: 4px 10px; min-height: auto; width: auto; margin: 0;">
+                    مشاركة 📤
+                </button>
+                <button class="edit-match-btn" data-match-id="{{ match.id }}" title="تعديل المباراة"
+                    style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #4da8da; min-height: auto; width: auto; margin: 0; padding: 4px;">
+                    ✏️
+                </button>
+                <button class="delete-match-btn" data-match-id="{{ match.id }}" title="حذف المباراة"
+                    style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #ff6b6b; min-height: auto; width: auto; margin: 0; padding: 4px;">
+                    🗑️
+                </button>
+            </div>
         </div>
 
         <!-- Teams Tables -->
