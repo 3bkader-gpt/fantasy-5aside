@@ -27,17 +27,27 @@ document.addEventListener('DOMContentLoaded', function () {
         // GK logic
         const gkCheck = clone.querySelector('.is-gk-check');
         const savesInput = clone.querySelector('.saves-input');
+        const concededInput = clone.querySelector('.conceded-input');
+        const cleanSheetCheck = clone.querySelector('.clean-sheet-check');
 
         gkCheck.addEventListener('change', function () {
-            savesInput.disabled = !this.checked;
-            if (this.checked) {
-                savesInput.style.backgroundColor = '';
+            const isGK = this.checked;
+            savesInput.disabled = !isGK;
+            concededInput.disabled = !isGK;
+            cleanSheetCheck.disabled = !isGK;
+
+            if (isGK) {
                 savesInput.style.opacity = '1';
+                concededInput.style.opacity = '1';
+                cleanSheetCheck.style.opacity = '1';
                 savesInput.focus();
             } else {
-                savesInput.style.backgroundColor = '';
                 savesInput.style.opacity = '0.5';
+                concededInput.style.opacity = '0.5';
+                cleanSheetCheck.style.opacity = '0.5';
                 savesInput.value = 0;
+                concededInput.value = 0;
+                cleanSheetCheck.checked = false;
             }
         });
 
