@@ -50,8 +50,6 @@ class MatchStatBase(BaseModel):
     goals_conceded: int = 0
     is_gk: bool = False
     clean_sheet: bool = False
-    mvp: bool = False
-    is_captain: bool = False
 
 class MatchStatCreate(MatchStatBase):
     pass
@@ -61,6 +59,9 @@ class MatchStatResponse(MatchStatBase):
     match_id: int
     player_id: Optional[int] = None
     points_earned: int = 0
+    bonus_points: int = 0
+    mvp: bool = False
+    is_captain: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

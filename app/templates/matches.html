@@ -84,8 +84,11 @@
                             <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
-                                    {% if stat.is_captain %}<span title="Captain">©️</span>{% endif %}
-                                    {% if stat.mvp %}<span title="MVP">⭐</span>{% endif %}
+                                    {% if stat.bonus_points == 3 %}<span title="BPS: 3 Points">🥇</span>
+                                    {% elif stat.bonus_points == 2 %}<span title="BPS: 2 Points">🥈</span>
+                                    {% elif stat.bonus_points == 1 %}<span title="BPS: 1 Point">🥉</span>{% endif %}
+                                    {% if stat.is_captain %}<span title="Captain (Legacy)">©️</span>{% endif %}
+                                    {% if stat.mvp %}<span title="MVP (Legacy)">⭐</span>{% endif %}
                                     {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
                                 </td>
                                 <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
@@ -126,8 +129,11 @@
                             <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
-                                    {% if stat.is_captain %}<span title="Captain">©️</span>{% endif %}
-                                    {% if stat.mvp %}<span title="MVP">⭐</span>{% endif %}
+                                    {% if stat.bonus_points == 3 %}<span title="BPS: 3 Points">🥇</span>
+                                    {% elif stat.bonus_points == 2 %}<span title="BPS: 2 Points">🥈</span>
+                                    {% elif stat.bonus_points == 1 %}<span title="BPS: 1 Point">🥉</span>{% endif %}
+                                    {% if stat.is_captain %}<span title="Captain (Legacy)">©️</span>{% endif %}
+                                    {% if stat.mvp %}<span title="MVP (Legacy)">⭐</span>{% endif %}
                                     {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
                                 </td>
                                 <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
@@ -245,8 +251,6 @@
         <td data-label="أهداف عليه"><input type="number" class="conceded-input form-control" value="0" min="0"
                 style="min-width: 40px; padding: 5px;"></td>
         <td data-label="CS"><input type="checkbox" class="clean-sheet-check"></td>
-        <td data-label="MVP"><input type="checkbox" class="mvp-check"></td>
-        <td data-label="كابتن"><input type="checkbox" class="captain-check"></td>
         <td data-label="الإجراء">
             <button class="swap-row-btn" title="تبديل الفريق"
                 style="background-color: var(--primary-color); color: white; border: none; padding: 3px 6px; border-radius: var(--radius-sm); cursor: pointer;">🔄</button>
@@ -273,9 +277,7 @@
                         "saves": parseInt("{{ stat.saves }}") || 0,
                             "goals_conceded": parseInt("{{ stat.goals_conceded }}") || 0,
                                 "is_gk": {% if stat.is_gk %} true{% else %} false{% endif %},
-        "clean_sheet": {% if stat.clean_sheet %} true{% else %} false{% endif %},
-        "mvp": {% if stat.mvp %} true{% else %} false{% endif %},
-        "is_captain": {% if stat.is_captain %} true{% else %} false{% endif %}
+        "clean_sheet": {% if stat.clean_sheet %} true{% else %} false{% endif %}
     } {% if not loop.last %}, {% endif %}
     {% endfor %}
             ]

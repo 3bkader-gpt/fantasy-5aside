@@ -79,6 +79,7 @@ class MatchStat(Base):
     is_captain = Column(Boolean, default=False)
     
     points_earned = Column(Integer, default=0)
+    bonus_points = Column(Integer, default=0)
 
     player = relationship("Player", back_populates="match_stats")
     match = relationship("Match", back_populates="stats")

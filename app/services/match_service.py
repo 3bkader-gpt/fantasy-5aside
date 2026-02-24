@@ -38,6 +38,10 @@ class MatchService(IMatchService):
         )
         self.match_repo.save_match(db_match)
 
+        # Phase 1: Collect base stats
+        team_a_base = []
+        team_b_base = []
+
         for stat_data in match_data.stats:
             player_name = stat_data.player_name.strip()
             player = self.player_repo.get_by_name(league_id, player_name)
@@ -52,38 +56,61 @@ class MatchService(IMatchService):
                 is_winner = True
                 
             is_draw = team_a_score == team_b_score
-            points_earned = points.calculate_player_points(
+            base_points = points.calculate_player_points(
                 goals=stat_data.goals,
                 assists=stat_data.assists,
                 is_winner=is_winner,
                 is_draw=is_draw,
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
-                mvp=stat_data.mvp,
                 saves=stat_data.saves,
-                goals_conceded=stat_data.goals_conceded,
-                is_captain=stat_data.is_captain
+                goals_conceded=stat_data.goals_conceded
             )
 
+            stat_dict = {
+                'id': player.id,
+                'team': stat_data.team,
+                'goals': stat_data.goals,
+                'assists': stat_data.assists,
+                'is_winner': is_winner,
+                'base_points': base_points,
+                'stat_data': stat_data,
+                'player': player
+            }
+            if stat_data.team == 'A':
+                team_a_base.append(stat_dict)
+            else:
+                team_b_base.append(stat_dict)
+
+        # Phase 2: Calculate bonus points
+        bonuses = points.calculate_bonus_points(team_a_base, team_b_base)
+
+        # Phase 3: Apply bonuses, save stats, save updates
+        combined_stats = team_a_base + team_b_base
+        for s in combined_stats:
+            player = s['player']
+            stat_data = s['stat_data']
+            bonus = bonuses.get(player.id, 0)
+            total_points = s['base_points'] + bonus
+            
             db_stat = models.MatchStat(
                 match_id=db_match.id,
                 player_id=player.id,
-                team=stat_data.team,
+                team=s['team'],
                 goals=stat_data.goals,
                 assists=stat_data.assists,
                 saves=stat_data.saves,
                 goals_conceded=stat_data.goals_conceded,
-                is_winner=is_winner,
+                is_winner=s['is_winner'],
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
-                mvp=stat_data.mvp,
-                is_captain=stat_data.is_captain,
-                points_earned=points_earned
+                points_earned=total_points,
+                bonus_points=bonus
             )
             
             db_match.stats.append(db_stat)
 
-            player.total_points += points_earned
+            player.total_points += total_points
             player.total_goals += stat_data.goals
             player.total_assists += stat_data.assists
             player.total_saves += stat_data.saves
@@ -132,6 +159,10 @@ class MatchService(IMatchService):
         match.team_a_score = team_a_score
         match.team_b_score = team_b_score
 
+        # Phase 1: Collect base stats
+        team_a_base = []
+        team_b_base = []
+
         for stat_data in update_data.stats:
             player_name = stat_data.player_name.strip()
             player = self.player_repo.get_by_name(league_id, player_name)
@@ -146,38 +177,61 @@ class MatchService(IMatchService):
                 is_winner = True
                 
             is_draw = team_a_score == team_b_score
-            points_earned = points.calculate_player_points(
+            base_points = points.calculate_player_points(
                 goals=stat_data.goals,
                 assists=stat_data.assists,
                 is_winner=is_winner,
                 is_draw=is_draw,
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
-                mvp=stat_data.mvp,
                 saves=stat_data.saves,
-                goals_conceded=stat_data.goals_conceded,
-                is_captain=stat_data.is_captain
+                goals_conceded=stat_data.goals_conceded
             )
+
+            stat_dict = {
+                'id': player.id,
+                'team': stat_data.team,
+                'goals': stat_data.goals,
+                'assists': stat_data.assists,
+                'is_winner': is_winner,
+                'base_points': base_points,
+                'stat_data': stat_data,
+                'player': player
+            }
+            if stat_data.team == 'A':
+                team_a_base.append(stat_dict)
+            else:
+                team_b_base.append(stat_dict)
+
+        # Phase 2: Calculate bonus points
+        bonuses = points.calculate_bonus_points(team_a_base, team_b_base)
+
+        # Phase 3: Apply bonuses, save stats, save updates
+        combined_stats = team_a_base + team_b_base
+        for s in combined_stats:
+            player = s['player']
+            stat_data = s['stat_data']
+            bonus = bonuses.get(player.id, 0)
+            total_points = s['base_points'] + bonus
 
             db_stat = models.MatchStat(
                 match_id=match.id,
                 player_id=player.id,
-                team=stat_data.team,
+                team=s['team'],
                 goals=stat_data.goals,
                 assists=stat_data.assists,
                 saves=stat_data.saves,
                 goals_conceded=stat_data.goals_conceded,
-                is_winner=is_winner,
+                is_winner=s['is_winner'],
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
-                mvp=stat_data.mvp,
-                is_captain=stat_data.is_captain,
-                points_earned=points_earned
+                points_earned=total_points,
+                bonus_points=bonus
             )
             
             match.stats.append(db_stat)
 
-            player.total_points += points_earned
+            player.total_points += total_points
             player.total_goals += stat_data.goals
             player.total_assists += stat_data.assists
             player.total_saves += stat_data.saves

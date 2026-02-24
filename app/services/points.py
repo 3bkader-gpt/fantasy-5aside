@@ -21,32 +21,37 @@ class PointsStrategy(ABC):
     def calculate(self, ctx: PointsContext) -> int:
         pass
 
-class ParticipationPoints(PointsStrategy):
-    def calculate(self, ctx: PointsContext) -> int:
-        return 1
-
 class GoalPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
+        # هدف = 2 نقطة للاعب عادي، 4 نقاط للحارس
         return ctx.goals * (4 if ctx.is_gk else 2)
+
 
 class AssistPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
+        # أسيست = 1 نقطة للاعب عادي، 2 نقطة للحارس
         return ctx.assists * (2 if ctx.is_gk else 1)
-        
+
+
 class WinPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
+        # فوز = 3 نقاط، تعادل = 1 نقطة
         if ctx.is_winner:
             return 3
         elif ctx.is_draw:
             return 1
         return 0
 
+
 class MVPPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
+        # أفضل لاعب في المباراة = 1 نقطة إضافية
         return 1 if ctx.mvp else 0
+
 
 class CleanSheetPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
+        # كلين شيت = 3 نقاط للحارس فقط
         if ctx.clean_sheet and ctx.is_gk:
             return 3
         return 0
@@ -92,13 +97,13 @@ class PointsCalculator:
             assists=match_data.assists,
             is_winner=match_data.score > 0,
             is_draw=is_draw,
-            is_gk=match_data.is_goalkeeper,
+            is_gk=getattr(match_data, "is_goalkeeper", False),
             clean_sheet=match_data.goals_conceded == 0,
-            mvp=match_data.is_mvp,
+            mvp=getattr(match_data, "is_mvp", False),
             saves=match_data.saves,
             goals_conceded=match_data.goals_conceded,
         )
-        return self.calculate_total(ctx, is_captain=match_data.is_captain)
+        return self.calculate_total(ctx, is_captain=getattr(match_data, "is_captain", False))
 
 # Maintain dependency inversion by instantiating calculator separately
 default_calculator = PointsCalculator()
@@ -113,10 +118,10 @@ def calculate_player_points(
     mvp: bool,
     saves: int,
     goals_conceded: int,
-    is_captain: bool = False
+    is_captain: bool = False,
 ) -> int:
     """
-    تابعة مساعدة للاستخدام في الخدمات الحالية، تعتمد على نفس المنطق المستخدم في الاختبارات.
+    تابعة مساعدة للاستخدام في الخدمات الحالية.
     """
     ctx = PointsContext(
         goals=goals,
@@ -129,4 +134,73 @@ def calculate_player_points(
         saves=saves,
         goals_conceded=goals_conceded,
     )
-    return default_calculator.calculate_total(ctx, is_captain)
+    return default_calculator.calculate_total(ctx, is_captain=is_captain)
+
+def calculate_bonus_points(team_a_stats: List[dict], team_b_stats: List[dict]) -> dict:
+    """
+    Calculates the new BPS bonus points based on impact ratio:
+    Impact Ratio = (Player Base Points / Total Team Base Points) * 100
+    Minimum base points required to be eligible: 4
+    Returns a dict mapping player index (or identifier) to bonus points (3, 2, 1)
+    """
+    all_players = []
+    
+    # helper to process team
+    def process_team(stats, team_name):
+        team_total = sum(stat['base_points'] for stat in stats)
+        for idx, stat in enumerate(stats):
+            if stat['base_points'] >= 4 and team_total > 0:
+                ratio = (stat['base_points'] / team_total) * 100
+                all_players.append({
+                    'id': stat['id'],
+                    'team': team_name,
+                    'ratio': ratio,
+                    'base_points': stat['base_points'],
+                    'goals': stat['goals'],
+                    'assists': stat['assists'],
+                    'is_winner': stat['is_winner']
+                })
+                
+    process_team(team_a_stats, 'A')
+    process_team(team_b_stats, 'B')
+    
+    if not all_players:
+        return {}
+        
+    # Sort primarily by ratio (descending). If tie, by goals (desc), then assists (desc), then is_winner, then base_points
+    all_players.sort(key=lambda x: (
+        x['ratio'], 
+        x['goals'], 
+        x['assists'], 
+        x['is_winner'], 
+        x['base_points']
+    ), reverse=True)
+    
+    bonuses = {}
+    current_bonus = 3
+    i = 0
+    
+    while i < len(all_players) and current_bonus > 0:
+        # Find all players with the EXACT SAME sorting criteria at this position (ties)
+        ties = [all_players[i]]
+        j = i + 1
+        while j < len(all_players):
+            if (all_players[j]['ratio'] == all_players[i]['ratio'] and
+                all_players[j]['goals'] == all_players[i]['goals'] and
+                all_players[j]['assists'] == all_players[i]['assists'] and
+                all_players[j]['is_winner'] == all_players[i]['is_winner'] and
+                all_players[j]['base_points'] == all_players[i]['base_points']):
+                ties.append(all_players[j])
+                j += 1
+            else:
+                break
+                
+        # Give all tied players the current bonus
+        for player in ties:
+            bonuses[player['id']] = current_bonus
+            
+        # Decrease bonus for next rank
+        current_bonus -= 1
+        i = j
+        
+    return bonuses

@@ -125,8 +125,13 @@
                     <td data-label="أسيست">{{ stat.assists }}</td>
                     <td data-label="شباك نظيفة">{% if stat.clean_sheet %}🛡️{% else %}-{% endif %}</td>
                     <td data-label="جوائز">
-                        {% if stat.mvp %}🌟 MVP{% endif %}
-                        {% if stat.is_captain %}👑 كابتن{% endif %}
+                        {% if stat.bonus_points == 3 %}<span title="BPS: 3 Points">🥇</span>
+                        {% elif stat.bonus_points == 2 %}<span title="BPS: 2 Points">🥈</span>
+                        {% elif stat.bonus_points == 1 %}<span title="BPS: 1 Point">🥉</span>{% endif %}
+                        {% if stat.mvp %}🌟 MVP (Legacy){% endif %}
+                        {% if stat.is_captain %}👑 كابتن (Legacy){% endif %}
+                        {% if not stat.mvp and not stat.is_captain and (stat.bonus_points is none or stat.bonus_points
+                        == 0) %}-{% endif %}
                     </td>
                 </tr>
                 {% else %}

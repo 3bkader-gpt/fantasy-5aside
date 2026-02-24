@@ -121,9 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 saves: parseInt(row.querySelector('.saves-input').value) || 0,
                 goals_conceded: parseInt(row.querySelector('.conceded-input').value) || 0,
                 is_gk: row.querySelector('.is-gk-check').checked,
-                clean_sheet: row.querySelector('.clean-sheet-check').checked,
-                mvp: row.querySelector('.mvp-check').checked,
-                is_captain: row.querySelector('.captain-check').checked
+                clean_sheet: row.querySelector('.clean-sheet-check').checked
             });
         }
     }
