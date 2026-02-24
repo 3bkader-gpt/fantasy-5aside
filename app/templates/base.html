@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/static/css/style.css?v=2.0">
+    <link rel="stylesheet" href="/static/css/style.css?v=3.1">
 </head>
 
 <body>
@@ -27,6 +27,8 @@
             <li><a href="/l/{{ league.slug }}/cup"><span class="icon">🏆</span><span class="text">الكأس</span></a></li>
             <li><a href="/l/{{ league.slug }}/hall-of-fame"><span class="icon">🎖️</span><span
                         class="text">الشرف</span></a></li>
+            <li><a href="#" onclick="showRulesModal(event)"><span class="icon">📖</span><span
+                        class="text">القواعد</span></a></li>
             <li><a href="/l/{{ league.slug }}/admin" class="admin-link"><span class="icon">🛡️</span><span
                         class="text">الإدارة</span></a></li>
             {% else %}
@@ -55,6 +57,93 @@
             <div class="modal-actions flex-between gap-3">
                 <button id="modal-cancel-btn" class="btn btn-secondary" style="flex:1;">إلغاء</button>
                 <button id="modal-confirm-btn" class="btn btn-danger" style="flex:1;">تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rules-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header flex-between mb-1" style="align-items: center;">
+                <h3 class="m-0" style="color: var(--primary-color);">📖 نظام حساب النقاط</h3>
+                <button class="icon-btn text-muted" onclick="closeRulesModal()"
+                    style="font-size: 1.5rem; line-height: 1; padding: 0;">&times;</button>
+            </div>
+            <div class="rules-body">
+                <p class="mb-1 text-muted" style="font-size: 0.95rem; line-height: 1.5;">كيف تُحسب النقاط لكل لاعب بناءً
+                    على أدائه في المباراة؟ الإجابة في هذا الجدول:</p>
+
+                <div class="rules-table-container mb-2">
+                    <table class="rules-table">
+                        <thead>
+                            <tr>
+                                <th>الحدث</th>
+                                <th>لاعب</th>
+                                <th>حارس</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>⚽ هدف</td>
+                                <td>+2</td>
+                                <td>+4</td>
+                            </tr>
+                            <tr>
+                                <td>👟 أسيست</td>
+                                <td>+1</td>
+                                <td>+2</td>
+                            </tr>
+                            <tr>
+                                <td>🏆 فوز</td>
+                                <td>+3</td>
+                                <td>+3</td>
+                            </tr>
+                            <tr>
+                                <td>🤝 تعادل</td>
+                                <td>+1</td>
+                                <td>+1</td>
+                            </tr>
+                            <tr>
+                                <td>⭐ أفضل لاعب (MVP)</td>
+                                <td>+1</td>
+                                <td>+1</td>
+                            </tr>
+                            <tr class="highlight-gk">
+                                <td>🛡️ كليان شيت</td>
+                                <td class="text-muted">—</td>
+                                <td>+3</td>
+                            </tr>
+                            <tr class="highlight-gk">
+                                <td>✋ 3 تصديات</td>
+                                <td class="text-muted">—</td>
+                                <td>+1</td>
+                            </tr>
+                            <tr class="highlight-gk">
+                                <td>❌ 3 أهداف عليه</td>
+                                <td class="text-muted">—</td>
+                                <td style="color: var(--danger-color); font-weight: bold;">-1</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="captain-rule card p-1 mb-1"
+                    style="background: var(--surface-color); border-right: 4px solid var(--primary-color); padding-right: 15px;">
+                    <h4 class="m-0 mb-sm" style="color: var(--primary-color); font-size: 1.1rem;">©️ نقطة الكابتن</h4>
+                    <p class="m-0 text-sm" style="line-height: 1.5;">تُضاعف النقاط المحسوبة للاعب الكابتن في المباراة
+                        <strong>(x2)</strong>.
+                    </p>
+                </div>
+
+                <div class="min-points-rule card p-1"
+                    style="background: var(--surface-color); border-right: 4px solid var(--text-muted); padding-right: 15px;">
+                    <p class="m-0 text-sm" style="line-height: 1.5;">⚠️ النتيجة النهائية لأي لاعب <strong>لا يمكن أن تقل
+                            عن 0</strong>، حتى لو كانت الخصومات أكبر من نقاطه الموجبة.</p>
+                </div>
+            </div>
+            <div class="modal-actions mt-2">
+                <button class="btn btn-primary" style="width: 100%; border-radius: var(--radius-lg); font-weight: bold;"
+                    onclick="closeRulesModal()">إغلاق</button>
             </div>
         </div>
     </div>

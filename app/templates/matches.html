@@ -16,34 +16,38 @@
 
         <!-- Scoreboard Header -->
         <div class="scoreboard text-center"
-            style="background: var(--heading-color); color: white; padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; position: relative;">
+            style="background: #2c3e50; color: white; padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; position: relative;">
             <button class="btn btn-outline btn-sm share-match-btn" data-target="#match-{{ match.id }}"
                 title="مشاركة المباراة"
-                style="position: absolute; top: 10px; right: 80px; font-size: 0.85rem; color: white; border-color: white;">
+                style="position: absolute; top: 10px; right: 80px; font-size: 0.85rem; color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.4);">
                 مشاركة 📤📸
             </button>
             <span
-                style="position: absolute; top: 10px; right: 15px; font-size: 0.85rem; color: var(--color-gray-400);">#{{
+                style="position: absolute; top: 10px; right: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">#{{
                 match.id
                 }}</span>
             <span
-                style="position: absolute; top: 10px; left: 15px; font-size: 0.85rem; color: var(--color-gray-400);">{{
+                style="position: absolute; top: 10px; left: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">{{
                 match.date.strftime('%Y-%m-%d %H:%M') if match.date else 'تاريخ غير معروف' }}</span>
             <button class="delete-match-btn" data-match-id="{{ match.id }}" title="حذف المباراة"
-                style="position: absolute; bottom: 10px; right: 15px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--danger-color); z-index: 10;">
+                style="position: absolute; bottom: 10px; right: 15px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #ff6b6b; z-index: 10;">
                 🗑️
+            </button>
+            <button class="edit-match-btn" data-match-id="{{ match.id }}" title="تعديل المباراة"
+                style="position: absolute; bottom: 10px; right: 45px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #4da8da; z-index: 10;">
+                ✏️
             </button>
 
             <h2 class="flex-center gap-2 mb-0" style="flex-wrap: wrap;">
-                <span style="flex: 1; text-align: left; color: var(--primary-color);">{{
+                <span style="flex: 1; text-align: left; color: #4da8da;">{{
                     match.team_a_name }}</span>
                 <span
                     style="font-size: 2.5rem; background: rgba(255,255,255,0.1); padding: 5px 20px; border-radius: var(--radius-md);">
-                    <span style="color: var(--primary-color);">{{ match.team_a_score }}</span>
-                    <span style="color: var(--color-gray-400); font-size: 1.5rem;">-</span>
-                    <span style="color: var(--warning-color);">{{ match.team_b_score }}</span>
+                    <span style="color: #4da8da;">{{ match.team_a_score }}</span>
+                    <span style="color: rgba(255,255,255,0.5); font-size: 1.5rem;">-</span>
+                    <span style="color: #f39c12;">{{ match.team_b_score }}</span>
                 </span>
-                <span style="flex: 1; text-align: right; color: var(--warning-color);">{{
+                <span style="flex: 1; text-align: right; color: #f39c12;">{{
                     match.team_b_name }}</span>
             </h2>
         </div>
@@ -53,12 +57,11 @@
 
             <!-- Team A Stats -->
             <div style="flex: 1; min-width: 300px;">
-                <h4 class="mb-1"
-                    style="color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px;">
+                <h4 class="mb-1" style="color: #4da8da; border-bottom: 2px solid #4da8da; padding-bottom: 5px;">
                     تشكيلة {{ match.team_a_name }}</h4>
                 <div class="table-responsive">
                     <table style="width: 100%; font-size: 0.9rem;">
-                        <thead style="background: rgba(52, 152, 219, 0.1);">
+                        <thead style="background: rgba(52, 152, 219, 0.2);">
                             <tr>
                                 <th>اللاعب</th>
                                 <th>⚽</th>
@@ -70,7 +73,7 @@
                         <tbody>
                             {% for stat in match.stats %}
                             {% if stat.team == 'A' %}
-                            <tr style="border-bottom: 1px solid #eee;">
+                            <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
                                     {% if stat.is_captain %}<span title="Captain">©️</span>{% endif %}
@@ -96,12 +99,11 @@
 
             <!-- Team B Stats -->
             <div style="flex: 1; min-width: 300px;">
-                <h4 class="mb-1"
-                    style="color: var(--warning-color); border-bottom: 2px solid var(--warning-color); padding-bottom: 5px;">
+                <h4 class="mb-1" style="color: #f39c12; border-bottom: 2px solid #f39c12; padding-bottom: 5px;">
                     تشكيلة {{ match.team_b_name }}</h4>
                 <div class="table-responsive">
                     <table style="width: 100%; font-size: 0.9rem;">
-                        <thead style="background: rgba(230, 126, 34, 0.1);">
+                        <thead style="background: rgba(230, 126, 34, 0.2);">
                             <tr>
                                 <th>اللاعب</th>
                                 <th>⚽</th>
@@ -113,7 +115,7 @@
                         <tbody>
                             {% for stat in match.stats %}
                             {% if stat.team == 'B' %}
-                            <tr style="border-bottom: 1px solid #eee;">
+                            <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
                                     {% if stat.is_captain %}<span title="Captain">©️</span>{% endif %}
@@ -143,8 +145,135 @@
     {% endif %}
 </div>
 
+<!-- Edit Match Modal -->
+<div id="editMatchModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <span class="close-modal">&times;</span>
+        <h2>تعديل بيانات المباراة <span id="edit-match-id-display"></span></h2>
+
+        <div class="card match-form-container mt-2">
+            <div style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                <h3 style="margin-top:0;">تأكيد الإدارة لتحديث المباريات</h3>
+                <input type="password" id="edit_admin_password" placeholder="أدخل كلمة سر إدارة الدوري لحفظ التعديلات"
+                    required class="form-control">
+            </div>
+
+            <div class="tactical-board" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+                <!-- Team A -->
+                <div class="team-container team-a-container" style="flex: 1; min-width: 350px;">
+                    <input type="text" id="edit_team_a_name" class="form-control text-center mb-1"
+                        style="font-size: 1.2rem; font-weight: bold; border-bottom: 2px solid var(--primary-color);">
+                    <button id="edit-add-player-a-btn" class="btn btn-primary mb-1 custom-add-btn"
+                        style="width: 100%;">+ إضافة لاعب لـ <span class="team-a-label">فريق أ</span></button>
+                    <div class="table-responsive" style="margin-bottom: 0;">
+                        <table style="min-width: 600px; font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 100px;">اللاعب</th>
+                                    <th>⚽ أهداف</th>
+                                    <th>👟 أسيست</th>
+                                    <th>🧤 حارس؟</th>
+                                    <th>✋ تصديات</th>
+                                    <th>❌ عليه</th>
+                                    <th>🛡️ CS</th>
+                                    <th>⭐ MVP</th>
+                                    <th>©️ كابتن</th>
+                                    <th>حذف/تبديل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="edit-team-a-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Team B -->
+                <div class="team-container team-b-container" style="flex: 1; min-width: 350px;">
+                    <input type="text" id="edit_team_b_name" class="form-control text-center mb-1"
+                        style="font-size: 1.2rem; font-weight: bold; border-bottom: 2px solid var(--warning-color);">
+                    <button id="edit-add-player-b-btn" class="btn mb-1 custom-add-btn"
+                        style="width: 100%; background: var(--warning-color); color: white;">+ إضافة لاعب لـ <span
+                            class="team-b-label">فريق ب</span></button>
+                    <div class="table-responsive" style="margin-bottom: 0;">
+                        <table style="min-width: 600px; font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 100px;">اللاعب</th>
+                                    <th>⚽ أهداف</th>
+                                    <th>👟 أسيست</th>
+                                    <th>🧤 حارس؟</th>
+                                    <th>✋ تصديات</th>
+                                    <th>❌ عليه</th>
+                                    <th>🛡️ CS</th>
+                                    <th>⭐ MVP</th>
+                                    <th>©️ كابتن</th>
+                                    <th>حذف/تبديل</th>
+                                </tr>
+                            </thead>
+                            <tbody id="edit-team-b-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <button id="save-edit-match-btn" class="btn btn-success"
+                style="width: 100%; padding: 10px; font-size: 1.1rem;">
+                💾 حفظ التعديلات
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Template for a new row (hidden) -->
+<template id="edit-player-row-template">
+    <tr class="player-row">
+        <td data-label="الاسم"><input type="text" class="player-name-input form-control" placeholder="اسم"></td>
+        <td data-label="أهداف"><input type="number" class="goals-input form-control" value="0" min="0"
+                style="min-width: 40px; padding: 5px;"></td>
+        <td data-label="أسيست"><input type="number" class="assists-input form-control" value="0" min="0"
+                style="min-width: 40px; padding: 5px;"></td>
+        <td data-label="حارس؟"><input type="checkbox" class="is-gk-check"></td>
+        <td data-label="تصديات"><input type="number" class="saves-input form-control" value="0" min="0" disabled
+                style="min-width: 40px; padding: 5px; opacity: 0.5;"></td>
+        <td data-label="أهداف عليه"><input type="number" class="conceded-input form-control" value="0" min="0"
+                style="min-width: 40px; padding: 5px;"></td>
+        <td data-label="CS"><input type="checkbox" class="clean-sheet-check"></td>
+        <td data-label="MVP"><input type="checkbox" class="mvp-check"></td>
+        <td data-label="كابتن"><input type="checkbox" class="captain-check"></td>
+        <td data-label="الإجراء">
+            <button class="swap-row-btn" title="تبديل الفريق"
+                style="background-color: var(--primary-color); color: white; border: none; padding: 3px 6px; border-radius: var(--radius-sm); cursor: pointer;">🔄</button>
+            <button class="remove-row-btn" title="حذف"
+                style="background-color: var(--danger-color); color: white; border: none; padding: 3px 6px; border-radius: var(--radius-sm); cursor: pointer;">X</button>
+        </td>
+    </tr>
+</template>
+
 <script>
     window.LEAGUE_SLUG = "{{ league.slug }}";
+    window.MATCHES_DATA = {
+        {% for match in matches %}
+    "{{ match.id }}": {
+        "team_a_name": "{{ match.team_a_name }}",
+            "team_b_name": "{{ match.team_b_name }}",
+                "stats": [
+                    {% for stat in match.stats %}
+    {
+        "player_name": "{{ stat.player.name }}",
+            "team": "{{ stat.team }}",
+                "goals": parseInt("{{ stat.goals }}") || 0,
+                    "assists": parseInt("{{ stat.assists }}") || 0,
+                        "saves": parseInt("{{ stat.saves }}") || 0,
+                            "goals_conceded": parseInt("{{ stat.goals_conceded }}") || 0,
+                                "is_gk": {% if stat.is_gk %} true{% else %} false{% endif %},
+        "clean_sheet": {% if stat.clean_sheet %} true{% else %} false{% endif %},
+        "mvp": {% if stat.mvp %} true{% else %} false{% endif %},
+        "is_captain": {% if stat.is_captain %} true{% else %} false{% endif %}
+    } {% if not loop.last %}, {% endif %}
+    {% endfor %}
+            ]
+        }{% if not loop.last %}, {% endif %}
+    {% endfor %}
+    };
 </script>
 <script src="/static/js/matches.js"></script>
 {% endblock %}

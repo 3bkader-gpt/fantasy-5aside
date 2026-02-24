@@ -177,6 +177,10 @@ class MatchRepository(IMatchRepository):
         self.db.commit()
         return True
 
+    def delete_match_stats(self, match_id: int) -> None:
+        self.db.query(models.MatchStat).filter(models.MatchStat.match_id == match_id).delete(synchronize_session=False)
+        self.db.commit()
+
     def get_player_history(self, player_id: int) -> List[models.MatchStat]:
         return self.db.query(models.MatchStat).options(
             joinedload(models.MatchStat.match)

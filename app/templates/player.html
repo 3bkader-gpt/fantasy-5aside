@@ -2,8 +2,7 @@
 
 {% block content %}
 <div class="player-profile container-sm" style="max-width: 900px;">
-    <div class="card text-center mb-2"
-        style="background: linear-gradient(135deg, var(--heading-color), var(--primary-color)); color: white;">
+    <div class="card text-center mb-2" style="background: linear-gradient(135deg, #2c3e50, #3498db); color: white;">
         <h1 class="mb-0" style="font-size: 2.5rem;">{{ player.name }}</h1>
         <p style="font-size: 1.2rem; opacity: 0.9;" class="mb-0 mt-1">ملف إحصائيات اللاعب</p>
 
@@ -21,7 +20,7 @@
         <!-- Current Season -->
         <div class="card text-center" style="border-bottom: 4px solid var(--warning-color);">
             <h3 class="text-secondary mb-1" style="font-size: 1rem;">إحصائيات الشهر الحالي</h3>
-            <div style="font-size: 2.5rem; font-weight: bold; color: var(--heading-color);" class="mb-1">{{
+            <div style="font-size: 2.5rem; font-weight: bold; color: var(--text-color);" class="mb-1">{{
                 player.total_points }}
             </div>
             <div class="text-secondary" style="font-size: 0.9rem;">إجمالي النقاط</div>
@@ -29,11 +28,11 @@
             <div class="flex-center"
                 style="justify-content: space-around; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
                 <div>
-                    <div style="font-weight: bold; color: var(--heading-color);">{{ player.total_goals }}</div>
+                    <div style="font-weight: bold; color: var(--text-color);">{{ player.total_goals }}</div>
                     <div class="text-secondary" style="font-size: 0.8rem;">أهداف</div>
                 </div>
                 <div>
-                    <div style="font-weight: bold; color: var(--heading-color);">{{ player.total_assists }}</div>
+                    <div style="font-weight: bold; color: var(--text-color);">{{ player.total_assists }}</div>
                     <div class="text-secondary" style="font-size: 0.8rem;">أسيست</div>
                 </div>
             </div>
@@ -49,11 +48,11 @@
             <div class="flex-center"
                 style="justify-content: space-around; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                 <div>
-                    <div style="font-weight: bold; color: var(--heading-color);">{{ total_matches }}</div>
+                    <div style="font-weight: bold; color: var(--text-color);">{{ total_matches }}</div>
                     <div class="text-secondary" style="font-size: 0.8rem;">لعب</div>
                 </div>
                 <div>
-                    <div style="font-weight: bold; color: var(--heading-color);">{{ ga_per_match }}</div>
+                    <div style="font-weight: bold; color: var(--text-color);">{{ ga_per_match }}</div>
                     <div class="text-secondary" style="font-size: 0.8rem;">مساهمة/مباراة</div>
                 </div>
             </div>
@@ -69,12 +68,12 @@
             <div class="flex-center"
                 style="justify-content: space-around; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                 <div>
-                    <div style="font-weight: bold; color: var(--heading-color);">{{ player.all_time_goals +
+                    <div style="font-weight: bold; color: var(--text-color);">{{ player.all_time_goals +
                         player.total_goals }}</div>
                     <div class="text-secondary" style="font-size: 0.8rem;">أهداف</div>
                 </div>
                 <div>
-                    <div style="font-weight: bold; color: var(--heading-color);">{{ player.all_time_assists +
+                    <div style="font-weight: bold; color: var(--text-color);">{{ player.all_time_assists +
                         player.total_assists }}
                     </div>
                     <div class="text-secondary" style="font-size: 0.8rem;">أسيست</div>
@@ -100,7 +99,7 @@
     <script src="/static/js/player_chart.js"></script>
     {% endif %}
 
-    <h2 class="mb-2" style="color: var(--heading-color);">📜 سجل المباريات الخاص باللاعب</h2>
+    <h2 class="mb-2" style="color: var(--text-color);">📜 سجل المباريات الخاص باللاعب</h2>
     <div class="table-responsive">
         <table>
             <thead>

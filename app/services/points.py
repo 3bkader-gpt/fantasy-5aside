@@ -8,6 +8,7 @@ class PointsContext:
     goals: int
     assists: int
     is_winner: bool
+    is_draw: bool
     is_gk: bool
     clean_sheet: bool
     mvp: bool
@@ -34,29 +35,33 @@ class AssistPoints(PointsStrategy):
         
 class WinPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        # الفوز يعطي 3 نقاط طبقاً لاختبارات الوحدة
-        return 3 if ctx.is_winner else 0
+        if ctx.is_winner:
+            return 3
+        elif ctx.is_draw:
+            return 1
+        return 0
 
 class MVPPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        # أفضل لاعب في المباراة نقطة واحدة
         return 1 if ctx.mvp else 0
 
 class CleanSheetPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
         if ctx.clean_sheet and ctx.is_gk:
-            # حارس المرمى يحصل على 3 نقاط لكلين شيت
             return 3
         return 0
 
 class SavePoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        return ctx.saves // 3
+        if ctx.is_gk:
+            return ctx.saves // 3
+        return 0
 
 class GoalsConcededPenalty(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        # خصم نقطة لكل 3 أهداف مستقبلة تقريباً
-        return -(ctx.goals_conceded // 3)
+        if ctx.is_gk:
+            return -(ctx.goals_conceded // 3)
+        return 0
 
 class PointsCalculator:
     def __init__(self, strategies: Optional[List[PointsStrategy]] = None):
@@ -73,17 +78,20 @@ class PointsCalculator:
 
     def calculate_total(self, ctx: PointsContext, is_captain: bool = False) -> int:
         base_points = sum(strategy.calculate(ctx) for strategy in self.strategies)
-        return base_points * 2 if is_captain else base_points
+        final_points = base_points * 2 if is_captain else base_points
+        return max(0, final_points)
 
     def calculate_player_points(self, match_data: schemas.MatchCreate) -> int:
         """
         واجهة عالية المستوى لاختبارات الوحدة:
         تحوّل كائن MatchCreate إلى PointsContext وتحسب النقاط.
         """
+        is_draw = match_data.score == 0
         ctx = PointsContext(
             goals=match_data.goals,
             assists=match_data.assists,
             is_winner=match_data.score > 0,
+            is_draw=is_draw,
             is_gk=match_data.is_goalkeeper,
             clean_sheet=match_data.goals_conceded == 0,
             mvp=match_data.is_mvp,
@@ -99,6 +107,7 @@ def calculate_player_points(
     goals: int, 
     assists: int, 
     is_winner: bool, 
+    is_draw: bool,
     is_gk: bool,
     clean_sheet: bool,
     mvp: bool,
@@ -113,6 +122,7 @@ def calculate_player_points(
         goals=goals,
         assists=assists,
         is_winner=is_winner,
+        is_draw=is_draw,
         is_gk=is_gk,
         clean_sheet=clean_sheet,
         mvp=mvp,

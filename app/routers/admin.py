@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request, HTTPException, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from ..schemas import schemas
@@ -7,9 +7,9 @@ from ..models import models
 from ..core import security
 from ..dependencies import (
     get_league_service, get_cup_service, get_match_service,
-    get_league_repository, get_player_repository,
+    get_league_repository, get_player_repository, get_match_repository,
     ILeagueService, ICupService, IMatchService,
-    ILeagueRepository, IPlayerRepository
+    ILeagueRepository, IPlayerRepository, IMatchRepository
 )
 
 router = APIRouter(prefix="/l/{slug}/admin", tags=["admin"])
@@ -150,6 +150,69 @@ def delete_match(
     try:
         match_service.delete_match(match_id, league.id)
         return {"message": "تم حذف المباراة بنجاح"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/match/{match_id}")
+def get_match_details(
+    slug: str,
+    match_id: int,
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    match_repo: IMatchRepository = Depends(get_match_repository),
+):
+    """
+    إرجاع بيانات مباراة واحدة (للـ frontend عند فتح شاشة التعديل).
+    """
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+
+    match = match_repo.get_by_id(match_id)
+    if not match or match.league_id != league.id:
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    stats_payload = []
+    for stat in match.stats:
+        stats_payload.append(
+            {
+                "player_name": stat.player.name if stat.player else "",
+                "team": stat.team,
+                "goals": stat.goals,
+                "assists": stat.assists,
+                "saves": stat.saves,
+                "goals_conceded": stat.goals_conceded,
+                "is_gk": stat.is_gk,
+                "clean_sheet": stat.clean_sheet,
+                "mvp": stat.mvp,
+                "is_captain": stat.is_captain,
+            }
+        )
+
+    return {
+        "id": match.id,
+        "team_a_name": match.team_a_name,
+        "team_b_name": match.team_b_name,
+        "stats": stats_payload,
+    }
+
+@router.post("/match/{match_id}/edit")
+def edit_match(
+    slug: str, 
+    match_id: int, 
+    payload: schemas.MatchEditRequest,
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    match_service: IMatchService = Depends(get_match_service)
+):
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+        
+    try:
+        updated_match = match_service.update_match(league.id, match_id, payload)
+        return {"message": "تم تحديث المباراة بنجاح", "match_id": updated_match.id}
     except HTTPException as e:
         raise e
     except Exception as e:

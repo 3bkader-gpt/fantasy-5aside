@@ -86,3 +86,31 @@ function showPromptModal(title, message) {
         };
     });
 }
+
+// Rules Modal Functions
+function showRulesModal(event) {
+    if (event) event.preventDefault();
+    const modal = document.getElementById('rules-modal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeRulesModal() {
+    const modal = document.getElementById('rules-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Close modals when clicking outside their content
+document.addEventListener("DOMContentLoaded", function () {
+    const overlays = document.querySelectorAll('.modal-overlay');
+    overlays.forEach(overlay => {
+        overlay.addEventListener('click', function (e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    });
+});

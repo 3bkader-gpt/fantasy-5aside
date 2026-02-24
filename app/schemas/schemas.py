@@ -85,6 +85,10 @@ class MatchCreate(MatchBase):
     saves: int = 0
     goals_conceded: int = 0
 
+class MatchEditRequest(MatchBase):
+    stats: List[MatchStatCreate] = []
+    admin_password: str
+
 class MatchResponse(MatchBase):
     id: int
     league_id: int

@@ -145,11 +145,85 @@ a {
 
 .dark-mode .delete-match-btn {
     color: #ff6b6b;
-    /* Lighter red for dark mode */
 }
 
 .dark-mode .delete-match-btn:hover {
     color: #ff4757;
+}
+
+/* =========================================
+   COMPREHENSIVE DARK MODE FIXES (ALL PAGES)
+   ========================================= */
+
+/* --- Global: Table Headers Bolder --- */
+thead th {
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+}
+
+/* --- Global: Cards in Dark Mode --- */
+.dark-mode .card {
+    border-color: var(--border-color);
+}
+
+.dark-mode .modal-content {
+    border: 1px solid var(--border-color);
+}
+
+/* --- Matches Page --- */
+.dark-mode .scoreboard {
+    background: #1a2a3a !important;
+}
+
+.dark-mode .table-responsive table thead {
+    color: var(--text-primary);
+}
+
+.dark-mode .table-responsive table tbody tr {
+    border-bottom-color: var(--border-color) !important;
+}
+
+.dark-mode .table-responsive table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* --- Cup Page: Round Headers --- */
+.dark-mode .cup-bracket h2 {
+    background: #1a2a3a !important;
+    color: white !important;
+}
+
+.dark-mode .matchup-card .player-name {
+    color: var(--text-primary);
+}
+
+.dark-mode .resolved-vs {
+    color: var(--color-gray-400);
+}
+
+/* --- Hall of Fame Page --- */
+.dark-mode .card h3[style*="color: var(--warning-color)"] {
+    color: #f39c12 !important;
+}
+
+/* --- Player Profile Page --- */
+.dark-mode .player-profile .card div[style*="color: var(--heading-color)"] {
+    color: var(--text-primary) !important;
+}
+
+.dark-mode .player-profile .card[style*="linear-gradient"] {
+    background: linear-gradient(135deg, #1a2a3a, #2980b9) !important;
+}
+
+/* --- Admin Dashboard --- */
+.dark-mode .card[style*="rgba(231, 76, 60, 0.05)"] {
+    background: rgba(231, 76, 60, 0.1) !important;
+}
+
+/* --- Leaderboard Header Text --- */
+.dark-mode .table-responsive table thead th {
+    color: #fff;
 }
 
 /* --- Gamification Badges --- */
@@ -978,4 +1052,75 @@ button.btn-danger {
 .trend-icon {
     font-size: 0.8rem;
     margin-inline-end: 0.25rem;
+}
+
+/* =========================================
+   POINTS RULES MODAL STYLES
+   ========================================= */
+.rules-body {
+    padding: 0.5rem 0;
+}
+
+.rules-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+}
+
+.rules-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: unset;
+    /* override generic table style for modal */
+}
+
+.rules-table th {
+    background-color: var(--nav-bg);
+    color: white;
+    font-weight: bold;
+    text-align: right;
+    padding: 12px 15px;
+    font-size: 0.95rem;
+}
+
+.rules-table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.rules-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.rules-table tbody tr:hover {
+    background-color: var(--color-gray-50);
+}
+
+/* Dark Mode Overrides for Rules Modal */
+.dark-mode .rules-table-container {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .rules-table th {
+    background-color: #1a2a3a;
+}
+
+.dark-mode .rules-table td {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dark-mode .rules-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .highlight-gk td {
+    color: var(--color-gray-400);
+}
+
+.dark-mode .highlight-gk td:last-child {
+    color: var(--text-color);
 }

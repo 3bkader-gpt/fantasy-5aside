@@ -31,6 +31,10 @@ class IMatchService(ABC):
         pass
         
     @abstractmethod
+    def update_match(self, league_id: int, match_id: int, update_data: schemas.MatchEditRequest) -> models.Match:
+        pass
+        
+    @abstractmethod
     def delete_match(self, match_id: int, league_id: int) -> bool:
         pass
 

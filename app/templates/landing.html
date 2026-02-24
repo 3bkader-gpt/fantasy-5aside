@@ -4,7 +4,7 @@
 <div class="container-sm text-center">
 
     <div class="mb-2">
-        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: var(--heading-color);">دوري الخماسي للجميع ⚽</h1>
+        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-color);">دوري الخماسي للجميع ⚽</h1>
         <p class="text-secondary" style="font-size: 1.2rem; line-height: 1.6;">
             أنشئ فانتزي خماسي لصحابك، قريتك، أو زملاء العمل بمكان واحد مستقل لكل بطولة!
         </p>
@@ -49,7 +49,7 @@
 
     {% if leagues %}
     <div class="card" style="text-align: right;">
-        <h2 class="card-header" style="color: var(--heading-color);">الدوريات المتاحة 🏆</h2>
+        <h2 class="card-header" style="color: var(--text-color);">الدوريات المتاحة 🏆</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
             {% for league in leagues %}
             <a href="/l/{{ league.slug }}" class="card card-hover"

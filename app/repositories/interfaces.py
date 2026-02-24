@@ -78,6 +78,10 @@ class IMatchRepository(ABC):
     @abstractmethod
     def delete(self, match_id: int) -> bool:
         pass
+        
+    @abstractmethod
+    def delete_match_stats(self, match_id: int) -> None:
+        pass
 
     @abstractmethod
     def get_player_history(self, player_id: int) -> List[models.MatchStat]:

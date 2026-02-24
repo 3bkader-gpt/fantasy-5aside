@@ -31,6 +31,7 @@ class MockMatchRepository(IMatchRepository):
     def save_match(self, match): pass
     def delete(self, match_id: int): pass
     def get_player_history(self, player_id: int): pass
+    def delete_match_stats(self, match_id: int): pass
 
 class TestCupService:
     def setup_method(self):

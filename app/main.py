@@ -1,25 +1,41 @@
+import logging
 import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import public, admin
-from .database import engine, Base
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
+
+from .database import Base, engine
+from .routers import admin, public
+
+# Use Uvicorn's logger so logs appear in the same output
+logger = logging.getLogger("uvicorn.error")
 
 # Create tables if not already created (though seed.py does this too)
 Base.metadata.create_all(bind=engine)
 
-from sqlalchemy import text
-from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Starting application lifespan: running manual schema migrations.")
     # Manual schema migrations
     with engine.begin() as conn:
         try:
-            conn.execute(text("ALTER TABLE players ADD COLUMN previous_rank INTEGER DEFAULT 0;"))
-        except Exception:
-            pass
+            logger.info("Applying migration: adding 'previous_rank' column to 'players' table if missing.")
+            conn.execute(
+                text("ALTER TABLE players ADD COLUMN previous_rank INTEGER DEFAULT 0;")
+            )
+            logger.info("Migration applied successfully.")
+        except Exception as exc:
+            logger.info(
+                "Skipping 'previous_rank' migration (it may already exist). Details: %s",
+                exc,
+            )
+    logger.info("Application startup complete inside lifespan, handing control back to FastAPI.")
     yield
+
 
 app = FastAPI(title="5-a-side Fantasy Football", lifespan=lifespan)
 
