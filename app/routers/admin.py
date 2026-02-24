@@ -165,7 +165,7 @@ def delete_match(
         
     try:
         match_service.delete_match(match_id, league.id)
-        return {"message": "تم حذف المباراة بنجاح"}
+        return {"success": True, "message": "تم حذف المباراة بنجاح"}
     except HTTPException as e:
         raise e
     except Exception as e:
