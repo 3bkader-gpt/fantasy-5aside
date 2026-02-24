@@ -10,13 +10,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!password) return;
 
             try {
-                const formData = new FormData();
-                formData.append('password', password);
                 const leagueSlug = window.LEAGUE_SLUG;
 
                 const response = await fetch(`/l/${leagueSlug}/admin/match/${matchId}`, {
                     method: 'DELETE',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ admin_password: password })
                 });
 
                 const result = await response.json();
