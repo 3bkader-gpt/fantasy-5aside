@@ -18,7 +18,7 @@
 <body>
 
     <nav>
-        <a href="/" class="brand" style="text-decoration: none; color: white;">⚽ دوري الخماسي</a>
+        <a href="/" class="brand">⚽ دوري الخماسي</a>
         <ul>
             {% if league %}
             <li><a href="/l/{{ league.slug }}"><span class="icon">📋</span><span class="text">الترتيب</span></a></li>
@@ -33,9 +33,7 @@
             <li><a href="/"><span class="icon">🏠</span><span class="text">الرئيسية</span></a></li>
             {% endif %}
             <li>
-                <button id="theme-toggle"
-                    style="background:none; border:none; color:inherit; font-size:1.2rem; cursor:pointer;"
-                    aria-label="تبديل الوضع الليلي">🌙</button>
+                <button id="theme-toggle" class="icon-btn" aria-label="تبديل الوضع الليلي">🌙</button>
             </li>
         </ul>
     </nav>
@@ -83,13 +81,11 @@
     <!-- Generic Modal -->
     <div id="global-modal" class="modal-overlay">
         <div class="modal-content">
-            <h3 id="modal-title" style="margin-bottom: 1rem;"></h3>
+            <h3 id="modal-title" class="mb-1"></h3>
             <div id="modal-body"></div>
-            <div class="modal-actions">
-                <button id="modal-cancel-btn"
-                    style="background: #95a5a6; color:white; border:none; padding:8px 16px; border-radius:5px; cursor:pointer;">إلغاء</button>
-                <button id="modal-confirm-btn"
-                    style="background: var(--negative-color); color:white; border:none; padding:8px 16px; border-radius:5px; cursor:pointer;">تأكيد</button>
+            <div class="modal-actions flex-between gap-3">
+                <button id="modal-cancel-btn" class="btn btn-secondary" style="flex:1;">إلغاء</button>
+                <button id="modal-confirm-btn" class="btn btn-danger" style="flex:1;">تأكيد</button>
             </div>
         </div>
     </div>
@@ -119,7 +115,7 @@
                 const cancelBtn = document.getElementById('modal-cancel-btn');
 
                 titleEl.textContent = title;
-                bodyEl.innerHTML = `<p style="margin-bottom:15px;">${message}</p><input type="password" id="modal-input" class="form-control" style="width:100%; padding:10px; border-radius:5px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-color);">`;
+                bodyEl.innerHTML = `<p class="mb-1">${message}</p><input type="password" id="modal-input" class="form-control">`;
                 modal.classList.add('active');
 
                 setTimeout(() => document.getElementById('modal-input').focus(), 100);

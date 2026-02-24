@@ -3,34 +3,35 @@
 {% block content %}
 <h1>📝 تسجيل نتيجة مباراة (اللوحة التكتيكية)</h1>
 
-<div class="admin-card">
-    <h3>🏆 إدارة الكأس</h3>
+<div class="card mb-2" style="border-right: 5px solid var(--warning-color);">
+    <h3 style="color: var(--warning-color);">🏆 إدارة الكأس</h3>
     <form action="/l/{{ league.slug }}/admin/cup/generate" method="POST">
-        <button type="submit" class="btn-primary" style="background-color: #f39c12;">
+        <button type="submit" class="btn" style="background-color: var(--warning-color); color: white;">
             إنشاء قرعة الكأس (أعلى 10 لاعبين)
         </button>
     </form>
-    <p style="font-size: 0.9rem; margin-top: 10px;">* سيتم اختيار أفضل 10 لاعبين في الترتيب الحالي وتسكينهم في مواجهات
+    <p class="text-muted mt-1" style="font-size: 0.9rem;">* سيتم اختيار أفضل 10 لاعبين في الترتيب الحالي وتسكينهم في
+        مواجهات
         ربع النهائي.</p>
 </div>
 
-<div class="admin-card" style="border-right: 5px solid var(--negative-color);">
-    <h3 style="color: var(--negative-color);">🚨 إنهاء الشهر الحالي</h3>
+<div class="card mb-2" style="border-right: 5px solid var(--danger-color);">
+    <h3 style="color: var(--danger-color);">🚨 إنهاء الشهر الحالي</h3>
     <form action="/l/{{ league.slug }}/admin/season/end" method="POST"
         onsubmit="return confirm('هل أنت متأكد من إنهاء الشهر؟ سيتم إضافة المتصدر إلى لوحة الشرف وتصفير جميع النقاط الحالية!');">
-        <input type="text" name="month_name" placeholder="اسم الشهر (مثال: أغسطس 2026)" required class="tactical-input"
-            style="width: 250px; margin-left: 10px; display: inline-block;">
-        <button type="submit" class="btn-primary" style="background-color: var(--negative-color);">
+        <input type="text" name="month_name" placeholder="اسم الشهر (مثال: أغسطس 2026)" required class="form-control"
+            style="width: 250px; display: inline-block; margin-inline-end: 1rem;">
+        <button type="submit" class="btn btn-danger">
             إنهاء الشهر والأرشفة
         </button>
     </form>
 </div>
 
-<div class="match-form-container">
+<div class="card match-form-container">
     <div style="margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
         <h3 style="margin-top:0;">تأكيد الإدارة</h3>
         <input type="password" id="admin_password" placeholder="أدخل كلمة سر إدارة الدوري لحفظ المباراة" required
-            class="tactical-input">
+            class="form-control">
     </div>
 
     <!-- Tactical Board -->
@@ -38,10 +39,9 @@
 
         <!-- Team A -->
         <div class="team-container team-a-container">
-            <input type="text" id="team_a_name" value="فريق أ" class="tactical-input"
-                style="font-size: 1.5rem; font-weight: bold; border: none; background: transparent; border-bottom: 2px solid var(--accent-color); margin-bottom: 15px; text-align: center; border-radius: 0;">
-            <button id="add-player-a-btn" class="btn-primary"
-                style="width: 100%; margin-bottom: 15px; background: var(--accent-color);">+ إضافة لاعب للفريق</button>
+            <input type="text" id="team_a_name" value="فريق أ" class="form-control text-center mb-1"
+                style="font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid var(--primary-color);">
+            <button id="add-player-a-btn" class="btn btn-primary mb-1" style="width: 100%;">+ إضافة لاعب للفريق</button>
             <div class="table-responsive" style="margin-bottom: 0;">
                 <table style="min-width: 700px;">
                     <thead>
@@ -67,10 +67,10 @@
 
         <!-- Team B -->
         <div class="team-container team-b-container">
-            <input type="text" id="team_b_name" value="فريق ب" class="tactical-input"
-                style="font-size: 1.5rem; font-weight: bold; border: none; background: transparent; border-bottom: 2px solid #e67e22; margin-bottom: 15px; text-align: center; border-radius: 0;">
-            <button id="add-player-b-btn" class="btn-primary"
-                style="width: 100%; margin-bottom: 15px; background: #e67e22;">+ إضافة لاعب للفريق</button>
+            <input type="text" id="team_b_name" value="فريق ب" class="form-control text-center mb-1"
+                style="font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid var(--warning-color);">
+            <button id="add-player-b-btn" class="btn mb-1"
+                style="width: 100%; background: var(--warning-color); color: white;">+ إضافة لاعب للفريق</button>
             <div class="table-responsive" style="margin-bottom: 0;">
                 <table style="min-width: 700px;">
                     <thead>
@@ -96,8 +96,8 @@
 
     </div>
 
-    <button id="save-match-btn" class="btn-primary"
-        style="width: 100%; padding: 15px; font-size: 1.2rem; background: var(--positive-color);">💾 حفظ المباراة وإقرار
+    <button id="save-match-btn" class="btn btn-success" style="width: 100%; padding: 15px; font-size: 1.2rem;">💾 حفظ
+        المباراة وإقرار
         النتيجة</button>
 </div>
 
@@ -105,26 +105,26 @@
 <template id="player-row-template">
     <tr class="player-row">
         <td data-label="الاسم">
-            <input type="text" class="player-name-input" placeholder="اسم اللاعب">
+            <input type="text" class="player-name-input form-control" placeholder="اسم اللاعب">
         </td>
         <td data-label="أهداف">
-            <input type="number" class="goals-input tactical-input" value="0" min="0"
-                style="width: 50px; padding: 5px;">
+            <input type="number" class="goals-input form-control" value="0" min="0"
+                style="min-width: 50px; padding: 5px;">
         </td>
         <td data-label="أسيست">
-            <input type="number" class="assists-input tactical-input" value="0" min="0"
-                style="width: 50px; padding: 5px;">
+            <input type="number" class="assists-input form-control" value="0" min="0"
+                style="min-width: 50px; padding: 5px;">
         </td>
         <td data-label="حارس؟">
             <input type="checkbox" class="is-gk-check">
         </td>
         <td data-label="تصديات">
-            <input type="number" class="saves-input tactical-input" value="0" min="0" disabled
-                style="width: 50px; padding: 5px; opacity: 0.5;">
+            <input type="number" class="saves-input form-control" value="0" min="0" disabled
+                style="min-width: 50px; padding: 5px; opacity: 0.5;">
         </td>
         <td data-label="أهداف عليه">
-            <input type="number" class="conceded-input tactical-input" value="0" min="0"
-                style="width: 50px; padding: 5px;">
+            <input type="number" class="conceded-input form-control" value="0" min="0"
+                style="min-width: 50px; padding: 5px;">
         </td>
         <td data-label="CS">
             <input type="checkbox" class="clean-sheet-check">
@@ -137,9 +137,9 @@
         </td>
         <td data-label="الإجراء" style="white-space: nowrap;">
             <button class="swap-row-btn" title="انقل اللاعب للفريق الآخر"
-                style="background-color: #9b59b6; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-left: 5px;">🔄</button>
+                style="background-color: var(--primary-color); color: white; border: none; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; margin-inline-start: 5px;">🔄</button>
             <button class="remove-row-btn" title="حذف"
-                style="background-color: var(--negative-color); color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">X</button>
+                style="background-color: var(--danger-color); color: white; border: none; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer;">X</button>
         </td>
     </tr>
 </template>

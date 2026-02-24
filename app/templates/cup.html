@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="cup-container" style="max-width: 800px; margin: 0 auto; padding-bottom: 50px;">
-    <h1 style="text-align: center; margin-bottom: 2rem;">🏆 كأس الشهر (Head-to-Head)</h1>
+<div class="cup-container container-sm">
+    <h1 class="text-center mb-2">🏆 كأس الشهر (Head-to-Head)</h1>
 
     {% if not matchups %}
     <div class="empty-state">
@@ -15,24 +15,25 @@
         {% set current_round = None %}
         {% for matchup in matchups %}
         {% if current_round != matchup.round_name %}
-        <h2
-            style="background: #2c3e50; color: white; padding: 10px; border-radius: 8px; margin-top: 30px; font-size: 1.2rem; text-align: center;">
+        <h2 class="text-center"
+            style="background: var(--heading-color); color: white; padding: 0.75rem; border-radius: var(--radius-md); margin-top: 2rem; font-size: 1.2rem;">
             {{ matchup.round_name }}
         </h2>
         {% set current_round = matchup.round_name %}
         {% endif %}
 
-        <div class="matchup-card {% if matchup.is_active %}active-matchup{% else %}resolved-matchup{% endif %}"
-            style="background: white; border-radius: 12px; margin-bottom: 15px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between;">
+        <div
+            class="card matchup-card flex-between mb-1 {% if matchup.is_active %}active-matchup{% else %}resolved-matchup{% endif %}">
 
-            <div class="player player1 {% if not matchup.is_active and matchup.winner_id != matchup.player1_id %}loser{% endif %}"
-                style="flex: 1; text-align: center;">
-                <div class="player-name {% if matchup.winner_id == matchup.player1_id %}winner-name{% endif %}"
+            <div class="player player1 text-center {% if not matchup.is_active and matchup.winner_id != matchup.player1_id %}loser{% endif %}"
+                style="flex: 1;">
+                <div class="player-name {% if matchup.winner_id == matchup.player1_id %}text-success{% endif %}"
                     style="font-weight: bold; font-size: 1.2rem;">
                     {{ matchup.player1.name }}
                     {% if matchup.winner_id == matchup.player1_id %} 🏆 {% endif %}
                 </div>
-                <div style="font-size: 0.9rem; color: #666;">إجمالي النقاط: {{ matchup.player1.total_points }}</div>
+                <div class="text-secondary" style="font-size: 0.9rem;">إجمالي النقاط: {{ matchup.player1.total_points }}
+                </div>
             </div>
 
             <div class="vs" style="padding: 0 20px; font-weight: bold; text-align: center;">
@@ -43,22 +44,23 @@
                 {% endif %}
             </div>
 
-            <div class="player player2 {% if not matchup.is_active and matchup.winner_id != matchup.player2_id %}loser{% endif %}"
-                style="flex: 1; text-align: center;">
-                <div class="player-name {% if matchup.winner_id == matchup.player2_id %}winner-name{% endif %}"
+            <div class="player player2 text-center {% if not matchup.is_active and matchup.winner_id != matchup.player2_id %}loser{% endif %}"
+                style="flex: 1;">
+                <div class="player-name {% if matchup.winner_id == matchup.player2_id %}text-success{% endif %}"
                     style="font-weight: bold; font-size: 1.2rem;">
                     {% if matchup.winner_id == matchup.player2_id %} 🏆 {% endif %}
                     {{ matchup.player2.name }}
                 </div>
-                <div style="font-size: 0.9rem; color: #666;">إجمالي النقاط: {{ matchup.player2.total_points }}</div>
+                <div class="text-secondary" style="font-size: 0.9rem;">إجمالي النقاط: {{ matchup.player2.total_points }}
+                </div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    <div
-        style="margin-top: 40px; padding: 25px; background: var(--hover-bg); border-radius: 12px; border-right: 5px solid var(--accent-color); color: var(--text-color); box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+    <div class="card mb-2"
+        style="background: var(--hover-bg); border-right: 5px solid var(--accent-color); padding: 1.5rem; box-shadow: var(--shadow-md);">
         <h4
             style="margin-top: 0; color: var(--accent-color); font-size: 1.2rem; margin-bottom: 15px; font-weight: 800;">
             📜 ملاحظات الكأس:</h4>
@@ -91,11 +93,11 @@
     }
 
     .active-matchup {
-        border-right: 5px solid #f39c12;
+        border-right: 5px solid var(--warning-color);
     }
 
     .resolved-matchup {
-        border-right: 5px solid #27ae60;
+        border-right: 5px solid var(--success-color);
     }
 
     .loser {
@@ -104,11 +106,7 @@
     }
 
     .player-name {
-        color: #2c3e50;
-    }
-
-    .winner-name {
-        color: #27ae60;
+        color: var(--heading-color);
     }
 
     .vs-badge {
@@ -118,14 +116,14 @@
     }
 
     .active-vs {
-        background: #e74c3c;
+        background: var(--danger-color);
         color: white;
         font-size: 0.9rem;
         animation: pulse 2s infinite;
     }
 
     .resolved-vs {
-        color: #7f8c8d;
+        color: var(--color-gray-500);
         font-size: 1.2rem;
     }
 </style>

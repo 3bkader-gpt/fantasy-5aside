@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="matches-container">
-    <h1 style="text-align: center; margin-bottom: 2rem;">سجل المباريات</h1>
+    <h1 class="text-center mb-2">سجل المباريات</h1>
 
     {% if not matches %}
     <div class="empty-state">
@@ -12,51 +12,53 @@
     </div>
     {% else %}
     {% for match in matches %}
-    <div class="match-card" id="match-{{ match.id }}"
-        style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div class="card mb-2" id="match-{{ match.id }}">
 
         <!-- Scoreboard Header -->
-        <div class="scoreboard"
-            style="text-align: center; background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; position: relative;">
-            <button class="btn btn-share btn-sm share-match-btn" data-target="#match-{{ match.id }}"
+        <div class="scoreboard text-center"
+            style="background: var(--heading-color); color: white; padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; position: relative;">
+            <button class="btn btn-outline btn-sm share-match-btn" data-target="#match-{{ match.id }}"
                 title="مشاركة المباراة"
-                style="position: absolute; top: 10px; right: 80px; font-size: 0.85rem; border: 1px solid white; color: white;">
+                style="position: absolute; top: 10px; right: 80px; font-size: 0.85rem; color: white; border-color: white;">
                 مشاركة 📤📸
             </button>
-            <span style="position: absolute; top: 10px; right: 15px; font-size: 0.85rem; color: #bdc3c7;">#{{ match.id
+            <span
+                style="position: absolute; top: 10px; right: 15px; font-size: 0.85rem; color: var(--color-gray-400);">#{{
+                match.id
                 }}</span>
-            <span style="position: absolute; top: 10px; left: 15px; font-size: 0.85rem; color: #bdc3c7;">{{
+            <span
+                style="position: absolute; top: 10px; left: 15px; font-size: 0.85rem; color: var(--color-gray-400);">{{
                 match.date.strftime('%Y-%m-%d %H:%M') }}</span>
             <button class="delete-match-btn" data-match-id="{{ match.id }}" title="حذف المباراة"
-                style="position: absolute; bottom: 10px; right: 15px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #e74c3c; z-index: 10;">
+                style="position: absolute; bottom: 10px; right: 15px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--danger-color); z-index: 10;">
                 🗑️
             </button>
 
-            <h2
-                style="margin: 0; display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
-                <span style="flex: 1; text-align: left; color: #3498db; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">{{
+            <h2 class="flex-center gap-2 mb-0" style="flex-wrap: wrap;">
+                <span style="flex: 1; text-align: left; color: var(--primary-color);">{{
                     match.team_a_name }}</span>
                 <span
-                    style="font-size: 2.5rem; background: rgba(255,255,255,0.1); padding: 5px 20px; border-radius: 8px;">
-                    <span style="color: #3498db">{{ match.team_a_score }}</span>
-                    <span style="color: #666; font-size: 1.5rem;">-</span>
-                    <span style="color: #e67e22">{{ match.team_b_score }}</span>
+                    style="font-size: 2.5rem; background: rgba(255,255,255,0.1); padding: 5px 20px; border-radius: var(--radius-md);">
+                    <span style="color: var(--primary-color);">{{ match.team_a_score }}</span>
+                    <span style="color: var(--color-gray-400); font-size: 1.5rem;">-</span>
+                    <span style="color: var(--warning-color);">{{ match.team_b_score }}</span>
                 </span>
-                <span style="flex: 1; text-align: right; color: #e67e22; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">{{
+                <span style="flex: 1; text-align: right; color: var(--warning-color);">{{
                     match.team_b_name }}</span>
             </h2>
         </div>
 
         <!-- Teams Tables -->
-        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 1.25rem; flex-wrap: wrap;">
 
             <!-- Team A Stats -->
             <div style="flex: 1; min-width: 300px;">
-                <h4 style="color: #3498db; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                <h4 class="mb-1"
+                    style="color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px;">
                     تشكيلة {{ match.team_a_name }}</h4>
                 <div class="table-responsive">
                     <table style="width: 100%; font-size: 0.9rem;">
-                        <thead style="background: #f0f8ff;">
+                        <thead style="background: rgba(52, 152, 219, 0.1);">
                             <tr>
                                 <th>اللاعب</th>
                                 <th>⚽</th>
@@ -79,9 +81,10 @@
                                 <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
-                                <td style="font-weight: bold; color: #27ae60;">{{ stat.points_earned }}</td>
+                                <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
+                                </td>
                                 {% else %}
-                                <td style="font-weight: bold; color: #7f8c8d;">{{ stat.points_earned }}</td>
+                                <td class="text-secondary" style="font-weight: bold;">{{ stat.points_earned }}</td>
                                 {% endif %}
                             </tr>
                             {% endif %}
@@ -93,11 +96,12 @@
 
             <!-- Team B Stats -->
             <div style="flex: 1; min-width: 300px;">
-                <h4 style="color: #e67e22; margin-bottom: 10px; border-bottom: 2px solid #e67e22; padding-bottom: 5px;">
+                <h4 class="mb-1"
+                    style="color: var(--warning-color); border-bottom: 2px solid var(--warning-color); padding-bottom: 5px;">
                     تشكيلة {{ match.team_b_name }}</h4>
                 <div class="table-responsive">
                     <table style="width: 100%; font-size: 0.9rem;">
-                        <thead style="background: #fff5f0;">
+                        <thead style="background: rgba(230, 126, 34, 0.1);">
                             <tr>
                                 <th>اللاعب</th>
                                 <th>⚽</th>
@@ -120,9 +124,10 @@
                                 <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
-                                <td style="font-weight: bold; color: #27ae60;">{{ stat.points_earned }}</td>
+                                <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
+                                </td>
                                 {% else %}
-                                <td style="font-weight: bold; color: #7f8c8d;">{{ stat.points_earned }}</td>
+                                <td class="text-secondary" style="font-weight: bold;">{{ stat.points_earned }}</td>
                                 {% endif %}
                             </tr>
                             {% endif %}

@@ -3,25 +3,23 @@
 {% block content %}
 <h1>🏆 ترتيب دوري الأبطال</h1>
 
-<div style="text-align: center; margin-bottom: 20px;">
-    <button id="share-leaderboard" class="btn btn-share">مشاركة الترتيب 📤📸</button>
+<div class="text-center mb-1">
+    <button id="share-leaderboard" class="btn btn-primary">مشاركة الترتيب 📤📸</button>
 </div>
 
-<div id="capture-area" style="padding: 10px; border-radius: 8px;">
+<div id="capture-area" style="padding: 1rem;">
 
     <!-- Dynamic Banners -->
-    <div class="banners-container" style="margin-bottom: 20px;">
+    <div class="banners-container mb-1">
         {% if latest_hof %}
-        <div class="banner-card"
-            style="background: linear-gradient(135deg, #f1c40f, #e67e22); color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div class="banner-card banner-gold">
             🌟 بطل شهر {{ latest_hof.month_year }}: {{ latest_hof.player.name }} ({{ latest_hof.points_scored }} نقطة)
             🌟
         </div>
         {% endif %}
 
         {% if next_cup %}
-        <div class="banner-card"
-            style="background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div class="banner-card banner-danger">
             🏆 موعد الكأس القادم: {{ next_cup.player1.name }} 🆚 {{ next_cup.player2.name }} 🏆
         </div>
         {% endif %}
@@ -35,8 +33,7 @@
     </div>
     {% else %}
     <!-- Leaderboard Category Tabs -->
-    <div class="tabs-container"
-        style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+    <div class="tabs-container flex-center gap-2 mb-1" style="flex-wrap: wrap;">
         <button class="tab-btn active" data-sort="points">الترتيب العام</button>
         <button class="tab-btn" data-sort="goals">الهدافين</button>
         <button class="tab-btn" data-sort="assists">صناع اللعب</button>
@@ -62,14 +59,13 @@
                 <tr data-points="{{ player.total_points }}" data-goals="{{ player.total_goals }}"
                     data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}">
                     <td data-label="المركز" class="rank-col">
-                        <span class="trend-indicator" style="margin-left: 5px;">
+                        <span class="trend-indicator" style="margin-inline-end: 0.5rem;">
                             {% if player.previous_rank == 0 or player.previous_rank == loop.index %}
-                            <span style="color: grey; font-size:0.8rem;">➖</span>
-                            {% elif loop.index < player.previous_rank %} <span
-                                style="color: var(--positive-color); font-size:0.8rem;"
-                                title="صعد {{ player.previous_rank - loop.index }} مركز">⬆️</span>
+                            <span class="text-secondary trend-icon">➖</span>
+                            {% elif loop.index < player.previous_rank %} <span style="color: var(--positive-color);"
+                                class="trend-icon" title="صعد {{ player.previous_rank - loop.index }} مركز">⬆️</span>
                         {% else %}
-                        <span style="color: var(--negative-color); font-size:0.8rem;"
+                        <span style="color: var(--negative-color);" class="trend-icon"
                             title="تراجع {{ loop.index - player.previous_rank }} مركز">⬇️</span>
                         {% endif %}
                         </span>
@@ -77,8 +73,7 @@
                         {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% endif %}
                     </td>
                     <td data-label="اللاعب">
-                        <a href="/player/{{ player.id }}"
-                            style="text-decoration: none; color: inherit; font-weight: bold;">{{ player.name }}</a>
+                        <a href="/player/{{ player.id }}" style="font-weight: bold;">{{ player.name }}</a>
                         {% if loop.index == 1 %}<span class="crown">👑</span>{% endif %}
                     </td>
                     <td data-label="الفورمة">{{ player.form }}</td>

@@ -15,8 +15,12 @@ def calculate_player_points(
     """
     points = 1  # Participation points
     
-    points += goals * 2
-    points += assists * 1
+    # Point values
+    goal_value = 4 if is_gk else 2
+    assist_value = 2 if is_gk else 1
+    
+    points += goals * goal_value
+    points += assists * assist_value
     
     if is_winner:
         points += 2

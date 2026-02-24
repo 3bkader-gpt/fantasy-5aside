@@ -1,70 +1,62 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 0 auto; text-align: center; padding: 50px 20px;">
+<div class="container-sm text-center">
 
-    <div style="margin-bottom: 40px;">
-        <h1 style="font-size: 3rem; color: #2c3e50; margin-bottom: 15px;">دوري الخماسي للجميع ⚽</h1>
-        <p style="font-size: 1.2rem; color: #7f8c8d; line-height: 1.6;">
+    <div class="mb-2">
+        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: var(--heading-color);">دوري الخماسي للجميع ⚽</h1>
+        <p class="text-secondary" style="font-size: 1.2rem; line-height: 1.6;">
             أنشئ فانتزي خماسي لصحابك، قريتك، أو زملاء العمل بمكان واحد مستقل لكل بطولة!
         </p>
     </div>
 
-    <div
-        style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 5px solid #3498db; margin-bottom: 40px;">
-        <h2 style="margin-top: 0; color: #3498db; margin-bottom: 30px;">إنشاء دوري جديد الآن</h2>
+    <div class="card mb-2" style="border-top: 5px solid var(--primary-color);">
+        <h2 style="color: var(--primary-color); margin-top: 0; margin-bottom: 2rem;">إنشاء دوري جديد الآن</h2>
 
         {% if error %}
-        <div style="background: #e74c3c; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <div class="alert alert-danger">
             {{ error }}
         </div>
         {% endif %}
 
         <form action="/create-league" method="POST" style="text-align: right;">
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2c3e50;">اسم
-                    الدوري:</label>
+            <div class="mb-1">
+                <label class="form-label">اسم الدوري:</label>
                 <input type="text" name="name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                    class="form-control">
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2c3e50;">رابط الدوري
-                    (الرابط الذي ستشاركه مع أصدقائك):</label>
-                <div style="display: flex; align-items: center; direction: ltr;">
-                    <span
-                        style="background: #eee; padding: 12px; border: 1px solid #ddd; border-right: none; border-radius: 8px 0 0 8px; color: #666;">/l/</span>
+            <div class="mb-1">
+                <label class="form-label">رابط الدوري (الرابط الذي ستشاركه مع أصدقائك):</label>
+                <div class="input-group" style="direction: ltr;">
+                    <span class="input-group-text">/l/</span>
                     <input type="text" name="slug" required placeholder="ashmant-squad" pattern="[a-zA-Z0-9-]+"
-                        title="يسمح فقط بالحروف الإنجليزية والأرقام والشرطة (-)"
-                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 0 8px 8px 0; font-size: 1rem; box-sizing: border-box; direction: ltr;">
+                        title="يسمح فقط بالحروف الإنجليزية والأرقام والشرطة (-)" class="form-control"
+                        style="direction: ltr;">
                 </div>
             </div>
 
-            <div style="margin-bottom: 30px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2c3e50;">كلمة سر الإدارة
-                    (للإدمن فقط):</label>
+            <div class="mb-2">
+                <label class="form-label">كلمة سر الإدارة (للإدمن فقط):</label>
                 <input type="password" name="admin_password" required placeholder="اختر كلمة سر قوية"
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                    class="form-control">
             </div>
 
-            <button type="submit" class="btn-primary"
-                style="width: 100%; padding: 15px; font-size: 1.2rem; background: #3498db; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);">
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.2rem;">
                 🚀 أنشئ الدوري الآن
-            </button>
-        </form>
+            </button </form>
     </div>
 
     {% if leagues %}
-    <div
-        style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: right;">
-        <h2 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">الدوريات
-            المتاحة 🏆</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+    <div class="card" style="text-align: right;">
+        <h2 class="card-header" style="color: var(--heading-color);">الدوريات المتاحة 🏆</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
             {% for league in leagues %}
-            <a href="/l/{{ league.slug }}"
-                style="display: block; padding: 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; color: #2c3e50; font-weight: bold; transition: all 0.3s ease; text-decoration: none;">
-                <span style="font-size: 1.1rem; display: block; margin-bottom: 5px;">{{ league.name }}</span>
-                <span style="font-size: 0.85rem; color: #7f8c8d; font-weight: normal;">/l/{{ league.slug }}</span>
+            <a href="/l/{{ league.slug }}" class="card card-hover"
+                style="display: block; padding: 1rem; color: var(--text-color); box-shadow: none;">
+                <span style="font-size: 1.1rem; display: block; margin-bottom: 5px; font-weight: bold;">{{ league.name
+                    }}</span>
+                <span class="text-secondary" style="font-size: 0.85rem;">/l/{{ league.slug }}</span>
             </a>
             {% endfor %}
         </div>
