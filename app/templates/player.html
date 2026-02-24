@@ -162,5 +162,191 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Player Card Export Section -->
+    <div class="text-center mb-2 mt-2">
+        <button id="export-player-card" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.75rem 2rem;">
+            📥 تحميل بطاقة اللاعب
+        </button>
+    </div>
+
+    <!-- Hidden FIFA-Style Player Card -->
+    <div id="player-card-container" style="position: absolute; left: -9999px; top: 0;">
+        <div id="player-card" style="
+            width: 420px;
+            padding: 0;
+            border-radius: 20px;
+            overflow: hidden;
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+            color: #fff;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,215,0,0.3);
+        ">
+            <!-- Card Header -->
+            <div style="
+                background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
+                padding: 2rem 1.5rem 1rem;
+                text-align: center;
+                border-bottom: 1px solid rgba(255,215,0,0.2);
+            ">
+                <div style="
+                    width: 90px; height: 90px;
+                    margin: 0 auto 0.75rem;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #ffd700, #ff8c00);
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 2.5rem;
+                    box-shadow: 0 5px 20px rgba(255,215,0,0.3);
+                ">⚽</div>
+                <div style="font-size: 2rem; font-weight: 800; letter-spacing: 1px;">{{ player.name }}</div>
+                <div style="font-size: 0.9rem; opacity: 0.7; margin-top: 0.25rem;">{{ league.name }}</div>
+            </div>
+
+            <!-- Rating Circle -->
+            <div style="text-align: center; margin: -1.5rem auto 0; position: relative; z-index: 1;">
+                <div style="
+                    display: inline-block;
+                    width: 70px; height: 70px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #ffd700, #ff6b00);
+                    font-size: 1.8rem;
+                    font-weight: 900;
+                    line-height: 70px;
+                    color: #1a1a2e;
+                    box-shadow: 0 5px 15px rgba(255,215,0,0.4);
+                ">{{ player.total_points }}</div>
+                <div style="font-size: 0.75rem; margin-top: 0.25rem; opacity: 0.7;">النقاط</div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1px;
+                background: rgba(255,255,255,0.05);
+                margin: 1rem 1.5rem;
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid rgba(255,255,255,0.08);
+            ">
+                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.2);">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #2ecc71;">{{ player.total_goals }}</div>
+                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">أهداف</div>
+                </div>
+                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.2);">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #9b59b6;">{{ player.total_assists }}</div>
+                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">أسيست</div>
+                </div>
+                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.2);">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #3498db;">{{ player.total_saves }}</div>
+                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">تصديات</div>
+                </div>
+                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #f39c12;">{{ total_matches }}</div>
+                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">مباريات</div>
+                </div>
+                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #1abc9c;">{{ win_rate }}%</div>
+                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">فوز</div>
+                </div>
+                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #e74c3c;">{{ player.total_clean_sheets }}
+                    </div>
+                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">شباك نظيفة</div>
+                </div>
+            </div>
+
+            <!-- Form Bar -->
+            {% if history %}
+            <div style="text-align: center; margin: 0.5rem 1.5rem;">
+                <div style="font-size: 0.7rem; opacity: 0.5; margin-bottom: 0.3rem;">الفورمة (آخر 5 مباريات)</div>
+                <div style="display: flex; justify-content: center; gap: 6px;">
+                    {% for stat in history[:5] %}
+                    <span style="
+                        display: inline-block;
+                        width: 24px; height: 24px;
+                        border-radius: 5px;
+                        font-size: 0.65rem;
+                        line-height: 24px;
+                        font-weight: bold;
+                        background: {{ '#27ae60' if stat.is_winner else '#e74c3c' }};
+                        color: white;
+                    ">{{ 'W' if stat.is_winner else 'L' }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Badges -->
+            {% if badges %}
+            <div style="text-align: center; padding: 0.5rem 1.5rem 1rem;">
+                <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                    {% for badge in badges %}
+                    <span style="
+                        background: rgba(255,215,0,0.15);
+                        border: 1px solid rgba(255,215,0,0.3);
+                        padding: 0.2rem 0.6rem;
+                        border-radius: 20px;
+                        font-size: 0.7rem;
+                    ">{{ badge }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Card Footer -->
+            <div style="
+                text-align: center;
+                padding: 0.5rem;
+                background: rgba(0,0,0,0.3);
+                font-size: 0.6rem;
+                opacity: 0.4;
+                letter-spacing: 2px;
+            ">FANTASY 5-A-SIDE</div>
+        </div>
+    </div>
+
 </div>
-{% endblock %}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const exportBtn = document.getElementById('export-player-card');
+        if (!exportBtn) return;
+
+        exportBtn.addEventListener('click', function () {
+            const cardContainer = document.getElementById('player-card-container');
+            const card = document.getElementById('player-card');
+
+            // Temporarily show the card for capture
+            cardContainer.style.position = 'fixed';
+            cardContainer.style.left = '0';
+            cardContainer.style.top = '0';
+            cardContainer.style.zIndex = '-1';
+            cardContainer.style.opacity = '1';
+
+            html2canvas(card, {
+                backgroundColor: null,
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                width: 420,
+            }).then(function (canvas) {
+                // Restore hidden state
+                cardContainer.style.position = 'absolute';
+                cardContainer.style.left = '-9999px';
+
+                // Download the image
+                const link = document.createElement('a');
+                link.download = 'player_card_{{ player.name }}.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(function (err) {
+                cardContainer.style.position = 'absolute';
+                cardContainer.style.left = '-9999px';
+                console.error('Card export failed:', err);
+                alert('حدث خطأ أثناء إنشاء البطاقة');
+            });
+        });
+    });
+</script>{% endblock %}
