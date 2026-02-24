@@ -16,11 +16,15 @@ engine = _make_engine(SQLALCHEMY_DATABASE_URL)
 # لو الاتصال بـ Postgres/Supabase فشل (إنترنت أو سيرفر متوقف)، استخدم SQLite تلقائياً
 if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
     try:
-        with engine.connect():
-            pass
-    except OperationalError:
+        with engine.connect() as conn:
+            print(f"✅ Successfully connected to PostgreSQL database!")
+    except OperationalError as e:
+        print(f"⚠️ Failed to connect to PostgreSQL: {e}")
+        print("⚠️ Falling back to SQLite database...")
         SQLALCHEMY_DATABASE_URL = SQLITE_URL
         engine = _make_engine(SQLITE_URL)
+else:
+    print(f"ℹ️ Using SQLite database.")
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
