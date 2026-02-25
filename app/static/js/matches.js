@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (closeEditModalBtn) {
         closeEditModalBtn.addEventListener('click', () => {
-            editModal.style.display = 'none';
+            if (editModal) editModal.classList.remove('active');
         });
     }
 
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             document.getElementById('edit_admin_password').value = '';
-            editModal.style.display = 'block';
+            if (editModal) editModal.classList.add('active');
         });
     });
 
