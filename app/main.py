@@ -21,27 +21,30 @@ Base.metadata.create_all(bind=engine)
 async def lifespan(app: FastAPI):
     logger.info("Starting application lifespan: running manual schema migrations.")
     # Manual schema migrations
-    columns_to_add = [
-        ("previous_rank", "INTEGER DEFAULT 0"),
-        ("last_season_points", "INTEGER DEFAULT 0"),
-        ("last_season_goals", "INTEGER DEFAULT 0"),
-        ("last_season_assists", "INTEGER DEFAULT 0"),
-        ("last_season_saves", "INTEGER DEFAULT 0"),
-        ("last_season_clean_sheets", "INTEGER DEFAULT 0")
+    # Format: (table_name, column_name, column_definition)
+    migrations = [
+        ("players", "previous_rank", "INTEGER DEFAULT 0"),
+        ("players", "last_season_points", "INTEGER DEFAULT 0"),
+        ("players", "last_season_goals", "INTEGER DEFAULT 0"),
+        ("players", "last_season_assists", "INTEGER DEFAULT 0"),
+        ("players", "last_season_saves", "INTEGER DEFAULT 0"),
+        ("players", "last_season_clean_sheets", "INTEGER DEFAULT 0"),
+        ("match_stats", "bonus_points", "INTEGER DEFAULT 0")
     ]
     
-    for col_name, col_type in columns_to_add:
+    for table, col_name, col_type in migrations:
         # Each column in its own transaction to prevent poisoning
         try:
             with engine.begin() as conn:
-                conn.execute(text(f"ALTER TABLE players ADD COLUMN {col_name} {col_type};"))
-                logger.info(f"Migration: added '{col_name}' column.")
-        except Exception as exc:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type};"))
+                logger.info(f"Migration: added '{col_name}' to '{table}'.")
+        except Exception:
             # Expected if column already exists
-            logger.debug(f"Skipping migration for '{col_name}' (likely exists).")
+            logger.debug(f"Skipping migration for '{col_name}' in '{table}' (likely exists).")
                 
     logger.info("Application startup complete inside lifespan, handing control back to FastAPI.")
     yield
+
 
 
 app = FastAPI(title="5-a-side Fantasy Football", lifespan=lifespan)

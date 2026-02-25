@@ -1,19 +1,46 @@
-# IDE
+# --- IDE & OS ---
 .vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
 
-# Python junk
+# --- Python ---
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+lib/
+bin/
+build/
+dist/
+*.egg-info/
 
-# Local env / scripts
+# --- Environment & Secrets ---
 .env
-check_db.py
-inspect_dbs.py
-test_supabase*.py
-test_supabase_corrected.py
-test_bps.py
+.env.*
+!.env.example
 
-# Local data and temp files
+# --- Databases ---
+*.db
+*.sqlite
 data/
+
+# --- Project Specific Temporary Files ---
 diff_base.txt
 old_base.html
+test_bps.py
+test_output_ansi.txt
+test_supabase*.py
+check_db.py
+inspect_dbs.py
+seed.py
+migrate.py
+manage_leagues.py
