@@ -90,3 +90,18 @@ def get_current_admin_league(
         raise HTTPException(status_code=403, detail="غير مصرح لك بإدارة هذا الدوري")
         
     return league
+
+def check_admin_status(
+    slug: str,
+    request: Request
+) -> bool:
+    authorization: str = request.cookies.get("access_token")
+    if not authorization or not authorization.startswith("Bearer "):
+        return False
+        
+    token = authorization.split(" ")[1]
+    payload = security.verify_token(token)
+    if not payload:
+        return False
+        
+    return payload.get("sub") == slug

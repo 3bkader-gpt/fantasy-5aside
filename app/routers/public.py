@@ -8,6 +8,7 @@ from ..core import security
 from ..dependencies import (
     get_league_repository, get_player_repository, get_match_repository,
     get_hof_repository, get_cup_repository, get_analytics_service,
+    check_admin_status,
     ILeagueRepository, IPlayerRepository, IMatchRepository,
     IHallOfFameRepository, ICupRepository, IAnalyticsService
 )
@@ -98,10 +99,12 @@ def read_leaderboard(
     active_cups = cup_repo.get_active_matchups(league.id)
     next_cup = active_cups[0] if active_cups else None
     
+    is_admin = check_admin_status(slug, request)
+    
     return templates.TemplateResponse(
         request=request,
         name="leaderboard.html", 
-        context={"league": league, "players": players, "latest_hof": latest_hof, "next_cup": next_cup, "is_admin": False}
+        context={"league": league, "players": players, "latest_hof": latest_hof, "next_cup": next_cup, "is_admin": is_admin}
     )
 
 @router.get("/l/{slug}/matches")
@@ -118,10 +121,11 @@ def read_matches(
         return _canonical_league_redirect(request, slug, league.slug)
         
     matches = match_repo.get_all_for_league(league.id)
+    is_admin = check_admin_status(slug, request)
     return templates.TemplateResponse(
         request=request,
         name="matches.html", 
-        context={"league": league, "matches": matches, "is_admin": False}
+        context={"league": league, "matches": matches, "is_admin": is_admin}
     )
 
 @router.get("/l/{slug}/cup")
@@ -138,10 +142,11 @@ def read_cup(
         return _canonical_league_redirect(request, slug, league.slug)
         
     matchups = cup_repo.get_all_for_league(league.id)
+    is_admin = check_admin_status(slug, request)
     return templates.TemplateResponse(
         request=request,
         name="cup.html",
-        context={"league": league, "matchups": matchups, "is_admin": False}
+        context={"league": league, "matchups": matchups, "is_admin": is_admin}
     )
 
 @router.get("/l/{slug}/player/{player_id}")
@@ -172,6 +177,8 @@ def read_player(
     badges = analytics.get("badges")
     recent_matches = analytics.get("recent_matches")
         
+    is_admin = check_admin_status(slug, request)
+        
     return templates.TemplateResponse(
         request=request,
         name="player.html",
@@ -181,7 +188,7 @@ def read_player(
             "summary": summary,
             "badges": badges,
             "recent_matches": recent_matches,
-            "is_admin": False
+            "is_admin": is_admin
         }
     )
 
@@ -199,10 +206,11 @@ def read_hof(
         return _canonical_league_redirect(request, slug, league.slug)
         
     hof_records = hof_repo.get_all_for_league(league.id)
+    is_admin = check_admin_status(slug, request)
     
     return templates.TemplateResponse(
         request=request,
         name="hof.html", 
-        context={"league": league, "hof_records": hof_records, "is_admin": False}
+        context={"league": league, "hof_records": hof_records, "is_admin": is_admin}
     )
 
