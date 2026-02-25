@@ -4,6 +4,13 @@ from sqlalchemy.exc import OperationalError
 from .core.config import settings, SQLITE_URL
 import logging
 
+# Ensure data directory exists for local SQLite early
+if settings.database_url.startswith("sqlite"):
+    _db_path = settings.database_url.replace("sqlite:///", "")
+    _db_dir = os.path.dirname(_db_path)
+    if _db_dir and not os.path.exists(_db_dir):
+        os.makedirs(_db_dir, exist_ok=True)
+
 def _make_engine(url: str):
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
@@ -15,22 +22,8 @@ SQLALCHEMY_DATABASE_URL = settings.effective_database_url
 engine = _make_engine(SQLALCHEMY_DATABASE_URL)
 logger = logging.getLogger("uvicorn.error")
 
-# لو الاتصال بـ Postgres/Supabase فشل (إنترنت أو سيرفر متوقف)، استخدم SQLite تلقائياً
-# ملاحظة: في وضع الاختبار (settings.testing=True) نفشل بدلاً من الـ fallback
-if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
-    try:
-        with engine.connect() as conn:
-            logger.info("Successfully connected to PostgreSQL database.")
-    except OperationalError as e:
-        if settings.testing:
-            logger.error("Failed to connect to PostgreSQL in testing mode: %s", e)
-            raise
-        logger.warning("Failed to connect to PostgreSQL: %s", e)
-        logger.warning("Falling back to SQLite database...")
-        SQLALCHEMY_DATABASE_URL = SQLITE_URL
-        engine = _make_engine(SQLITE_URL)
-else:
-    logger.info("Using SQLite database.")
+# NOTE: We removed the top-level engine.connect() test as it causes issues in CI/CD 
+# when the database isn't ready or during module import.
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
