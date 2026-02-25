@@ -36,7 +36,7 @@ class MatchService(IMatchService):
             team_a_score=team_a_score,
             team_b_score=team_b_score
         )
-        self.match_repo.save_match(db_match)
+        self.match_repo.save(db_match)
 
         # Phase 1: Collect base stats
         team_a_base = []

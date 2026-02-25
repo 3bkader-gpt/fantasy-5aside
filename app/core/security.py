@@ -1,12 +1,12 @@
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         # Check if the stored password is an old plaintext password (fallback)
-        # Bcrypt hashes always start with $2a$, $2b$, or $2y$.
-        if not hashed_password.startswith("$2"):
+        # PBKDF2 hashes start with $pbkdf2-sha256$
+        if not hashed_password.startswith("$pbkdf2"):
             return plain_password == hashed_password
         return pwd_context.verify(plain_password, hashed_password)
     except Exception:

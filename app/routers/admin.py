@@ -41,8 +41,9 @@ def admin_dashboard(
         
     players = player_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
-        "admin/dashboard.html", 
-        {"request": request, "league": league, "players": players}
+        request=request,
+        name="admin/dashboard.html", 
+        context={"league": league, "players": players}
     )
 
 @router.post("/match")

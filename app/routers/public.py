@@ -33,8 +33,9 @@ def read_root(
 ):
     leagues = league_repo.get_all()
     return templates.TemplateResponse(
-        "landing.html", 
-        {"request": request, "leagues": leagues}
+        request=request,
+        name="landing.html", 
+        context={"leagues": leagues}
     )
 
 @router.post("/create-league")
@@ -48,7 +49,11 @@ def create_league(
     slug = slug.strip()
     existing = league_repo.get_by_slug(slug)
     if existing:
-        return templates.TemplateResponse("landing.html", {"request": request, "error": "هذا الرابط مستخدم بالفعل"})
+        return templates.TemplateResponse(
+            request=request, 
+            name="landing.html", 
+            context={"error": "هذا الرابط مستخدم بالفعل"}
+        )
         
     hashed_password = security.get_password_hash(admin_password)
     new_league = models.League(
@@ -84,8 +89,9 @@ def read_leaderboard(
     next_cup = active_cups[0] if active_cups else None
     
     return templates.TemplateResponse(
-        "leaderboard.html", 
-        {"request": request, "league": league, "players": players, "latest_hof": latest_hof, "next_cup": next_cup}
+        request=request,
+        name="leaderboard.html", 
+        context={"league": league, "players": players, "latest_hof": latest_hof, "next_cup": next_cup}
     )
 
 @router.get("/l/{slug}/matches")
@@ -103,8 +109,9 @@ def read_matches(
         
     matches = match_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
-        "matches.html",
-        {"request": request, "league": league, "matches": matches}
+        request=request,
+        name="matches.html", 
+        context={"league": league, "matches": matches}
     )
 
 @router.get("/l/{slug}/cup")
@@ -122,8 +129,9 @@ def read_cup(
         
     matchups = cup_repo.get_all_for_league(league.id)
     return templates.TemplateResponse(
-        "cup.html",
-        {"request": request, "league": league, "matchups": matchups}
+        request=request,
+        name="cup.html",
+        context={"league": league, "matchups": matchups}
     )
 
 @router.get("/l/{slug}/player/{player_id}")
@@ -143,11 +151,27 @@ def read_player(
         
     analytics = analytics_service.get_player_analytics(player_id, league.id)
     if not analytics:
-        return templates.TemplateResponse("leaderboard.html", {"request": request, "league": league, "players": player_repo.get_leaderboard(league.id)})
+        return templates.TemplateResponse(
+            request=request, 
+            name="leaderboard.html", 
+            context={"league": league, "players": player_repo.get_leaderboard(league.id)}
+        )
+    
+    player = analytics.get("player")
+    summary = analytics.get("summary")
+    badges = analytics.get("badges")
+    recent_matches = analytics.get("recent_matches")
         
     return templates.TemplateResponse(
-        "player.html",
-        {"request": request, "league": league, **analytics}
+        request=request,
+        name="player.html",
+        context={
+            "league": league,
+            "player": player,
+            "summary": summary,
+            "badges": badges,
+            "recent_matches": recent_matches
+        }
     )
 
 @router.get("/l/{slug}/hall-of-fame")
@@ -166,7 +190,8 @@ def read_hof(
     hof_records = hof_repo.get_all_for_league(league.id)
     
     return templates.TemplateResponse(
-        "hof.html",
-        {"request": request, "league": league, "hof_records": hof_records}
+        request=request,
+        name="hof.html", 
+        context={"league": league, "hof_records": hof_records}
     )
 
