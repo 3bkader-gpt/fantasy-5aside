@@ -21,23 +21,24 @@ Base.metadata.create_all(bind=engine)
 async def lifespan(app: FastAPI):
     logger.info("Starting application lifespan: running manual schema migrations.")
     # Manual schema migrations
-    with engine.begin() as conn:
-        columns_to_add = [
-            ("previous_rank", "INTEGER DEFAULT 0"),
-            ("last_season_points", "INTEGER DEFAULT 0"),
-            ("last_season_goals", "INTEGER DEFAULT 0"),
-            ("last_season_assists", "INTEGER DEFAULT 0"),
-            ("last_season_saves", "INTEGER DEFAULT 0"),
-            ("last_season_clean_sheets", "INTEGER DEFAULT 0")
-        ]
-        
-        for col_name, col_type in columns_to_add:
-            try:
+    columns_to_add = [
+        ("previous_rank", "INTEGER DEFAULT 0"),
+        ("last_season_points", "INTEGER DEFAULT 0"),
+        ("last_season_goals", "INTEGER DEFAULT 0"),
+        ("last_season_assists", "INTEGER DEFAULT 0"),
+        ("last_season_saves", "INTEGER DEFAULT 0"),
+        ("last_season_clean_sheets", "INTEGER DEFAULT 0")
+    ]
+    
+    for col_name, col_type in columns_to_add:
+        # Each column in its own transaction to prevent poisoning
+        try:
+            with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE players ADD COLUMN {col_name} {col_type};"))
                 logger.info(f"Migration: added '{col_name}' column.")
-            except Exception as exc:
-                # Expected if column already exists
-                logger.debug(f"Skipping migration for '{col_name}' (likely exists).")
+        except Exception as exc:
+            # Expected if column already exists
+            logger.debug(f"Skipping migration for '{col_name}' (likely exists).")
                 
     logger.info("Application startup complete inside lifespan, handing control back to FastAPI.")
     yield
