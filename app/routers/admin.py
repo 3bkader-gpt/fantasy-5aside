@@ -97,7 +97,6 @@ def undo_end_season(
 
 @router.post("/settings/update")
 def update_league_settings(
-    current_admin_password: str = Form(...), 
     name: str = Form(None), 
     new_slug: str = Form(None), 
     new_password: str = Form(None), 
@@ -121,8 +120,7 @@ def update_league_settings(
     update_data = schemas.LeagueUpdate(
         name=name,
         slug=new_slug,
-        new_password=new_password,
-        current_admin_password=current_admin_password
+        new_password=new_password
     )
     
     try:
@@ -135,13 +133,12 @@ def update_league_settings(
 
 @router.post("/settings/delete")
 def delete_league_entirely(
-    admin_password: str = Form(...), 
     league: models.League = Depends(get_current_admin_league),
     league_service: ILeagueService = Depends(get_league_service)
 ):
 
     try:
-        league_service.delete_league(league.id, admin_password)
+        league_service.delete_league(league.id)
         return {"success": True, "redirect_url": "/?msg=deleted"}
     except HTTPException as e:
         return {"success": False, "detail": e.detail}

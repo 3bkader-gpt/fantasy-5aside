@@ -15,7 +15,7 @@ class ILeagueRepository(ABC):
     @abstractmethod
     def update(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[models.League]: pass
     @abstractmethod
-    def delete(self, league_id: int, admin_password: str) -> bool: pass
+    def delete(self, league_id: int) -> bool: pass
     @abstractmethod
     def create(self, league_in: schemas.LeagueCreate, hashed_password: str) -> models.League: pass
     @abstractmethod

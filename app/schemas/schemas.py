@@ -14,7 +14,7 @@ class LeagueUpdate(BaseModel):
     name: Optional[str] = None
     slug: Optional[str] = None
     new_password: Optional[str] = None
-    current_admin_password: str
+    current_admin_password: Optional[str] = None
 
 class LeagueResponse(LeagueBase):
     id: int
@@ -71,10 +71,8 @@ class MatchBase(BaseModel):
     team_b_name: str = "Team B"
 
 class MatchCreate(MatchBase):
-    # الحقول الأصلية المستخدمة في الـ API
     league_id: Optional[int] = None
     stats: List[MatchStatCreate] = []
-    admin_password: str = ""
 
     # حقول مساعدة لاختبارات احتساب النقاط (تُستخدم في tests/test_points.py)
     score: int = 0
@@ -88,7 +86,6 @@ class MatchCreate(MatchBase):
 
 class MatchEditRequest(MatchBase):
     stats: List[MatchStatCreate] = []
-    admin_password: str
 
 class MatchResponse(MatchBase):
     id: int

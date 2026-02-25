@@ -134,16 +134,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (deleteBtn) {
         deleteBtn.addEventListener('click', async function () {
             const slug = this.getAttribute('data-league-slug');
-            const password = await showPromptModal("حذف الدوري نهائياً", "أدخل كلمة مرور الآدمن لتأكيد الحذف النهائي ولا يمكن التراجع عن ذلك:");
-            if (!password) return;
+            if (!confirm("⚠️ هل أنت متأكد من حذف الدوري نهائياً؟ سيتم مسح جميع البيانات ولا يمكن التراجع عن ذلك.")) return;
 
             try {
-                const formData = new FormData();
-                formData.append('admin_password', password);
-
                 const response = await fetch(`/l/${slug}/admin/settings/delete`, {
-                    method: 'POST',
-                    body: formData
+                    method: 'POST'
                 });
 
                 const result = await response.json();

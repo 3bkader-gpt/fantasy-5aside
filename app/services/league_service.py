@@ -90,5 +90,5 @@ class LeagueService(ILeagueService):
     def update_settings(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[models.League]:
         return self.league_repo.update(league_id, update_data)
         
-    def delete_league(self, league_id: int, admin_password: str) -> bool:
-        return self.league_repo.delete(league_id, admin_password)
+    def delete_league(self, league_id: int) -> bool:
+        return self.league_repo.delete(league_id)

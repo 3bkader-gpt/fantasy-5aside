@@ -24,8 +24,8 @@ class LeagueRepository(ILeagueRepository):
         return self.db.query(models.League).order_by(models.League.created_at.desc()).all()
     def update(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[models.League]:
         league = self.get_by_id(league_id)
-        if not league or not security.verify_password(update_data.current_admin_password, league.admin_password):
-            raise HTTPException(status_code=403, detail="كلمة السر الحالية غير صحيحة")
+        if not league:
+            return None
         if update_data.name: league.name = update_data.name
         if update_data.slug: league.slug = update_data.slug.strip()
         if update_data.new_password: league.admin_password = security.get_password_hash(update_data.new_password)
@@ -33,10 +33,10 @@ class LeagueRepository(ILeagueRepository):
         self.db.commit()
         self.db.refresh(league)
         return league
-    def delete(self, league_id: int, admin_password: str) -> bool:
+    def delete(self, league_id: int) -> bool:
         league = self.get_by_id(league_id)
-        if not league or not security.verify_password(admin_password, league.admin_password):
-            raise HTTPException(status_code=403, detail="كلمة السر غير صحيحة")
+        if not league:
+            return False
         # ORM cascade="all, delete" handles Players, Matches, etc.
         self.db.delete(league)
         self.db.commit()
