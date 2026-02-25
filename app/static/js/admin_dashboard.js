@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const adminPassword = prompt('يرجى إدخال كلمة سر الإدارة لتأكيد الحذف:');
+            const adminPassword = await showPromptModal("تأكيد حذف اللاعب", `يرجى إدخال كلمة سر الإدارة لتأكيد حذف "${playerName}":`);
             if (!adminPassword) return;
 
             try {

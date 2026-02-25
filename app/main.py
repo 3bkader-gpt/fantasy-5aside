@@ -27,10 +27,16 @@ async def lifespan(app: FastAPI):
             conn.execute(
                 text("ALTER TABLE players ADD COLUMN previous_rank INTEGER DEFAULT 0;")
             )
-            logger.info("Migration applied successfully.")
+            # Add last_season columns
+            conn.execute(text("ALTER TABLE players ADD COLUMN last_season_points INTEGER DEFAULT 0;"))
+            conn.execute(text("ALTER TABLE players ADD COLUMN last_season_goals INTEGER DEFAULT 0;"))
+            conn.execute(text("ALTER TABLE players ADD COLUMN last_season_assists INTEGER DEFAULT 0;"))
+            conn.execute(text("ALTER TABLE players ADD COLUMN last_season_saves INTEGER DEFAULT 0;"))
+            conn.execute(text("ALTER TABLE players ADD COLUMN last_season_clean_sheets INTEGER DEFAULT 0;"))
+            logger.info("Migrations applied successfully.")
         except Exception as exc:
             logger.info(
-                "Skipping 'previous_rank' migration (it may already exist). Details: %s",
+                "Skipping migrations (they may already exist). Details: %s",
                 exc,
             )
     logger.info("Application startup complete inside lifespan, handing control back to FastAPI.")

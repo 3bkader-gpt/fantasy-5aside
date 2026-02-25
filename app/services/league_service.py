@@ -25,12 +25,21 @@ class LeagueService(ILeagueService):
                 self.hof_repo.save(hof)
 
         for player in players:
+            # Snapshot the current stats before clearing
+            player.last_season_points = player.total_points
+            player.last_season_goals = player.total_goals
+            player.last_season_assists = player.total_assists
+            player.last_season_saves = player.total_saves
+            player.last_season_clean_sheets = player.total_clean_sheets
+
+            # Add to all-time
             player.all_time_points += player.total_points
             player.all_time_goals += player.total_goals
             player.all_time_assists += player.total_assists
             player.all_time_saves += player.total_saves
             player.all_time_clean_sheets += player.total_clean_sheets
 
+            # Reset totals
             player.total_points = 0
             player.total_goals = 0
             player.total_assists = 0
@@ -43,9 +52,7 @@ class LeagueService(ILeagueService):
     def undo_end_season(self, league_id: int) -> None:
         """Reverse the last end_current_season call.
         
-        After end_season: all_time = old_all_time + last_total, total = 0
-        This undo assumes it's called RIGHT AFTER end_season (before new matches).
-        It moves all_time back into total and zeros all_time.
+        Uses the last_season_* snapshot to restore totals and correct all-time stats.
         """
         from fastapi import HTTPException
 
@@ -57,20 +64,28 @@ class LeagueService(ILeagueService):
 
         players = self.player_repo.get_all_for_league(league_id)
         for player in players:
-            if player.total_points == 0:
-                player.total_points = player.all_time_points
-                player.total_goals = player.all_time_goals
-                player.total_assists = player.all_time_assists
-                player.total_saves = player.all_time_saves
-                player.total_clean_sheets = player.all_time_clean_sheets
+            # Restore totals from snapshot
+            player.total_points = player.last_season_points
+            player.total_goals = player.last_season_goals
+            player.total_assists = player.last_season_assists
+            player.total_saves = player.last_season_saves
+            player.total_clean_sheets = player.last_season_clean_sheets
 
-                player.all_time_points = 0
-                player.all_time_goals = 0
-                player.all_time_assists = 0
-                player.all_time_saves = 0
-                player.all_time_clean_sheets = 0
+            # Subtract from all-time (correcting the previous addition)
+            player.all_time_points = max(0, player.all_time_points - player.last_season_points)
+            player.all_time_goals = max(0, player.all_time_goals - player.last_season_goals)
+            player.all_time_assists = max(0, player.all_time_assists - player.last_season_assists)
+            player.all_time_saves = max(0, player.all_time_saves - player.last_season_saves)
+            player.all_time_clean_sheets = max(0, player.all_time_clean_sheets - player.last_season_clean_sheets)
 
-                self.player_repo.save(player)
+            # Clear snapshot
+            player.last_season_points = 0
+            player.last_season_goals = 0
+            player.last_season_assists = 0
+            player.last_season_saves = 0
+            player.last_season_clean_sheets = 0
+
+            self.player_repo.save(player)
 
     def update_settings(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[models.League]:
         return self.league_repo.update(league_id, update_data)
