@@ -13,12 +13,17 @@ from .routers import admin, public
 # Use Uvicorn's logger so logs appear in the same output
 logger = logging.getLogger("uvicorn.error")
 
-# Create tables if not already created (though seed.py does this too)
-Base.metadata.create_all(bind=engine)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Create tables if not already created (though seed.py does this too)
+    # Ensuring directory exists for SQLite
+    if engine.url.drivername == "sqlite":
+        db_path = os.path.dirname(engine.url.database)
+        if db_path and not os.path.exists(db_path):
+            os.makedirs(db_path)
+    
+    Base.metadata.create_all(bind=engine)
+    
     logger.info("Starting application lifespan: running manual schema migrations.")
     # Manual schema migrations
     # Format: (table_name, column_name, column_definition)
