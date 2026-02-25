@@ -60,6 +60,7 @@
                     data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}">
                     <td data-label="المركز" class="rank-col">
                         <span class="trend-indicator" style="margin-inline-end: 0.5rem;">
+                            {% if player.total_points > 0 %}
                             {% if player.previous_rank == 0 or player.previous_rank == loop.index %}
                             <span class="text-secondary trend-icon">➖</span>
                             {% elif loop.index < player.previous_rank %} <span style="color: var(--positive-color);"
@@ -68,13 +69,18 @@
                         <span style="color: var(--negative-color);" class="trend-icon"
                             title="تراجع {{ loop.index - player.previous_rank }} مركز">⬇️</span>
                         {% endif %}
+                        {% else %}
+                        <span class="text-secondary trend-icon">➖</span>
+                        {% endif %}
                         </span>
                         {{ loop.index }}
+                        {% if player.total_points > 0 %}
                         {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% endif %}
+                        {% endif %}
                     </td>
                     <td data-label="اللاعب">
                         <a href="/player/{{ player.id }}" style="font-weight: bold;">{{ player.name }}</a>
-                        {% if loop.index == 1 %}<span class="crown">👑</span>{% endif %}
+                        {% if player.total_points > 0 and loop.index == 1 %}<span class="crown">👑</span>{% endif %}
                     </td>
                     <td data-label="الفورمة">{{ player.form }}</td>
                     <td data-label="النقاط"><strong>{{ player.total_points }}</strong></td>

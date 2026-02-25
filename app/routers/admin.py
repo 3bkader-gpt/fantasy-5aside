@@ -302,3 +302,24 @@ def export_stats_csv(
         media_type="text/csv; charset=utf-8-sig",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+@router.delete("/player/{player_id}")
+def delete_player(
+    slug: str,
+    player_id: int,
+    payload: dict,
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    player_repo: IPlayerRepository = Depends(get_player_repository)
+):
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+        
+    admin_password = payload.get("admin_password")
+    if not security.verify_password(admin_password, league.admin_password):
+        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
+        
+    success = player_repo.delete(player_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    return {"success": True, "message": "تم حذف اللاعب بنجاح"}

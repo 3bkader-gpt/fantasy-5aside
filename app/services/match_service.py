@@ -19,6 +19,22 @@ class MatchService(IMatchService):
             player.previous_rank = index + 1
             self.player_repo.save(player)
 
+    @staticmethod
+    def normalize_name(name: str) -> str:
+        if not name: return ""
+        import re
+        # 1. Remove tashkeel
+        name = re.sub(r'[\u064B-\u0652]', '', name)
+        # 2. Unify Alef
+        name = re.sub(r'[أإآا]', 'ا', name)
+        # 3. Unify Yeh
+        name = re.sub(r'ى', 'ي', name)
+        # 4. Unify Teh Marbuta
+        name = re.sub(r'ة', 'ه', name)
+        # 5. Collapse spaces
+        name = re.sub(r'\s+', ' ', name)
+        return name.strip()
+
     def register_match(self, league_id: int, match_data: schemas.MatchCreate) -> models.Match:
         league = self.league_repo.get_by_id(league_id)
         if not league or not verify_password(match_data.admin_password, league.admin_password):
@@ -43,7 +59,11 @@ class MatchService(IMatchService):
         team_b_base = []
 
         for stat_data in match_data.stats:
-            player_name = stat_data.player_name.strip()
+            player_name = self.normalize_name(stat_data.player_name)
+            
+            if not player_name:
+                continue
+
             player = self.player_repo.get_by_name(league_id, player_name)
             
             if not player:

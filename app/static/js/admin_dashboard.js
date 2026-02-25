@@ -166,4 +166,38 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Player Deletion
+    document.querySelectorAll('.delete-player-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const playerId = this.getAttribute('data-player-id');
+            const playerName = this.getAttribute('data-player-name');
+
+            if (!confirm(`⚠️ هل أنت متأكد من حذف اللاعب "${playerName}" نهائياً؟\nسيتم مسح جميع إحصائياته من جميع المباريات والكؤوس.`)) {
+                return;
+            }
+
+            const adminPassword = prompt('يرجى إدخال كلمة سر الإدارة لتأكيد الحذف:');
+            if (!adminPassword) return;
+
+            try {
+                const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/player/${playerId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_password: adminPassword })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ تم حذف اللاعب بنجاح.');
+                    location.reload();
+                } else {
+                    alert('❌ خطأ: ' + (result.detail || 'تعذر حذف اللاعب.'));
+                }
+            } catch (error) {
+                console.error('Error deleting player:', error);
+                alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
+            }
+        });
+    });
 });

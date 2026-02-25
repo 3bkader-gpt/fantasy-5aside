@@ -139,6 +139,38 @@
     </form>
 </div>
 
+<!-- New Section: Player Management -->
+<div class="card mb-4" style="border-right: 5px solid var(--secondary-color);">
+    <h3 style="color: var(--text-color);">👥 إدارة اللاعبين (مسح المكرر)</h3>
+    <p class="text-secondary mb-2">يمكنك هنا مسح أي لاعب تم إضافته بالخطأ أو بشكل مكرر.</p>
+    <div
+        style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border-color);">
+                    <th style="text-align: right; padding: 10px;">اللاعب</th>
+                    <th style="text-align: right; padding: 10px;">النقاط</th>
+                    <th style="text-align: center; padding: 10px;">الإجراء</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 10px;">{{ player.name }}</td>
+                    <td style="padding: 10px;">{{ player.total_points }}</td>
+                    <td style="padding: 10px; text-align: center;">
+                        <button class="btn btn-danger btn-sm delete-player-btn" data-player-id="{{ player.id }}"
+                            data-player-name="{{ player.name }}">
+                            مسح نهائياً
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- Danger Zone -->
 <div class="card mb-4" style="border: 2px solid var(--danger-color); background: rgba(231, 76, 60, 0.05);">
     <h3 style="color: var(--danger-color);">⚠️ منطقة الخطر (Danger Zone)</h3>
