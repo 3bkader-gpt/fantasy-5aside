@@ -83,7 +83,10 @@ def get_current_admin_league(
     token = authorization.split(" ")[1]
     payload = security.verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="الجلسة انتهت، يرجى تسجيل الدخول مجدداً")
+        raise HTTPException(
+            status_code=401, 
+            detail="الجلسة انتهت أو غير صالحة، يرجى تسجيل الدخول مجدداً"
+        )
         
     token_slug = payload.get("sub")
     if token_slug != league.slug:

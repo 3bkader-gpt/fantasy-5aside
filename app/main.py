@@ -2,7 +2,9 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
@@ -53,6 +55,24 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="5-a-side Fantasy Football", lifespan=lifespan)
+templates = Jinja2Templates(directory="app/templates")
+
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    # Check if the client prefers HTML
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept and exc.status_code in [401, 403]:
+        return templates.TemplateResponse(
+            "auth/unauthorized.html",
+            {"request": request, "detail": exc.detail},
+            status_code=exc.status_code
+        )
+    
+    # Return default JSON for APIs or other errors
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
 
 # CORS
 app.add_middleware(

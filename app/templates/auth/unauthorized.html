@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-sm text-center" style="max-width: 600px; margin-top: 6rem; padding: 2rem;">
+
+    <div class="unauthorized-card card shadow-lg"
+        style="border-top: 6px solid var(--danger-color); padding: 3rem; border-radius: 15px;">
+        <div class="mb-4">
+            <div style="font-size: 5rem; margin-bottom: 1rem;">🚫</div>
+            <h1 style="color: var(--danger-color); font-size: 2.2rem; margin-bottom: 1rem; font-weight: 800;">وصول غير
+                مصرح به</h1>
+            <p class="text-secondary" style="font-size: 1.2rem; line-height: 1.8;">
+                {{ detail if detail else "عذراً، يجب تسجيل الدخول بصلاحيات المسؤول للوصول إلى هذه الصفحة." }}
+            </p>
+        </div>
+
+        <div class="d-grid gap-3 mt-4">
+            <a href="/login" class="btn btn-primary"
+                style="padding: 1rem 2rem; font-size: 1.2rem; border-radius: 8px; font-weight: bold;">
+                تسجيل الدخول الآن 🔑
+            </a>
+            <a href="/" class="btn"
+                style="background-color: var(--secondary-color); color: white; padding: 0.8rem 2rem; border-radius: 8px; font-weight: 500;">
+                العودة للرئيسية 🏠
+            </a>
+        </div>
+    </div>
+
+    <p class="text-muted mt-5" style="font-size: 0.9rem;">
+        إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع الدعم الفني للدوري أو المحاولة مرة أخرى لاحقاً.
+    </p>
+
+</div>
+
+<style>
+    .unauthorized-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        transform: translateY(0);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .unauthorized-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    [data-theme="light"] .unauthorized-card {
+        background: white;
+    }
+</style>
+{% endblock %}
