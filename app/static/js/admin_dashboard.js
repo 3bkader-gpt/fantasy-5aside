@@ -65,12 +65,6 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('add-player-b-btn').addEventListener('click', () => addPlayerRow(teamBBody));
 
         document.getElementById('save-match-btn').addEventListener('click', async () => {
-            const adminPassword = document.getElementById('admin_password').value;
-            if (!adminPassword) {
-                alert('⚠️ يرجى إدخال كلمة سر الإدارة الخاص بالدوري.');
-                return;
-            }
-
             const teamAName = document.getElementById('team_a_name').value.trim() || 'فريق أ';
             const teamBName = document.getElementById('team_b_name').value.trim() || 'فريق ب';
             const stats = [];
@@ -91,8 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const payload = {
                 team_a_name: teamAName,
                 team_b_name: teamBName,
-                stats: stats,
-                admin_password: adminPassword
+                stats: stats
             };
 
             try {
@@ -177,14 +170,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const adminPassword = await showPromptModal("تأكيد حذف اللاعب", `يرجى إدخال كلمة سر الإدارة لتأكيد حذف "${playerName}":`);
-            if (!adminPassword) return;
-
             try {
                 const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/player/${playerId}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ admin_password: adminPassword })
+                    body: JSON.stringify({})
                 });
 
                 const result = await response.json();

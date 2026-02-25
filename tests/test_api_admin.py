@@ -4,6 +4,8 @@ from app.core import security
 class TestAdminAPI:
     def test_admin_dashboard_access(self, client, league_repo):
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l", admin_password="p"), security.get_password_hash("p"))
+        token = security.create_access_token({"sub": l.slug})
+        client.cookies.set("access_token", f"Bearer {token}")
         response = client.get(f"/l/{l.slug}/admin/")
         assert response.status_code == 200
         assert "تسجيل نتيجة مباراة" in response.text
@@ -14,13 +16,14 @@ class TestAdminAPI:
         p1 = player_repo.create("P1", l.id)
         
         match_data = {
-            "admin_password": password,
             "team_a_name": "A",
             "team_b_name": "B",
             "stats": [
                 {"player_name": "P1", "team": "A", "goals": 3}
             ]
         }
+        token = security.create_access_token({"sub": l.slug})
+        client.cookies.set("access_token", f"Bearer {token}")
         response = client.post(f"/l/{l.slug}/admin/match", json=match_data)
         assert response.status_code == 200
         assert response.json()["message"] == "Match registered successfully"
@@ -31,14 +34,18 @@ class TestAdminAPI:
         player_repo.create("P1", l.id)
         player_repo.create("P2", l.id)
         
-        data = {"admin_password": "p"}
+        data = {}
+        token = security.create_access_token({"sub": l.slug})
+        client.cookies.set("access_token", f"Bearer {token}")
         response = client.post(f"/l/{l.slug}/admin/cup/generate", data=data, follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"
 
     def test_end_season_api(self, client, league_repo):
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l", admin_password="p"), security.get_password_hash("p"))
-        data = {"month_name": "October 2024", "admin_password": "p"}
+        data = {"month_name": "October 2024"}
+        token = security.create_access_token({"sub": l.slug})
+        client.cookies.set("access_token", f"Bearer {token}")
         response = client.post(f"/l/{l.slug}/admin/season/end", data=data, follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"
@@ -49,6 +56,8 @@ class TestAdminAPI:
             security.get_password_hash("p"),
         )
 
+        token = security.create_access_token({"sub": league.slug})
+        client.cookies.set("access_token", f"Bearer {token}")
         response = client.get("/l/elturtels/admin/", follow_redirects=False)
         assert response.status_code in (301, 308)
         assert response.headers["location"].startswith("/l/ElTurtels/admin")

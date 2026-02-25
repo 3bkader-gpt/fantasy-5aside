@@ -15,6 +15,9 @@ class LeagueRepository(ILeagueRepository):
     def get_by_slug(self, slug: str) -> Optional[models.League]:
         if not slug: return None
         return self.db.query(models.League).filter(func.lower(models.League.slug) == slug.lower()).first()
+    def get_by_name(self, name: str) -> Optional[models.League]:
+        if not name: return None
+        return self.db.query(models.League).filter(func.lower(models.League.name) == name.lower()).first()
     def get_by_id(self, league_id: int) -> Optional[models.League]:
         return self.db.query(models.League).filter(models.League.id == league_id).first()
     def get_all(self) -> List[models.League]:

@@ -47,8 +47,18 @@ def create_league(
     league_repo: ILeagueRepository = Depends(get_league_repository)
 ):
     slug = slug.strip()
-    existing = league_repo.get_by_slug(slug)
-    if existing:
+    name = name.strip()
+    
+    existing_name = league_repo.get_by_name(name)
+    if existing_name:
+        return templates.TemplateResponse(
+            request=request, 
+            name="landing.html", 
+            context={"error": "هذا الاسم مستخدم بالفعل", "is_admin": False}
+        )
+        
+    existing_slug = league_repo.get_by_slug(slug)
+    if existing_slug:
         return templates.TemplateResponse(
             request=request, 
             name="landing.html", 

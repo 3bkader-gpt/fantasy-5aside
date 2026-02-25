@@ -8,8 +8,6 @@
     <h3 style="color: var(--warning-color);">🏆 إدارة الكأس</h3>
     <form action="/l/{{ league.slug }}/admin/cup/generate" method="POST">
         <div class="form-group mb-1">
-            <input type="password" name="admin_password" placeholder="كلمة سر الإدارة" required class="form-control"
-                style="width: 200px; display: inline-block; margin-inline-end: 1rem;">
             <button type="submit" class="btn" style="background-color: var(--warning-color); color: white;">
                 إنشاء قرعة الكأس (أعلى 10 لاعبين)
             </button>
@@ -26,16 +24,12 @@
         onsubmit="return confirm('هل أنت متأكد من إنهاء الشهر؟ سيتم إضافة المتصدر إلى لوحة الشرف وتصفير جميع النقاط الحالية!');">
         <input type="text" name="month_name" placeholder="اسم الشهر (مثال: أغسطس 2026)" required class="form-control"
             style="width: 230px; display: inline-block; margin-inline-end: 0.5rem;">
-        <input type="password" name="admin_password" placeholder="كلمة سر الإدارة" required class="form-control"
-            style="width: 180px; display: inline-block; margin-inline-end: 0.5rem;">
         <button type="submit" class="btn btn-danger">
             إنهاء الشهر والأرشفة
         </button>
     </form>
     <form action="/l/{{ league.slug }}/admin/season/undo" method="POST" style="margin-top: 1rem;"
         onsubmit="return confirm('هل أنت متأكد من التراجع عن إنهاء الشهر؟ سيتم استعادة النقاط وحذف آخر تسجيل من لوحة الشرف.');">
-        <input type="password" name="admin_password" placeholder="كلمة سر الإدارة" required class="form-control"
-            style="width: 180px; display: inline-block; margin-inline-end: 0.5rem;">
         <button type="submit" class="btn" style="background: #7f8c8d; color: white; font-size: 0.85rem;">
             ↩️ تراجع عن إنهاء الشهر الأخير
         </button>
@@ -53,11 +47,7 @@
 </div>
 
 <div class="card match-form-container">
-    <div style="margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
-        <h3 style="margin-top:0;">تأكيد الإدارة</h3>
-        <input type="password" id="admin_password" placeholder="أدخل كلمة سر إدارة الدوري لحفظ المباراة" required
-            class="form-control">
-    </div>
+
 
     <!-- Tactical Board -->
     <div class="tactical-board" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">

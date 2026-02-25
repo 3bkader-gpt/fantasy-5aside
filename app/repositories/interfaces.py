@@ -7,6 +7,8 @@ class ILeagueRepository(ABC):
     @abstractmethod
     def get_by_slug(self, slug: str) -> Optional[models.League]: pass
     @abstractmethod
+    def get_by_name(self, name: str) -> Optional[models.League]: pass
+    @abstractmethod
     def get_by_id(self, league_id: int) -> Optional[models.League]: pass
     @abstractmethod
     def get_all(self) -> List[models.League]: pass

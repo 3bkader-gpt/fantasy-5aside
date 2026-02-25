@@ -1,6 +1,9 @@
-from fastapi import Depends
+from fastapi import Depends, Request, HTTPException
 from sqlalchemy.orm import Session
 from .database import get_db
+
+from .core import security
+from .models import models
 
 from .repositories.interfaces import (
     ILeagueRepository, IPlayerRepository, IMatchRepository, 
@@ -62,3 +65,28 @@ def get_analytics_service(
     match_repo: IMatchRepository = Depends(get_match_repository)
 ) -> IAnalyticsService:
     return AnalyticsService(player_repo, match_repo)
+
+# --- Security ---
+def get_current_admin_league(
+    slug: str,
+    request: Request,
+    league_repo: ILeagueRepository = Depends(get_league_repository)
+) -> models.League:
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+        
+    authorization: str = request.cookies.get("access_token")
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="غير مصرح لك بالدخول، يرجى تسجيل الدخول")
+        
+    token = authorization.split(" ")[1]
+    payload = security.verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="الجلسة انتهت، يرجى تسجيل الدخول مجدداً")
+        
+    token_slug = payload.get("sub")
+    if token_slug != league.slug:
+        raise HTTPException(status_code=403, detail="غير مصرح لك بإدارة هذا الدوري")
+        
+    return league

@@ -7,7 +7,7 @@ class League(Base):
     __tablename__ = "leagues"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
+    name = Column(String, unique=True, index=True)
     slug = Column(String, unique=True, index=True)
     admin_password = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

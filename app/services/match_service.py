@@ -37,8 +37,8 @@ class MatchService(IMatchService):
 
     def register_match(self, league_id: int, match_data: schemas.MatchCreate) -> models.Match:
         league = self.league_repo.get_by_id(league_id)
-        if not league or not verify_password(match_data.admin_password, league.admin_password):
-            raise HTTPException(status_code=401, detail="كلمة سر الإدارة غير صحيحة")
+        if not league:
+            raise HTTPException(status_code=404, detail="League not found")
 
         team_a_score = sum(s.goals for s in match_data.stats if s.team == 'A')
         team_b_score = sum(s.goals for s in match_data.stats if s.team == 'B')
@@ -145,8 +145,8 @@ class MatchService(IMatchService):
 
     def update_match(self, league_id: int, match_id: int, update_data: schemas.MatchEditRequest) -> models.Match:
         league = self.league_repo.get_by_id(league_id)
-        if not league or not verify_password(update_data.admin_password, league.admin_password):
-            raise HTTPException(status_code=401, detail="كلمة سر الإدارة غير صحيحة")
+        if not league:
+            raise HTTPException(status_code=404, detail="League not found")
 
         match = self.match_repo.get_by_id(match_id)
         if not match or match.league_id != league_id:

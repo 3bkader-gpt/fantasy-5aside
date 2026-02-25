@@ -8,6 +8,7 @@ from ..core import security
 from ..dependencies import (
     get_league_service, get_cup_service, get_match_service,
     get_league_repository, get_player_repository, get_match_repository,
+    get_current_admin_league,
     ILeagueService, ICupService, IMatchService,
     ILeagueRepository, IPlayerRepository, IMatchRepository
 )
@@ -30,12 +31,9 @@ def _canonical_admin_redirect(request: Request, provided_slug: str, canonical_sl
 def admin_dashboard(
     slug: str, 
     request: Request, 
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
     if league.slug != slug:
         return _canonical_admin_redirect(request, slug, league.slug)
         
@@ -48,14 +46,10 @@ def admin_dashboard(
 
 @router.post("/match")
 def create_match(
-    slug: str, 
     match_data: schemas.MatchCreate, 
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     match_service: IMatchService = Depends(get_match_service)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
         
     try:
         match = match_service.register_match(league.id, match_data)
@@ -67,80 +61,62 @@ def create_match(
 
 @router.post("/cup/generate")
 def generate_cup(
-    slug: str, 
-    admin_password: str = Form(...),
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     cup_service: ICupService = Depends(get_cup_service)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
-        
-    if not security.verify_password(admin_password, league.admin_password):
-        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
         
     success = cup_service.generate_cup_draw(league.id)
     if not success:
         raise HTTPException(status_code=400, detail="Not enough players to generate cup in this league")
-    return RedirectResponse(url=f"/l/{slug}/admin", status_code=303)
+    return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
 
 @router.post("/season/end")
 def end_season(
-    slug: str, 
     month_name: str = Form(...), 
-    admin_password: str = Form(...),
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     league_service: ILeagueService = Depends(get_league_service)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
-        
-    if not security.verify_password(admin_password, league.admin_password):
-        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
         
     try:
         league_service.end_current_season(league.id, month_name)
-        return RedirectResponse(url=f"/l/{slug}/admin", status_code=303)
+        return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/season/undo")
 def undo_end_season(
-    slug: str, 
-    admin_password: str = Form(...),
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     league_service: ILeagueService = Depends(get_league_service)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
-        
-    if not security.verify_password(admin_password, league.admin_password):
-        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
         
     try:
         league_service.undo_end_season(league.id)
-        return RedirectResponse(url=f"/l/{slug}/admin", status_code=303)
+        return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/settings/update")
 def update_league_settings(
-    slug: str, 
     current_admin_password: str = Form(...), 
     name: str = Form(None), 
     new_slug: str = Form(None), 
     new_password: str = Form(None), 
+    league: models.League = Depends(get_current_admin_league),
     league_repo: ILeagueRepository = Depends(get_league_repository),
     league_service: ILeagueService = Depends(get_league_service)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
+
+    if name is not None:
+        name = name.strip()
+        existing_name = league_repo.get_by_name(name)
+        if existing_name and existing_name.id != league.id:
+            raise HTTPException(status_code=400, detail="هذا الاسم مستخدم بالفعل")
 
     if new_slug is not None:
         new_slug = new_slug.strip()
+        existing_slug = league_repo.get_by_slug(new_slug)
+        if existing_slug and existing_slug.id != league.id:
+            raise HTTPException(status_code=400, detail="هذا الرابط مستخدم بالفعل")
 
     update_data = schemas.LeagueUpdate(
         name=name,
@@ -159,14 +135,10 @@ def update_league_settings(
 
 @router.post("/settings/delete")
 def delete_league_entirely(
-    slug: str, 
     admin_password: str = Form(...), 
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     league_service: ILeagueService = Depends(get_league_service)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
 
     try:
         league_service.delete_league(league.id, admin_password)
@@ -178,19 +150,11 @@ def delete_league_entirely(
 
 @router.delete("/match/{match_id}")
 def delete_match(
-    slug: str, 
     match_id: int, 
     payload: dict,
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     match_service: IMatchService = Depends(get_match_service)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
-        
-    admin_password = payload.get("admin_password")
-    if not security.verify_password(admin_password, league.admin_password):
-        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
         
     try:
         match_service.delete_match(match_id, league.id)
@@ -203,17 +167,13 @@ def delete_match(
 
 @router.get("/match/{match_id}")
 def get_match_details(
-    slug: str,
     match_id: int,
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     match_repo: IMatchRepository = Depends(get_match_repository),
 ):
     """
     إرجاع بيانات مباراة واحدة (للـ frontend عند فتح شاشة التعديل).
     """
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
 
     match = match_repo.get_by_id(match_id)
     if not match or match.league_id != league.id:
@@ -245,15 +205,11 @@ def get_match_details(
 
 @router.post("/match/{match_id}/edit")
 def edit_match(
-    slug: str, 
     match_id: int, 
     payload: schemas.MatchEditRequest,
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     match_service: IMatchService = Depends(get_match_service)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
         
     try:
         updated_match = match_service.update_match(league.id, match_id, payload)
@@ -265,18 +221,13 @@ def edit_match(
 
 @router.get("/export/stats")
 def export_stats_csv(
-    slug: str,
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository),
 ):
     """Export all player stats as a CSV file with Arabic-compatible encoding."""
     import csv
     import io
     from datetime import datetime
-
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
 
     players = player_repo.get_leaderboard(league.id)
 
@@ -316,19 +267,11 @@ def export_stats_csv(
     )
 @router.delete("/player/{player_id}")
 def delete_player(
-    slug: str,
     player_id: int,
     payload: dict,
-    league_repo: ILeagueRepository = Depends(get_league_repository),
+    league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository)
 ):
-    league = league_repo.get_by_slug(slug)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
-        
-    admin_password = payload.get("admin_password")
-    if not security.verify_password(admin_password, league.admin_password):
-        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
         
     success = player_repo.delete(player_id)
     if not success:

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from .database import Base, engine
-from .routers import admin, public
+from .routers import admin, public, auth
 
 # Use Uvicorn's logger so logs appear in the same output
 logger = logging.getLogger("uvicorn.error")
@@ -71,5 +71,6 @@ if not os.path.exists("app/static"):
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include Routers
+app.include_router(auth.router)
 app.include_router(public.router)
 app.include_router(admin.router)

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-sm text-center" style="max-width: 500px; margin-top: 5rem;">
+
+    <div class="mb-2">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--text-color);">تسجيل الدخول للإدارة 🔒</h1>
+        <p class="text-secondary" style="font-size: 1.1rem; line-height: 1.6;">
+            أدخل بيانات الدوري الخاص بك للوصول إلى لوحة التحكم
+        </p>
+    </div>
+
+    <div class="card mb-2" style="border-top: 5px solid var(--primary-color);">
+
+        {% if error %}
+        <div class="alert alert-danger mb-2"
+            style="background-color: rgba(255, 68, 68, 0.1); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.2); padding: 1rem; border-radius: 8px; text-align: right;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if request.query_params.get("msg") == "logged_out" %}
+        <div class="alert alert-success mb-2"
+            style="background-color: rgba(0, 200, 81, 0.1); color: #00c851; border: 1px solid rgba(0, 200, 81, 0.2); padding: 1rem; border-radius: 8px; text-align: right;">
+            تم تسجيل الخروج بنجاح
+        </div>
+        {% endif %}
+
+        <form action="/login" method="POST" style="text-align: right;">
+            <div class="mb-2">
+                <label class="form-label" style="font-weight: bold;">اسم الدوري:</label>
+                <input type="text" name="league_name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"
+                    class="form-control" style="padding: 0.8rem; font-size: 1.1rem;">
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label" style="font-weight: bold;">كلمة سر الإدارة:</label>
+                <input type="password" name="password" required placeholder="أدخل كلمة السر" class="form-control"
+                    style="padding: 0.8rem; font-size: 1.1rem;">
+            </div>
+
+            <button type="submit" class="btn btn-primary"
+                style="width: 100%; padding: 1rem; font-size: 1.2rem; margin-top: 1rem;">
+                دخول للإدارة 🔑
+            </button>
+        </form>
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <a href="/" style="color: var(--secondary-color); text-decoration: none; font-size: 1.1rem;">
+            🔙 العودة للصفحة الرئيسية
+        </a>
+    </div>
+
+</div>
+{% endblock %}
