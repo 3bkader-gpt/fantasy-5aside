@@ -41,3 +41,13 @@ class TestAdminAPI:
         response = client.post(f"/l/{l.slug}/admin/season/end", data=data, follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"
+
+    def test_canonical_slug_redirect_admin(self, client, league_repo):
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Admin Slug", slug="ElTurtels", admin_password="p"),
+            security.get_password_hash("p"),
+        )
+
+        response = client.get("/l/elturtels/admin/", follow_redirects=False)
+        assert response.status_code in (301, 308)
+        assert response.headers["location"].startswith("/l/ElTurtels/admin")

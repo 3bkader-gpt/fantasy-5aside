@@ -38,3 +38,21 @@ class TestPublicAPI:
         response = client.get(f"/l/{l.slug}/player/{p.id}")
         assert response.status_code == 200
         assert "AnalyzeMe" in response.text
+
+    def test_canonical_slug_redirect_public(self, client, league_repo, player_repo):
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Slug L", slug="ElTurtels", admin_password="p"),
+            security.get_password_hash("p"),
+        )
+        player_repo.create("PlayerX", league.id)
+
+        # Request with different casing -> expect 308 redirect to canonical slug
+        response = client.get("/l/elturtels", follow_redirects=False)
+        assert response.status_code in (301, 308)
+        location = response.headers["location"]
+        assert location.startswith("/l/ElTurtels")
+
+        # Follow redirect
+        final = client.get(location)
+        assert final.status_code == 200
+        assert "PlayerX" in final.text

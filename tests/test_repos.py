@@ -83,3 +83,29 @@ class TestRepositories:
         matches = match_repo.get_all_for_league(league.id)
         assert len(matches) == 1
         assert matches[0].team_a_name == "X"
+
+    def test_league_get_by_slug_case_insensitive(self, league_repo):
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Case League", slug="ElTurtels", admin_password="p"),
+            "hashed",
+        )
+
+        # Exact match
+        assert league_repo.get_by_slug("ElTurtels").id == league.id
+        # Case-insensitive lookup
+        assert league_repo.get_by_slug("elturtels").id == league.id
+
+    def test_league_update_slug_trim(self, db_session, league_repo):
+        l1 = league_repo.create(
+            schemas.LeagueCreate(name="L1", slug="slug-one", admin_password="p1"),
+            security.get_password_hash("p1"),
+        )
+        l2 = league_repo.create(
+            schemas.LeagueCreate(name="L2", slug="slug-two", admin_password="p2"),
+            security.get_password_hash("p2"),
+        )
+
+        # Trim whitespace
+        update = schemas.LeagueUpdate(slug="  new-slug  ", current_admin_password="p1")
+        updated = league_repo.update(l1.id, update)
+        assert updated.slug == "new-slug"

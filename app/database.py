@@ -16,11 +16,15 @@ engine = _make_engine(SQLALCHEMY_DATABASE_URL)
 logger = logging.getLogger("uvicorn.error")
 
 # لو الاتصال بـ Postgres/Supabase فشل (إنترنت أو سيرفر متوقف)، استخدم SQLite تلقائياً
+# ملاحظة: في وضع الاختبار (settings.testing=True) نفشل بدلاً من الـ fallback
 if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
     try:
         with engine.connect() as conn:
             logger.info("Successfully connected to PostgreSQL database.")
     except OperationalError as e:
+        if settings.testing:
+            logger.error("Failed to connect to PostgreSQL in testing mode: %s", e)
+            raise
         logger.warning("Failed to connect to PostgreSQL: %s", e)
         logger.warning("Falling back to SQLite database...")
         SQLALCHEMY_DATABASE_URL = SQLITE_URL

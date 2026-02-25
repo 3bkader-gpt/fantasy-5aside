@@ -1,57 +1,90 @@
-import pytest
 import os
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
 
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.core.config import settings
 from app.database import Base, get_db
 from app.main import app
 from app.repositories.db_repository import (
-    LeagueRepository, PlayerRepository, MatchRepository, 
-    CupRepository, HallOfFameRepository
+    CupRepository,
+    HallOfFameRepository,
+    LeagueRepository,
+    MatchRepository,
+    PlayerRepository,
 )
+from app.services.analytics_service import AnalyticsService
+from app.services.cup_service import CupService
 from app.services.league_service import LeagueService
 from app.services.match_service import MatchService
-from app.services.cup_service import CupService
-from app.services.analytics_service import AnalyticsService
 
-from sqlalchemy.pool import StaticPool
 
-# In-memory SQLite for testing
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+def _get_test_db_url() -> str:
+    """
+    Return the PostgreSQL URL to be used in tests.
+    Relies on TEST_DATABASE_URL / TESTING env picked up by Settings.
+    """
+    # Force testing mode for the duration of pytest
+    settings.testing = True
+    url = settings.effective_database_url
+    if not url.startswith("postgresql"):
+        raise RuntimeError(
+            f"Expected a PostgreSQL TEST_DATABASE_URL for tests, got: {url!r}"
+        )
+    return url
 
-@pytest.fixture(name="engine")
-def engine_fixture():
-    # Use function scope for engine to ensure a fresh :memory: DB for every test
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL, 
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool
-    )
-    # Import models explicitly to ensure they are registered with Base metadata
-    from app.models import models
+
+@pytest.fixture(scope="session", name="engine")
+def engine_fixture() -> "create_engine":
+    """
+    Create a PostgreSQL engine for the whole test session.
+    The underlying test database/schema must be isolated from production.
+    """
+    database_url = _get_test_db_url()
+    engine = create_engine(database_url)
+
+    # Ensure all tables exist (drop/create to start fresh for test session)
+    from app.models import models  # noqa: F401
+
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield engine
     engine.dispose()
 
+
 @pytest.fixture(name="db_session")
-def db_session_fixture(engine):
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def db_session_fixture(engine) -> Session:
+    """
+    Provide a database session wrapped in a transaction per test.
+    The transaction is rolled back at the end of each test, so tests
+    do not leak data into each other.
+    """
+    connection = engine.connect()
+    transaction = connection.begin()
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=connection)
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+        transaction.rollback()
+        connection.close()
+
 
 @pytest.fixture(name="client")
-def client_fixture(engine):
+def client_fixture(db_session: Session):
+    """
+    FastAPI TestClient that uses the same transactional db_session fixture.
+    """
+
     def override_get_db():
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        db = SessionLocal()
         try:
-            yield db
+            yield db_session
         finally:
-            db.close()
+            # Session cleanup/rollback handled by db_session fixture
+            pass
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:

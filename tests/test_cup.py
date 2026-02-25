@@ -1,53 +1,71 @@
-import pytest
-from app.services.cup_service import CupService
-from app.repositories.interfaces import IPlayerRepository, ICupRepository, IMatchRepository
+from app.schemas import schemas
+from app.core import security
 from app.models import models
 
-class MockPlayerRepository(IPlayerRepository):
-    def get_by_id(self, player_id: int): pass
-    def get_by_name(self, league_id: int, name: str): pass
-    def get_all_for_league(self, league_id: int):
-        return [
-            models.Player(id=1, name="Player 1", league_id=1, total_points=10),
-            models.Player(id=2, name="Player 2", league_id=1, total_points=8),
-            models.Player(id=3, name="Player 3", league_id=1, total_points=12),
-            models.Player(id=4, name="Player 4", league_id=1, total_points=5)
-        ]
-    def create(self, name: str, league_id: int): pass
-    def update_name(self, player_id: int, new_name: str): pass
-    def delete(self, player_id: int): pass
-    def get_leaderboard(self, league_id: int): pass
-    def save(self, player): pass
-
-class MockCupRepository(ICupRepository):
-    def get_active_matchups(self, league_id: int): return []
-    def get_all_for_league(self, league_id: int): return []
-    def save_matchups(self, matchups): pass
-    def delete_all_for_league(self, league_id: int): pass
-
-class MockMatchRepository(IMatchRepository):
-    def get_by_id(self, match_id: int): pass
-    def get_all_for_league(self, league_id: int): pass
-    def save(self, match): pass
-    def delete(self, match_id: int): pass
-    def get_player_history(self, player_id: int): pass
-    def delete_match_stats(self, match_id: int): pass
 
 class TestCupService:
-    def setup_method(self):
-        self.cup_service = CupService(
-            player_repo=MockPlayerRepository(),
-            cup_repo=MockCupRepository(),
-            match_repo=MockMatchRepository()
+    def test_generate_cup_draw_real_repos(self, db_session, league_repo, player_repo, cup_repo, cup_service):
+        # 1. Setup a real league with players in PostgreSQL test DB
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Cup League", slug="cup-league", admin_password="pass"),
+            security.get_password_hash("pass"),
         )
 
-    def test_generate_cup_draw(self):
-        matchups = self.cup_service.generate_cup_draw(league_id=1)
-        
+        # Create 4 players with different total_points
+        p1 = player_repo.create("P1", league.id)
+        p2 = player_repo.create("P2", league.id)
+        p3 = player_repo.create("P3", league.id)
+        p4 = player_repo.create("P4", league.id)
+        p1.total_points = 10
+        p2.total_points = 8
+        p3.total_points = 12
+        p4.total_points = 5
+        for p in (p1, p2, p3, p4):
+            player_repo.save(p)
+
+        # 2. Execute
+        matchups = cup_service.generate_cup_draw(league.id)
+
+        # 3. Verify basic properties and persistence
         assert len(matchups) == 2
-        for match in matchups:
-            assert match.league_id == 1
-            assert match.is_active == True
-            assert match.player1_id is not None
-            assert match.player2_id is not None
-            assert match.player1_id != match.player2_id
+        db_matchups = cup_repo.get_all_for_league(league.id)
+        assert len(db_matchups) == 2
+        for m in db_matchups:
+            assert m.league_id == league.id
+            assert m.is_active is True
+            assert m.player1_id != m.player2_id
+
+    def test_auto_resolve_cups_real_match(self, db_session, league_repo, player_repo, cup_repo, match_repo, cup_service):
+        # 1. Setup league, players, and a cup matchup
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Resolve League", slug="resolve", admin_password="pass"),
+            security.get_password_hash("pass"),
+        )
+        p1 = player_repo.create("CupP1", league.id)
+        p2 = player_repo.create("CupP2", league.id)
+
+        matchup = models.CupMatchup(
+            league_id=league.id,
+            player1_id=p1.id,
+            player2_id=p2.id,
+            round_name="Quarter-Final",
+            is_active=True,
+        )
+        db_session.add(matchup)
+        db_session.commit()
+
+        # 2. Create a real match with stats giving p1 more points in this match
+        match = models.Match(league_id=league.id, team_a_name="A", team_b_name="B")
+        match_repo.save(match)
+        stat1 = models.MatchStat(match_id=match.id, player_id=p1.id, goals=2, points_earned=6)
+        stat2 = models.MatchStat(match_id=match.id, player_id=p2.id, goals=1, points_earned=3)
+        db_session.add_all([stat1, stat2])
+        db_session.commit()
+
+        # 3. Execute auto_resolve_cups
+        cup_service.auto_resolve_cups(league.id, match.id)
+
+        # 4. Verify winner and deactivation
+        db_session.refresh(matchup)
+        assert matchup.is_active is False
+        assert matchup.winner_id == p1.id
