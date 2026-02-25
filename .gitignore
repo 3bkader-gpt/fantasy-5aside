@@ -33,7 +33,9 @@ dist/
 *.sqlite
 data/
 
-# --- Project Specific Temporary Files ---
+# --- Temporary & Logging ---
+ci_log*.txt
+pytestdebuglog.txt
 diff_base.txt
 old_base.html
 test_bps.py

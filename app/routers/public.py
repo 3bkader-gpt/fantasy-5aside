@@ -35,7 +35,7 @@ def read_root(
     return templates.TemplateResponse(
         request=request,
         name="landing.html", 
-        context={"leagues": leagues}
+        context={"leagues": leagues, "is_admin": False}
     )
 
 @router.post("/create-league")
@@ -52,7 +52,7 @@ def create_league(
         return templates.TemplateResponse(
             request=request, 
             name="landing.html", 
-            context={"error": "هذا الرابط مستخدم بالفعل"}
+            context={"error": "هذا الرابط مستخدم بالفعل", "is_admin": False}
         )
         
     hashed_password = security.get_password_hash(admin_password)
@@ -91,7 +91,7 @@ def read_leaderboard(
     return templates.TemplateResponse(
         request=request,
         name="leaderboard.html", 
-        context={"league": league, "players": players, "latest_hof": latest_hof, "next_cup": next_cup}
+        context={"league": league, "players": players, "latest_hof": latest_hof, "next_cup": next_cup, "is_admin": False}
     )
 
 @router.get("/l/{slug}/matches")
@@ -111,7 +111,7 @@ def read_matches(
     return templates.TemplateResponse(
         request=request,
         name="matches.html", 
-        context={"league": league, "matches": matches}
+        context={"league": league, "matches": matches, "is_admin": False}
     )
 
 @router.get("/l/{slug}/cup")
@@ -131,7 +131,7 @@ def read_cup(
     return templates.TemplateResponse(
         request=request,
         name="cup.html",
-        context={"league": league, "matchups": matchups}
+        context={"league": league, "matchups": matchups, "is_admin": False}
     )
 
 @router.get("/l/{slug}/player/{player_id}")
@@ -154,7 +154,7 @@ def read_player(
         return templates.TemplateResponse(
             request=request, 
             name="leaderboard.html", 
-            context={"league": league, "players": player_repo.get_leaderboard(league.id)}
+            context={"league": league, "players": player_repo.get_leaderboard(league.id), "is_admin": False}
         )
     
     player = analytics.get("player")
@@ -170,7 +170,8 @@ def read_player(
             "player": player,
             "summary": summary,
             "badges": badges,
-            "recent_matches": recent_matches
+            "recent_matches": recent_matches,
+            "is_admin": False
         }
     )
 
@@ -192,6 +193,6 @@ def read_hof(
     return templates.TemplateResponse(
         request=request,
         name="hof.html", 
-        context={"league": league, "hof_records": hof_records}
+        context={"league": league, "hof_records": hof_records, "is_admin": False}
     )
 

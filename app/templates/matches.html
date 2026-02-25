@@ -49,6 +49,7 @@
                     style="font-size: 0.8rem; color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.4); padding: 4px 10px; min-height: auto; width: auto; margin: 0;">
                     مشاركة 📤
                 </button>
+                {% if is_admin %}
                 <button class="edit-match-btn" data-match-id="{{ match.id }}" title="تعديل المباراة"
                     style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #4da8da; min-height: auto; width: auto; margin: 0; padding: 4px;">
                     ✏️
@@ -57,6 +58,7 @@
                     style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #ff6b6b; min-height: auto; width: auto; margin: 0; padding: 4px;">
                     🗑️
                 </button>
+                {% endif %}
             </div>
         </div>
 
@@ -159,6 +161,7 @@
     {% endif %}
 </div>
 
+{% if is_admin %}
 <!-- Edit Match Modal -->
 <div id="editMatchModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 900px;">
@@ -284,9 +287,11 @@
     {% endfor %}
 }
 </script>
+{% endif %}
 
 <script>
     window.LEAGUE_SLUG = "{{ league.slug }}";
+    {% if is_admin %}
     try {
         const matchesDataText = document.getElementById('matches-data-json').textContent;
         window.MATCHES_DATA = JSON.parse(matchesDataText);
@@ -294,6 +299,7 @@
         console.error("Match data parsing error:", e);
         window.MATCHES_DATA = {};
     }
+    {% endif %}
 </script>
 <script src="/static/js/matches.js"></script>
 {% endblock %}

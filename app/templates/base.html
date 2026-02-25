@@ -45,8 +45,10 @@
                         class="text">الشرف</span></a></li>
             <li><a href="#" onclick="showRulesModal(event)"><span class="icon">📖</span><span
                         class="text">القواعد</span></a></li>
+            {% if is_admin %}
             <li><a href="/l/{{ league.slug }}/admin" class="admin-link"><span class="icon">🛡️</span><span
                         class="text">الإدارة</span></a></li>
+            {% endif %}
             {% else %}
             <li><a href="/"><span class="icon">🏠</span><span class="text">الرئيسية</span></a></li>
             {% endif %}

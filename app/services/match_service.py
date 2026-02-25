@@ -164,10 +164,9 @@ class MatchService(IMatchService):
             if stat.clean_sheet:
                 player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
             self.player_repo.save(player)
+            # Remove stat from session correctly to avoid conflict with cascade
+            self.match_repo.db.delete(stat)
             
-        # Clear out old match stats completely linked to this match
-        self.match_repo.delete_match_stats(match_id)
-
         # Ensure match object handles newly appended state correctly
         match.stats = []
 

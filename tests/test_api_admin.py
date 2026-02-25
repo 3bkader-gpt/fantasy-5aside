@@ -31,13 +31,14 @@ class TestAdminAPI:
         player_repo.create("P1", l.id)
         player_repo.create("P2", l.id)
         
-        response = client.post(f"/l/{l.slug}/admin/cup/generate", follow_redirects=False)
+        data = {"admin_password": "p"}
+        response = client.post(f"/l/{l.slug}/admin/cup/generate", data=data, follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"
 
     def test_end_season_api(self, client, league_repo):
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l", admin_password="p"), security.get_password_hash("p"))
-        data = {"month_name": "October 2024"}
+        data = {"month_name": "October 2024", "admin_password": "p"}
         response = client.post(f"/l/{l.slug}/admin/season/end", data=data, follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"

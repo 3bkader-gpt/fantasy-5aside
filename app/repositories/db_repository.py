@@ -34,12 +34,7 @@ class LeagueRepository(ILeagueRepository):
         league = self.get_by_id(league_id)
         if not league or not security.verify_password(admin_password, league.admin_password):
             raise HTTPException(status_code=403, detail="كلمة السر غير صحيحة")
-        # Cleanup related matches and stats
-        self.db.query(models.MatchStat).filter(models.MatchStat.match.has(league_id=league_id)).delete(synchronize_session=False)
-        self.db.query(models.Match).filter(models.Match.league_id == league_id).delete(synchronize_session=False)
-        self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id).delete(synchronize_session=False)
-        self.db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league_id).delete(synchronize_session=False)
-        self.db.query(models.Player).filter(models.Player.league_id == league_id).delete(synchronize_session=False)
+        # ORM cascade="all, delete" handles Players, Matches, etc.
         self.db.delete(league)
         self.db.commit()
         return True
@@ -105,7 +100,7 @@ class MatchRepository(IMatchRepository):
     def delete(self, match_id: int) -> bool:
         match = self.get_by_id(match_id)
         if not match: return False
-        self.db.query(models.MatchStat).filter(models.MatchStat.match_id == match_id).delete(synchronize_session=False)
+        # ORM cascade="all, delete" handles stats
         self.db.delete(match)
         self.db.commit()
         return True

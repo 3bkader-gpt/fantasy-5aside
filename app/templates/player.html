@@ -164,10 +164,15 @@
     </div>
 
     <!-- Player Card Export Section -->
-    <div class="text-center mb-2 mt-2">
+    <div class="text-center mb-2 mt-2" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
         <button id="export-player-card" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.75rem 2rem;">
             📥 تحميل بطاقة اللاعب
         </button>
+        {% if is_admin %}
+        <button id="delete-player-btn" class="btn btn-danger" style="font-size: 1.1rem; padding: 0.75rem 2rem;">
+            🗑️ مسح اللاعب نهائياً
+        </button>
+        {% endif %}
     </div>
 
     <!-- Hidden FIFA-Style Player Card -->
@@ -348,5 +353,37 @@
                 alert('حدث خطأ أثناء إنشاء البطاقة');
             });
         });
+
+        // Delete Player Logic for Admins
+        const deletePlayerBtn = document.getElementById('delete-player-btn');
+        if (deletePlayerBtn) {
+            deletePlayerBtn.addEventListener('click', async function () {
+                if (!confirm(`⚠️ هل أنت متأكد من حذف اللاعب "{{ player.name }}" نهائياً؟\nسيتم مسح جميع إحصائياته من جميع المباريات والكؤوس.`)) {
+                    return;
+                }
+
+                const adminPassword = prompt(`يرجى إدخال كلمة سر الإدارة لتأكيد حذف "{{ player.name }}":`);
+                if (!adminPassword) return;
+
+                try {
+                    const response = await fetch(`/l/{{ league.slug }}/admin/player/{{ player.id }}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ admin_password: adminPassword })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('✅ تم حذف اللاعب بنجاح.');
+                        window.location.href = '/l/{{ league.slug }}';
+                    } else {
+                        alert('❌ خطأ: ' + (result.detail || 'تعذر حذف اللاعب.'));
+                    }
+                } catch (error) {
+                    console.error('Error deleting player:', error);
+                    alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
+                }
+            });
+        }
     });
 </script>{% endblock %}

@@ -43,7 +43,7 @@ def admin_dashboard(
     return templates.TemplateResponse(
         request=request,
         name="admin/dashboard.html", 
-        context={"league": league, "players": players}
+        context={"league": league, "players": players, "is_admin": True}
     )
 
 @router.post("/match")
@@ -68,12 +68,16 @@ def create_match(
 @router.post("/cup/generate")
 def generate_cup(
     slug: str, 
+    admin_password: str = Form(...),
     league_repo: ILeagueRepository = Depends(get_league_repository),
     cup_service: ICupService = Depends(get_cup_service)
 ):
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+        
+    if not security.verify_password(admin_password, league.admin_password):
+        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
         
     success = cup_service.generate_cup_draw(league.id)
     if not success:
@@ -84,12 +88,16 @@ def generate_cup(
 def end_season(
     slug: str, 
     month_name: str = Form(...), 
+    admin_password: str = Form(...),
     league_repo: ILeagueRepository = Depends(get_league_repository),
     league_service: ILeagueService = Depends(get_league_service)
 ):
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+        
+    if not security.verify_password(admin_password, league.admin_password):
+        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
         
     try:
         league_service.end_current_season(league.id, month_name)
@@ -100,12 +108,16 @@ def end_season(
 @router.post("/season/undo")
 def undo_end_season(
     slug: str, 
+    admin_password: str = Form(...),
     league_repo: ILeagueRepository = Depends(get_league_repository),
     league_service: ILeagueService = Depends(get_league_service)
 ):
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
+        
+    if not security.verify_password(admin_password, league.admin_password):
+        raise HTTPException(status_code=403, detail="كلمة سر الإدارة غير صحيحة")
         
     try:
         league_service.undo_end_season(league.id)
