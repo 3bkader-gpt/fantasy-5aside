@@ -108,7 +108,7 @@ class MatchService(IMatchService):
                 bonus_points=bonus
             )
             
-            db_match.stats.append(db_stat)
+            self.match_repo.db.add(db_stat)
 
             player.total_points += total_points
             player.total_goals += stat_data.goals
@@ -118,7 +118,7 @@ class MatchService(IMatchService):
                 player.total_clean_sheets += 1
             self.player_repo.save(player)
 
-        self.match_repo.save_match(db_match)
+        self.match_repo.db.commit()
         self.cup_service.auto_resolve_cups(league_id, db_match.id)
         
         return db_match
@@ -229,7 +229,7 @@ class MatchService(IMatchService):
                 bonus_points=bonus
             )
             
-            match.stats.append(db_stat)
+            self.match_repo.db.add(db_stat)
 
             player.total_points += total_points
             player.total_goals += stat_data.goals
@@ -239,7 +239,7 @@ class MatchService(IMatchService):
                 player.total_clean_sheets += 1
             self.player_repo.save(player)
 
-        self.match_repo.save_match(match)
+        self.match_repo.db.commit()
         self.cup_service.auto_resolve_cups(league_id, match.id)
         
         return match

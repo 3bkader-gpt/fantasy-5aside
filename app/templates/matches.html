@@ -20,7 +20,7 @@
             <!-- Top row: match number + date -->
             <div class="scoreboard-meta"
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 0.8rem; color: rgba(255,255,255,0.6);">
-                <span>#{{ match.id }}</span>
+                <span>#{{ loop.index }}</span>
                 <span>{{ match.date.strftime('%Y-%m-%d %H:%M') if match.date else 'تاريخ غير معروف' }}</span>
             </div>
 
