@@ -57,7 +57,8 @@
             <tbody id="leaderboard-body">
                 {% for player in players %}
                 <tr data-points="{{ player.total_points }}" data-goals="{{ player.total_goals }}"
-                    data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}">
+                    data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}"
+                    data-clean-sheets="{{ player.total_clean_sheets }}">
                     <td data-label="المركز" class="rank-col">
                         <span class="trend-indicator" style="margin-inline-end: 0.5rem;">
                             {% if player.total_points > 0 %}

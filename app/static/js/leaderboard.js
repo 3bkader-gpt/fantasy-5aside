@@ -29,24 +29,44 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Re-append sorted rows and update ranks dynamically
             tbody.innerHTML = "";
-            rows.forEach((row, index) => {
-                const rankText = index + 1;
-                const rankPrefix = rankText === 1 ? '🥇' : rankText === 2 ? '🥈' : rankText === 3 ? '🥉' : '';
+            let visibleRank = 0;
 
-                // Update the visible rank column
-                const rankCell = row.querySelector(".rank-col");
-                if (rankCell) {
-                    rankCell.innerHTML = `${rankText} ${rankPrefix}`;
+            rows.forEach((row) => {
+                const saves = parseInt(row.getAttribute('data-saves')) || 0;
+                const cleanSheets = parseInt(row.getAttribute('data-clean-sheets')) || 0;
+
+                let isVisible = true;
+                if (sortMetric === 'saves') {
+                    // Filter: Only show players with at least one save or clean sheet
+                    if (saves === 0 && cleanSheets === 0) {
+                        isVisible = false;
+                    }
                 }
 
-                // Keep the crown logic only for the first row
-                const nameLink = row.querySelector("td[data-label='اللاعب']");
-                if (nameLink) {
-                    const existingCrown = nameLink.querySelector(".crown");
-                    if (existingCrown) existingCrown.remove();
-                    if (rankText === 1 && sortMetric === 'points') {
-                        nameLink.insertAdjacentHTML('beforeend', '<span class="crown">👑</span>');
+                if (isVisible) {
+                    visibleRank++;
+                    row.style.display = '';
+
+                    const rankText = visibleRank;
+                    const rankPrefix = rankText === 1 ? '🥇' : rankText === 2 ? '🥈' : rankText === 3 ? '🥉' : '';
+
+                    // Update the visible rank column
+                    const rankCell = row.querySelector(".rank-col");
+                    if (rankCell) {
+                        rankCell.innerHTML = `${rankText} ${rankPrefix}`;
                     }
+
+                    // Keep the crown logic only for the first row of points leaderboard
+                    const nameLink = row.querySelector("td[data-label='اللاعب']");
+                    if (nameLink) {
+                        const existingCrown = nameLink.querySelector(".crown");
+                        if (existingCrown) existingCrown.remove();
+                        if (rankText === 1 && sortMetric === 'points') {
+                            nameLink.insertAdjacentHTML('beforeend', '<span class="crown">👑</span>');
+                        }
+                    }
+                } else {
+                    row.style.display = 'none';
                 }
 
                 tbody.appendChild(row);
