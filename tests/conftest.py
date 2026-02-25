@@ -23,15 +23,24 @@ from app.services.match_service import MatchService
 
 def _get_test_db_url() -> str:
     """
-    Return the PostgreSQL URL to be used in tests.
-    Relies on TEST_DATABASE_URL / TESTING env picked up by Settings.
+    Return the database URL to be used in tests.
+    Ensures that we never run tests against a production Supabase instance.
     """
     # Force testing mode for the duration of pytest
     settings.testing = True
     url = settings.effective_database_url
-    if not url.startswith("postgresql"):
+
+    # CRITICAL SAFEGUARD: Never run tests on Supabase
+    if "supabase" in url.lower():
         raise RuntimeError(
-            f"Expected a PostgreSQL TEST_DATABASE_URL for tests, got: {url!r}"
+            f"🚫 DANGER: You are trying to run tests against Supabase! \n"
+            f"URL: {url}\n"
+            f"Please set a separate TEST_DATABASE_URL in your .env file or rely on local SQLite."
+        )
+
+    if not url.startswith("postgresql") and not url.startswith("sqlite"):
+        raise RuntimeError(
+            f"Expected a PostgreSQL or SQLite URL for tests, got: {url!r}"
         )
     return url
 
@@ -39,10 +48,18 @@ def _get_test_db_url() -> str:
 @pytest.fixture(scope="session", name="engine")
 def engine_fixture() -> "create_engine":
     """
-    Create a PostgreSQL engine for the whole test session.
+    Create a database engine for the whole test session.
     The underlying test database/schema must be isolated from production.
     """
     database_url = _get_test_db_url()
+
+    # Ensure the data directory exists for SQLite
+    if database_url.startswith("sqlite"):
+        db_path = database_url.replace("sqlite:///", "")
+        db_dir = os.path.dirname(db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+
     engine = create_engine(database_url)
 
     # Ensure all tables exist (drop/create to start fresh for test session)

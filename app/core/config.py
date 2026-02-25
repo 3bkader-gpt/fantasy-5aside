@@ -18,9 +18,9 @@ class Settings(BaseSettings):
 
     @property
     def effective_database_url(self) -> str:
-        # أولاً: وضع الاختبار مع TEST_DATABASE_URL
-        if self.testing and self.test_database_url:
-            return self.test_database_url
+        # أولاً: وضع الاختبار مع TEST_DATABASE_URL أو الرجوع لـ SQLite للأمان
+        if self.testing:
+            return self.test_database_url or SQLITE_URL
 
         if self.use_sqlite:
             return SQLITE_URL
