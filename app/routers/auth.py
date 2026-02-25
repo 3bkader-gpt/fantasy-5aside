@@ -12,7 +12,7 @@ templates = Jinja2Templates(directory="app/templates")
 def login_page(request: Request, msg: str = None):
     return templates.TemplateResponse(
         request=request,
-        name="login.html",
+        name="auth/login.html",
         context={"msg": msg, "is_admin": False}
     )
 
@@ -30,7 +30,7 @@ def login_submit(
     if not league or not security.verify_password(password, league.admin_password):
         return templates.TemplateResponse(
             request=request,
-            name="login.html",
+            name="auth/login.html",
             context={"error": "League name or password incorrect", "is_admin": False}
         )
         
