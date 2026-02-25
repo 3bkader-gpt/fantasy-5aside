@@ -9,3 +9,4 @@ pydantic-settings
 passlib[bcrypt]
 httpx
 pytest
+beautifulsoup4
