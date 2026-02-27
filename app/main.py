@@ -57,9 +57,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="5-a-side Fantasy Football", lifespan=lifespan)
 templates = Jinja2Templates(directory="app/templates")
 
-@app.get("/health")
+@app.get("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "ok"}
+
+@app.get("/robots.txt")
+async def robots_txt():
+    from fastapi.responses import FileResponse
+    return FileResponse("app/static/robots.txt")
 
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
