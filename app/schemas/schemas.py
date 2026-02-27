@@ -83,6 +83,7 @@ class MatchCreate(MatchBase):
     is_goalkeeper: bool = False
     saves: int = 0
     goals_conceded: int = 0
+    clean_sheet: bool = False
 
 class MatchEditRequest(MatchBase):
     stats: List[MatchStatCreate] = []

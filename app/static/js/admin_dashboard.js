@@ -116,15 +116,24 @@ document.addEventListener('DOMContentLoaded', function () {
         const name = nameInput.value.trim();
 
         if (name) {
+            const isGk = row.querySelector('.is-gk-check').checked;
+            const goalsConceded = parseInt(row.querySelector('.conceded-input').value) || 0;
+            let cleanSheet = row.querySelector('.clean-sheet-check').checked;
+
+            // Apply new Clean Sheet rule: GK conceding 6 or fewer goals gets a clean sheet automatically
+            if (isGk && goalsConceded <= 6) {
+                cleanSheet = true;
+            }
+
             statsArray.push({
                 player_name: name,
                 team: teamIdentifier,
                 goals: parseInt(row.querySelector('.goals-input').value) || 0,
                 assists: parseInt(row.querySelector('.assists-input').value) || 0,
                 saves: parseInt(row.querySelector('.saves-input').value) || 0,
-                goals_conceded: parseInt(row.querySelector('.conceded-input').value) || 0,
-                is_gk: row.querySelector('.is-gk-check').checked,
-                clean_sheet: row.querySelector('.clean-sheet-check').checked
+                goals_conceded: goalsConceded,
+                is_gk: isGk,
+                clean_sheet: cleanSheet
             });
         }
     }

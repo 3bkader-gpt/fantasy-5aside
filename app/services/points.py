@@ -41,8 +41,15 @@ class WinPoints(PointsStrategy):
 
 class CleanSheetPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        if ctx.clean_sheet and ctx.is_gk:
-            return 10
+        if ctx.clean_sheet:
+            if ctx.is_gk:
+                if ctx.goals_conceded <= 2:
+                    return 10
+                elif ctx.goals_conceded <= 6:
+                    return 4
+                return 0
+            else:
+                return 2
         return 0
 
 class SavePoints(PointsStrategy):
@@ -79,13 +86,20 @@ class PointsCalculator:
         تحوّل كائن MatchCreate إلى PointsContext وتحسب النقاط.
         """
         is_draw = match_data.score == 0
+        is_gk = getattr(match_data, "is_goalkeeper", False)
+        
+        if is_gk:
+            clean_sheet = getattr(match_data, "clean_sheet", False) or (match_data.goals_conceded <= 6)
+        else:
+            clean_sheet = getattr(match_data, "clean_sheet", False)
+
         ctx = PointsContext(
             goals=match_data.goals,
             assists=match_data.assists,
             is_winner=match_data.score > 0,
             is_draw=is_draw,
-            is_gk=getattr(match_data, "is_goalkeeper", False),
-            clean_sheet=match_data.goals_conceded == 0,
+            is_gk=is_gk,
+            clean_sheet=clean_sheet,
             saves=match_data.saves,
             goals_conceded=match_data.goals_conceded,
         )

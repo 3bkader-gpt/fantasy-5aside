@@ -60,11 +60,11 @@ class TestPointsCalculation:
             is_captain=False,
             is_goalkeeper=True,
             saves=0,
-            goals_conceded=4 # Penalty: -(4//3) = -1
+            goals_conceded=4 # Penalty: -(4//3) = -1. Clean Sheet: +4 (for ibracket 3-6)
         )
-        # Expected: 2 (win) - 1 (penalty) = 1
+        # Expected: 2 (win) - 1 (penalty from 4 goals) + 4 (clean sheet for conceding 3-6 goals) = 5
         points = self.calculator.calculate_player_points(match_data)
-        assert points == 1
+        assert points == 5
 
     def test_minimum_zero_points(self):
         match_data = MatchCreate(
@@ -75,8 +75,24 @@ class TestPointsCalculation:
             is_captain=False,
             is_goalkeeper=True,
             saves=0,
-            goals_conceded=6 # Penalty: -2
+            goals_conceded=8 # Penalty: -2. Clean Sheet: 0 (since > 6)
         )
         points = self.calculator.calculate_player_points(match_data)
         # total points would be -2, but max(0, points) enforces minimum 0
         assert points == 0
+
+    def test_defender_clean_sheet(self):
+        match_data = MatchCreate(
+            score=1, # Win: +2
+            goals=0,
+            assists=0,
+            is_mvp=False,
+            is_captain=False,
+            is_goalkeeper=False,
+            saves=0,
+            goals_conceded=1, # Even if they conceded goals, clean_sheet=True grants +2
+            clean_sheet=True 
+        )
+        # Expected: 2 (win) + 2 (defender clean sheet) = 4
+        points = self.calculator.calculate_player_points(match_data)
+        assert points == 4

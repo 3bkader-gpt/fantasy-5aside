@@ -76,6 +76,11 @@ class MatchService(IMatchService):
                 is_winner = True
                 
             is_draw = team_a_score == team_b_score
+            
+            # Update clean sheet evaluation for GK (6 goals or fewer = clean sheet)
+            if stat_data.is_gk and stat_data.goals_conceded <= 6:
+                stat_data.clean_sheet = True
+
             base_points = points.calculate_player_points(
                 goals=stat_data.goals,
                 assists=stat_data.assists,
