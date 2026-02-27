@@ -57,6 +57,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="5-a-side Fantasy Football", lifespan=lifespan)
 templates = Jinja2Templates(directory="app/templates")
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
     # Check if the client prefers HTML
