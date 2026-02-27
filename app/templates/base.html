@@ -8,19 +8,24 @@
     <meta name="description"
         content="{% if league %}تابع ترتيب لاعبي {{ league.name }} وإحصائياتهم في دوري الخماسي{% else %}أنشئ دوري الخماسي الخاص بك وتابع الإحصائيات{% endif %}">
 
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="apple-touch-icon" href="/static/img/icon-192.png">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+
     <!-- OpenGraph / WhatsApp / Telegram Previews -->
     <meta property="og:type" content="website">
     <meta property="og:title"
-        content="{% if league %}{{ league.name }} ⚽{% else %}دوري الخماسي - Fantasy Football{% endif %}">
-    <meta property="og:description"
-        content="{% if league %}تابع ترتيب اللاعبين والإحصائيات في {{ league.name }}{% else %}أنشئ دوري الخماسي الخاص بك{% endif %}">
+        content="{% if league %}دوري {{ league.name }} - الفانتازي الرسمي ⚽{% else %}Fantasy 5-a-Side - منصة إدارة الخماسي{% endif %}">
+    <meta property="og:description" content="تابع ترتيب الدوري، إحصائيات اللاعبين، والمنافسة لحظة بلحظة!">
+    <meta property="og:image" content="https://yoursite.com/static/img/og-banner.jpg">
     <meta property="og:site_name" content="Fantasy 5-a-Side">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="{% if league %}{{ league.name }} ⚽{% else %}دوري الخماسي{% endif %}">
-    <meta name="twitter:description"
-        content="{% if league %}ترتيب وإحصائيات {{ league.name }}{% else %}أنشئ دوري الخماسي الخاص بك{% endif %}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% if league %}دوري {{ league.name }} ⚽{% else %}Fantasy 5-a-Side{% endif %}">
+    <meta name="twitter:description" content="تابع ترتيب الدوري والمنافسة لحظة بلحظة!">
 
     <!-- Google Fonts: Cairo -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,7 +39,14 @@
 <body>
 
     <nav>
-        <a href="/" class="brand">⚽ دوري الخماسي</a>
+        <div class="brand-container flex-between" style="gap: 1rem;">
+            <a href="/" class="brand">⚽ دوري الخماسي</a>
+            {% if league %}
+            <button onclick="copyLeagueLink()" class="btn-share-mini" title="نسخ رابط الدوري لإرساله لأصدقائك">
+                نسخ الرابط 🔗
+            </button>
+            {% endif %}
+        </div>
         <ul>
             {% if league %}
             <li><a href="/l/{{ league.slug }}"><span class="icon">📋</span><span class="text">الترتيب</span></a></li>
@@ -43,8 +55,8 @@
             <li><a href="/l/{{ league.slug }}/cup"><span class="icon">🏆</span><span class="text">الكأس</span></a></li>
             <li><a href="/l/{{ league.slug }}/hall-of-fame"><span class="icon">🎖️</span><span
                         class="text">الشرف</span></a></li>
-            <li><a href="#" onclick="showRulesModal(event)"><span class="icon">📖</span><span
-                        class="text">القواعد</span></a></li>
+            <li><a href="#" onclick="showRulesModal(event)"><span class="icon">📖</span><span class="text">كيف
+                        تلعب؟</span></a></li>
             {% if is_admin %}
             <li><a href="/l/{{ league.slug }}/admin" class="admin-link"><span class="icon">🛡️</span><span
                         class="text">الإدارة</span></a></li>
@@ -160,10 +172,22 @@
                     </p>
                 </div>
 
-                <div class="min-points-rule card p-1"
+                <div class="min-points-rule card p-1 mb-1"
                     style="background: var(--surface-color); border-right: 4px solid var(--text-muted); padding-right: 15px;">
                     <p class="m-0 text-sm" style="line-height: 1.5;">⚠️ النتيجة النهائية لأي لاعب <strong>لا يمكن أن تقل
                             عن 0</strong>، حتى لو كانت الخصومات أكبر من نقاطه الموجبة.</p>
+                </div>
+
+                <div class="badges-info card p-1"
+                    style="background: var(--surface-color); border-right: 4px solid var(--primary-color); padding-right: 15px;">
+                    <h4 class="m-0 mb-sm" style="color: var(--primary-color); font-size: 1.1rem;">🏅 الأوسمة والجوائز
+                        (Badges)</h4>
+                    <ul class="text-sm" style="list-style: none; padding: 0; margin: 0; line-height: 1.6;">
+                        <li>🔫 <strong>القناص:</strong> سجل 6 أهداف أو أكثر في مباراة واحدة.</li>
+                        <li>🛡️ <strong>الحائط:</strong> حافظ على نظافة شباكه في 3 مباريات إجمالاً.</li>
+                        <li>🎯 <strong>صانع الألعاب:</strong> صنع 15 هدفاً (أسيست) خلال الشهر .</li>
+                        <li>⚡ <strong>الصاروخ:</strong> سجل 5 أهداف أو أكثر في 3 مباريات متتالية.</li>
+                    </ul>
                 </div>
             </div>
             <div class="modal-actions mt-2">

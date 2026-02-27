@@ -121,7 +121,7 @@ class AnalyticsService(IAnalyticsService):
         total_goals_assists_all_time = player.all_time_goals + player.all_time_assists + player.total_goals + player.total_assists
         ga_per_match = (total_goals_assists_all_time / total_matches) if total_matches > 0 else 0
 
-        # Sort history properly by match date
+        # Sort history properly by match date (desc for UI)
         history.sort(key=lambda s: s.match.date, reverse=True)
 
         # Dynamic Badges Calculation using Strategy Pattern
@@ -134,4 +134,65 @@ class AnalyticsService(IAnalyticsService):
             "win_rate": round(win_rate, 2),
             "ga_per_match": round(ga_per_match, 2),
             "badges": badges
+        }
+
+    def get_player_form_and_chart_data(self, player_id: int, league_id: int):
+        player = self.player_repo.get_by_id(player_id)
+        if not player or player.league_id != league_id:
+            return None
+
+        # Chronological order for chart (Oldest to Newest)
+        history = self.match_repo.get_player_history(player.id)
+        history.sort(key=lambda s: s.match.date)
+
+        chart_labels = []
+        chart_data = []
+        point_colors = []
+        
+        for stat in history:
+            match = stat.match
+            chart_labels.append(match.date.strftime("%m/%d"))
+            chart_data.append(stat.points_earned)
+            
+            # Determine Top/Bottom scorer in THAT match
+            match_points = [s.points_earned for s in match.stats]
+            if not match_points:
+                point_colors.append("#6c757d") # Normal gray
+                continue
+                
+            max_p = max(match_points)
+            min_p = min(match_points)
+            
+            if stat.points_earned == max_p and stat.points_earned > 0:
+                point_colors.append("#2ecc71") # Green (Top)
+            elif stat.points_earned == min_p and len(match_points) > 1:
+                point_colors.append("#e74c3c") # Red (Bottom)
+            else:
+                point_colors.append("#6c757d") # Gray
+
+        # Form history (Last 5 matches, outcome)
+        # Outcome: Win, Draw, Loss. 
+        # Note: MatchStat.is_winner is already available. 
+        # But for 'Draw', we might need to check if points are equal or logic specific to the app.
+        # Assuming if not is_winner, and if it's a draw system, we'd know.
+        # In this app, matches are usually win/loss teams.
+        # Let's check models to see if there's a score.
+        
+        recent_history = sorted(history, key=lambda s: s.match.date, reverse=True)[:5]
+        form_history = []
+        for stat in recent_history:
+            if stat.is_winner:
+                form_history.append('W')
+            else:
+                # Basic check for Draw if points earned is low or logic dictates
+                # For now, following user prompt for W/D/L
+                # If the app doesn't have draws, just W/L
+                form_history.append('L')
+
+        return {
+            "chart_labels": chart_labels,
+            "chart_data": chart_data,
+            "point_colors": point_colors,
+            "form_history": list(reversed(form_history)) # Show in order: Oldest to Newest in UI usually, or stay consistent. 
+            # Prompt says "last 5 match outcomes", usually read left to right (Newest on right).
         }

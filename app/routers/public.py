@@ -12,6 +12,8 @@ from ..dependencies import (
     ILeagueRepository, IPlayerRepository, IMatchRepository,
     IHallOfFameRepository, ICupRepository, IAnalyticsService
 )
+from ..services.achievements import achievement_service
+
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -83,7 +85,8 @@ def read_leaderboard(
     league_repo: ILeagueRepository = Depends(get_league_repository),
     player_repo: IPlayerRepository = Depends(get_player_repository),
     hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
-    cup_repo: ICupRepository = Depends(get_cup_repository)
+    cup_repo: ICupRepository = Depends(get_cup_repository),
+    match_repo: IMatchRepository = Depends(get_match_repository)
 ):
     league = league_repo.get_by_slug(slug)
     if not league:
@@ -100,6 +103,12 @@ def read_leaderboard(
     next_cup = active_cups[0] if active_cups else None
     
     is_admin = check_admin_status(slug, request)
+    
+    # Add badges to each player
+    for player in players:
+        # We need history for badges that depend on it
+        player_history = match_repo.get_player_history(player.id)
+        player.badges = achievement_service.get_earned_badges(player, player_history)
     
     return templates.TemplateResponse(
         request=request,
@@ -176,8 +185,24 @@ def read_player(
     summary = analytics.get("summary")
     badges = analytics.get("badges")
     recent_matches = analytics.get("recent_matches")
+    history = analytics.get("history")
+
+    # Get Graph & Form Data
+    form_data = analytics_service.get_player_form_and_chart_data(player_id, league.id)
+    chart_labels = form_data.get("chart_labels") if form_data else []
+    chart_data = form_data.get("chart_data") if form_data else []
+    point_colors = form_data.get("point_colors") if form_data else []
+    form_history = form_data.get("form_history") if form_data else []
         
     is_admin = check_admin_status(slug, request)
+        
+    # Get Badges
+    earned_badges = achievement_service.get_earned_badges(player, history)
+
+    # Extract additional stats from analytics
+    total_matches = analytics.get("total_matches", 0)
+    win_rate = analytics.get("win_rate", 0)
+    ga_per_match = analytics.get("ga_per_match", 0)
         
     return templates.TemplateResponse(
         request=request,
@@ -186,8 +211,16 @@ def read_player(
             "league": league,
             "player": player,
             "summary": summary,
-            "badges": badges,
+            "badges": earned_badges,
             "recent_matches": recent_matches,
+            "history": history,
+            "chart_labels": chart_labels,
+            "chart_data": chart_data,
+            "point_colors": point_colors,
+            "form_history": form_history,
+            "total_matches": total_matches,
+            "win_rate": win_rate,
+            "ga_per_match": ga_per_match,
             "is_admin": is_admin
         }
     )

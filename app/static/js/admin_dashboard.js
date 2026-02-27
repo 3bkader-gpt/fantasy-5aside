@@ -185,4 +185,37 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // Player Name Editing
+    document.querySelectorAll('.edit-player-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const playerId = this.getAttribute('data-player-id');
+            const currentName = this.getAttribute('data-player-name');
+
+            const newName = prompt(`تعديل اسم اللاعب "${currentName}":`, currentName);
+
+            if (newName === null) return; // Cancelled
+            const trimmedName = newName.trim();
+            if (!trimmedName || trimmedName === currentName) return;
+
+            try {
+                const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/player/${playerId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: trimmedName })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ تم تحديث اسم اللاعب بنجاح.');
+                    location.reload();
+                } else {
+                    alert('❌ خطأ: ' + (result.detail || 'تعذر تحديث الاسم.'));
+                }
+            } catch (error) {
+                console.error('Error updating player name:', error);
+                alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
+            }
+        });
+    });
 });

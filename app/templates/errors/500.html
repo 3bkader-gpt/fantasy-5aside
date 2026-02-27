@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex-center" style="min-height: 70vh; flex-direction: column;">
+    <div class="card glass-card text-center"
+        style="max-width: 500px; padding: 3rem; animation: pulse 2s infinite alternate;">
+        <div style="font-size: 5rem; margin-bottom: 1.5rem;">📺</div>
+        <h1 style="color: var(--danger-color); margin-bottom: 1rem;">عطل فني في الـ VAR!</h1>
+        <p class="text-muted mb-2" style="font-size: 1.2rem;">حصل مشكلة غير متوقعة في النظام، جاري الإصلاح.</p>
+        <a href="/" class="btn btn-primary"
+            style="margin-top: 1.5rem; width: auto; padding: 12px 30px; border-radius: 50px;">
+            رجوع للرئيسية
+        </a>
+    </div>
+</div>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .dark-mode .glass-card {
+        background: rgba(15, 23, 42, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.9;
+        }
+
+        100% {
+            transform: scale(1.02);
+            opacity: 1;
+        }
+    }
+
+    .flex-center {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+{% endblock %}

@@ -29,21 +29,27 @@
         </button>
     </form>
     <form action="/l/{{ league.slug }}/admin/season/undo" method="POST" style="margin-top: 1rem;"
-        onsubmit="return confirm('هل أنت متأكد من التراجع عن إنهاء الشهر؟ سيتم استعادة النقاط وحذف آخر تسجيل من لوحة الشرف.');">
+        onsubmit="return confirm('هل أنت متأكد من التراجع عن نهاية الشهر؟');">
         <button type="submit" class="btn" style="background: #7f8c8d; color: white; font-size: 0.85rem;">
-            ↩️ تراجع عن إنهاء الشهر الأخير
+            إلغاء نهاية الشهر ⏪
         </button>
     </form>
 </div>
 
 <div class="card mb-2" style="border-right: 5px solid var(--info-color, #3498db);">
     <h3 style="color: var(--info-color, #3498db);">📊 تصدير الإحصائيات</h3>
-    <a href="/l/{{ league.slug }}/admin/export/stats" class="btn"
-        style="background: var(--info-color, #3498db); color: white;">
-        تحميل ملف Excel/CSV 📥
-    </a>
-    <p class="text-muted mt-1" style="font-size: 0.9rem;">* يحتوي الملف على جميع إحصائيات اللاعبين (النقاط، الأهداف،
-        الأسيست، التصديات، وأكثر).</p>
+    <div class="flex-between gap-1">
+        <a href="/l/{{ league.slug }}/admin/export/stats" class="btn"
+            style="background: var(--info-color, #3498db); color: white; flex: 1;">
+            تصدير البيانات (CSV) 📊
+        </a>
+        <a href="/l/{{ league.slug }}/admin/export/backup" class="btn"
+            style="background: #2c3e50; color: white; flex: 1;">
+            نسخة احتياطية (JSON) 💾
+        </a>
+    </div>
+    <p class="text-muted mt-1" style="font-size: 0.9rem;">* يمكنك تصدير الإحصائيات كملف Excel أو تحميل نسخة احتياطية
+        كاملة للملفات (JSON).</p>
 </div>
 
 <div class="card match-form-container">
@@ -154,6 +160,11 @@
                     <td style="padding: 10px;">{{ player.name }}</td>
                     <td style="padding: 10px;">{{ player.total_points }}</td>
                     <td style="padding: 10px; text-align: center;">
+                        <button class="btn btn-sm edit-player-btn" data-player-id="{{ player.id }}"
+                            data-player-name="{{ player.name }}"
+                            style="background: var(--info-color, #3498db); color: white; margin-inline-end: 5px;">
+                            تعديل الاسم ✏️
+                        </button>
                         <button class="btn btn-danger btn-sm delete-player-btn" data-player-id="{{ player.id }}"
                             data-player-name="{{ player.name }}">
                             مسح نهائياً

@@ -3,6 +3,7 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, HTTPException
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -82,6 +83,14 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         status_code=exc.status_code,
         content={"detail": exc.detail},
     )
+
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, __):
+    return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
+
+@app.exception_handler(500)
+async def custom_500_handler(request: Request, __):
+    return templates.TemplateResponse("errors/500.html", {"request": request}, status_code=500)
 
 # CORS
 app.add_middleware(

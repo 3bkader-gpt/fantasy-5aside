@@ -42,3 +42,7 @@ class IAnalyticsService(ABC):
     @abstractmethod
     def get_player_analytics(self, player_id: int, league_id: int) -> Optional[Dict[str, Any]]:
         pass
+
+    @abstractmethod
+    def get_player_form_and_chart_data(self, player_id: int, league_id: int) -> Optional[Dict[str, Any]]:
+        pass

@@ -80,8 +80,17 @@
                         {% endif %}
                     </td>
                     <td data-label="اللاعب">
-                        <a href="/player/{{ player.id }}" style="font-weight: bold;">{{ player.name }}</a>
-                        {% if player.total_points > 0 and loop.index == 1 %}<span class="crown">👑</span>{% endif %}
+                        <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-start;">
+                            <a href="/l/{{ league.slug }}/player/{{ player.id }}" style="font-weight: bold;">{{
+                                player.name }}</a>
+                            {% if player.total_points > 0 and loop.index == 1 %}<span class="crown">👑</span>{% endif %}
+                            <div class="player-badges-mini" style="display: flex; gap: 2px;">
+                                {% for badge in player.badges %}
+                                <span title="{{ badge.name }}: {{ badge.description }}"
+                                    style="font-size: 0.9rem; cursor: help;">{{ badge.icon }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </td>
                     <td data-label="الفورمة">{{ player.form }}</td>
                     <td data-label="النقاط"><strong>{{ player.total_points }}</strong></td>

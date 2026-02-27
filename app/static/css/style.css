@@ -1301,3 +1301,98 @@ button.btn-danger {
         font-size: 1rem;
     }
 }
+
+/* =========================================
+   V2.0 Polish: Premium UI & Viral Loop
+   ========================================= */
+
+/* Utility: Flexbox Between */
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.gap-1 {
+    gap: 0.5rem;
+}
+
+/* Mini Share Button (Glassmorphism) */
+.btn-share-mini {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s, transform 0.2s;
+    white-space: nowrap;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-share-mini:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.dark-mode .btn-share-mini {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Enhancement (Glassmorphism) */
+.modal-overlay.active {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(15, 23, 42, 0.7);
+    /* Deep Slate overlay */
+}
+
+/* Rules Table Custom Styling */
+.rules-table {
+    width: 100%;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.rules-table th {
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border-color);
+    padding: 10px;
+}
+
+.rules-table td {
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 10px;
+}
+
+.highlight-gk {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.dark-mode .highlight-gk {
+    background-color: rgba(52, 152, 219, 0.15);
+}
+
+.badges-info ul li {
+    position: relative;
+    padding-inline-start: 15px;
+    margin-bottom: 8px;
+}
+
+.badges-info ul li::before {
+    content: "•";
+    position: absolute;
+    right: 0;
+    color: var(--primary-color);
+    font-weight: bold;
+}

@@ -8,11 +8,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const goalsData = canvas.getAttribute('data-goals').split(',').map(Number);
     const assistsData = canvas.getAttribute('data-assists').split(',').map(Number);
 
-    // Parse outcomes for color-coding
+    // New: Point Colors from Analytics Service
+    const pointColorsRaw = canvas.getAttribute('data-point-colors');
+    const pointColors = pointColorsRaw ? pointColorsRaw.split(',') : [];
+
+    // Parse outcomes for tooltip
     const outcomesRaw = canvas.getAttribute('data-outcomes');
     const outcomes = outcomesRaw ? outcomesRaw.split(',') : [];
-    const pointColors = outcomes.map(o => o.trim() === 'W' ? '#27ae60' : '#e74c3c');
-    const pointBorderColors = outcomes.map(o => o.trim() === 'W' ? '#1e8449' : '#c0392b');
 
     const textColor = getComputedStyle(document.body).getPropertyValue('--text-color').trim();
     const gridColor = getComputedStyle(document.body).getPropertyValue('--border-color').trim();
@@ -28,11 +30,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     borderColor: '#3498db',
                     backgroundColor: 'rgba(52, 152, 219, 0.1)',
                     borderWidth: 3,
-                    tension: 0.3,
+                    tension: 0.4,
                     fill: true,
                     yAxisID: 'y',
                     pointBackgroundColor: pointColors.length ? pointColors : '#3498db',
-                    pointBorderColor: pointBorderColors.length ? pointBorderColors : '#2980b9',
+                    pointBorderColor: '#fff',
                     pointRadius: 6,
                     pointHoverRadius: 9,
                     pointBorderWidth: 2
@@ -42,32 +44,41 @@ document.addEventListener("DOMContentLoaded", function () {
                     data: goalsData,
                     type: 'bar',
                     backgroundColor: 'rgba(46, 204, 113, 0.6)',
-                    yAxisID: 'y1'
+                    yAxisID: 'y1',
+                    borderRadius: 4
                 },
                 {
                     label: 'الأسيست',
                     data: assistsData,
                     type: 'bar',
                     backgroundColor: 'rgba(155, 89, 182, 0.6)',
-                    yAxisID: 'y1'
+                    yAxisID: 'y1',
+                    borderRadius: 4
                 }
             ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: {
                 mode: 'index',
                 intersect: false,
             },
             plugins: {
                 legend: {
-                    labels: { color: textColor, font: { family: 'Cairo' } }
+                    position: 'top',
+                    labels: { color: textColor, font: { family: 'Cairo', size: 12 } }
                 },
                 tooltip: {
+                    padding: 12,
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { family: 'Cairo', size: 14 },
+                    bodyFont: { family: 'Cairo', size: 13 },
                     callbacks: {
                         afterLabel: function (context) {
                             if (context.datasetIndex === 0 && outcomes.length) {
-                                return outcomes[context.dataIndex].trim() === 'W' ? '✅ فوز' : '❌ خسارة';
+                                const outcome = outcomes[context.dataIndex].trim();
+                                return outcome === 'W' ? '✅ نتيجة المباراة: فوز' : '❌ نتيجة المباراة: خسارة';
                             }
                             return '';
                         }
@@ -76,15 +87,14 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             scales: {
                 x: {
-                    ticks: { color: textColor },
-                    grid: { color: gridColor },
-                    title: { display: true, text: 'المباريات', color: textColor }
+                    ticks: { color: textColor, font: { family: 'Cairo' } },
+                    grid: { color: gridColor, drawOnChartArea: false },
                 },
                 y: {
                     type: 'linear',
                     display: true,
                     position: 'right',
-                    title: { display: true, text: 'النقاط', color: textColor },
+                    title: { display: true, text: 'النقاط', color: textColor, font: { family: 'Cairo' } },
                     ticks: { color: textColor },
                     grid: { color: gridColor },
                     min: 0,
@@ -94,7 +104,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     type: 'linear',
                     display: true,
                     position: 'left',
-                    title: { display: true, text: 'الأهداف / الأسيست', color: textColor },
+                    title: { display: true, text: 'الأهداف / الأسيست', color: textColor, font: { family: 'Cairo' } },
                     ticks: { color: textColor, stepSize: 1 },
                     grid: { drawOnChartArea: false },
                     min: 0,

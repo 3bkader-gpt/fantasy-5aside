@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, Form
+import json
+from fastapi import APIRouter, Depends, Request, HTTPException, Form, Response
 from fastapi.responses import RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
@@ -10,8 +11,10 @@ from ..dependencies import (
     get_league_repository, get_player_repository, get_match_repository,
     get_current_admin_league,
     ILeagueService, ICupService, IMatchService,
-    ILeagueRepository, IPlayerRepository, IMatchRepository
+    ILeagueRepository, IPlayerRepository, IMatchRepository,
+    IAnalyticsService
 )
+from ..services.achievements import achievement_service
 
 router = APIRouter(prefix="/l/{slug}/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -234,24 +237,24 @@ def export_stats_csv(
     writer = csv.writer(output)
 
     writer.writerow([
-        'المركز', 'اسم اللاعب', 'النقاط', 'الأهداف', 'الأسيست',
-        'التصديات', 'شباك نظيفة', 'الفورمة',
-        'النقاط التاريخية', 'الأهداف التاريخية', 'الأسيست التاريخية'
+        'اسم اللاعب', 'النقاط', 'الأهداف', 'الصناعة',
+        'تصديات', 'شباك نظيفة', 'الأوسمة'
     ])
 
-    for idx, player in enumerate(players, 1):
+    for player in players:
+        # Fetch history to evaluate badges
+        history = match_repo.get_player_history(player.id)
+        earned_badges = achievement_service.get_earned_badges(player, history)
+        badge_names = ", ".join([b['name'] for b in earned_badges]) if earned_badges else "لا يوجد"
+
         writer.writerow([
-            idx,
             player.name,
             player.total_points,
             player.total_goals,
             player.total_assists,
             player.total_saves,
             player.total_clean_sheets,
-            getattr(player, 'form', '➖'),
-            player.all_time_points,
-            player.all_time_goals,
-            player.all_time_assists,
+            badge_names
         ])
 
     output.seek(0)
@@ -262,6 +265,88 @@ def export_stats_csv(
         media_type="text/csv; charset=utf-8-sig",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+@router.get("/export/backup")
+def export_league_backup(
+    league: models.League = Depends(get_current_admin_league),
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    match_repo: IMatchRepository = Depends(get_match_repository)
+):
+    """
+    Exports the entire league data (Players, Matches, Stats) as a JSON file.
+    Only accessible by league administrators.
+    """
+    try:
+        players = player_repo.get_leaderboard(league.id)
+        matches = match_repo.get_all_for_league(league.id)
+        
+        backup_data = {
+            "league": {
+                "name": league.name,
+                "slug": league.slug,
+                "created_at": league.created_at.isoformat() if hasattr(league.created_at, 'isoformat') else str(league.created_at)
+            },
+            "players": [],
+            "matches": []
+        }
+
+        for p in players:
+            backup_data["players"].append({
+                "name": p.name,
+                "total_points": p.total_points,
+                "goals": p.total_goals,
+                "assists": p.total_assists,
+                "saves": p.total_saves,
+                "clean_sheets": p.total_clean_sheets
+                # matches_played removed as it's not a direct column on Player model
+            })
+
+        for m in matches:
+            match_entry = {
+                "date": m.date.isoformat() if hasattr(m.date, 'isoformat') else str(m.date),
+                "team_a_name": m.team_a_name,
+                "team_b_name": m.team_b_name,
+                "team_a_score": m.team_a_score,
+                "team_b_score": m.team_b_score,
+                "stats": []
+            }
+            
+            if hasattr(m, 'stats'):
+                for s in m.stats:
+                    player_name = s.player.name if s.player else "Unknown"
+                    match_entry["stats"].append({
+                        "player_name": player_name,
+                        "goals": s.goals,
+                        "assists": s.assists,
+                        "saves": s.saves,
+                        "conceded": s.goals_conceded, # Fixed name
+                        "clean_sheet": s.clean_sheet,
+                        "is_gk": s.is_gk,
+                        "points": s.points_earned,     # Fixed name
+                        "bps": s.bonus_points          # Fixed name
+                    })
+            
+            backup_data["matches"].append(match_entry)
+
+        json_content = json.dumps(backup_data, ensure_ascii=False, indent=4)
+        filename = f"league_backup_{league.slug}.json"
+        
+        return Response(
+            content=json_content,
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except Exception as e:
+        import traceback
+        error_msg = f"Error exporting backup: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        return Response(
+            content=json.dumps({"error": str(e), "traceback": traceback.format_exc()}, indent=4),
+            media_type="application/json",
+            status_code=500
+        )
+
 @router.delete("/player/{player_id}")
 def delete_player(
     player_id: int,
@@ -275,3 +360,21 @@ def delete_player(
         raise HTTPException(status_code=404, detail="Player not found")
         
     return {"success": True, "message": "تم حذف اللاعب بنجاح"}
+
+@router.put("/player/{player_id}")
+def update_player_name(
+    player_id: int,
+    data: dict,
+    league: models.League = Depends(get_current_admin_league),
+    player_repo: IPlayerRepository = Depends(get_player_repository)
+):
+    """Update a player's name."""
+    new_name = data.get("name")
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Name is required")
+        
+    player = player_repo.update_name(player_id, new_name)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+        
+    return {"success": True, "player": {"id": player.id, "name": player.name}}

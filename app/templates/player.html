@@ -6,21 +6,14 @@
         <h1 class="mb-0" style="font-size: 2.5rem;">{{ player.name }}</h1>
         <p style="font-size: 1.2rem; opacity: 0.9;" class="mb-0 mt-1">ملف إحصائيات اللاعب</p>
 
-        {% if history %}
+        {% if form_history %}
         <div class="flex-center gap-2 mt-1" style="flex-wrap: wrap; align-items: center;">
-            <span style="font-size: 0.85rem; opacity: 0.8; margin-left: 0.5rem;">الفورمة:</span>
-            {% for stat in history[:5] %}
-            <span title="{{ 'فوز' if stat.is_winner else 'خسارة' }} — {{ stat.match.date.strftime('%m/%d') }}" style="
-                display: inline-block;
-                width: 28px; height: 28px;
-                border-radius: 6px;
-                font-size: 0.75rem;
-                line-height: 28px;
-                font-weight: bold;
-                background: {{ '#27ae60' if stat.is_winner else '#e74c3c' }};
-                color: white;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            ">{{ 'W' if stat.is_winner else 'L' }}</span>
+            <span style="font-size: 0.85rem; opacity: 0.8; margin-left: 0.5rem;">الفورمة (آخر 5 مباريات):</span>
+            {% for outcome in form_history %}
+            <span class="form-badge {{ 'win' if outcome == 'W' else 'loss' if outcome == 'L' else 'draw' }}"
+                title="{{ 'فوز' if outcome == 'W' else 'خسارة' if outcome == 'L' else 'تعادل' }}">
+                {{ outcome }}
+            </span>
             {% endfor %}
         </div>
         {% endif %}
@@ -28,7 +21,9 @@
         {% if badges %}
         <div class="flex-center gap-2 mt-1" style="flex-wrap: wrap;">
             {% for badge in badges %}
-            <span class="badge-pill">{{ badge }}</span>
+            <span class="badge-pill" title="{{ badge.description }}" style="cursor: help;">
+                {{ badge.icon }} {{ badge.name }}
+            </span>
             {% endfor %}
         </div>
         {% endif %}
@@ -102,21 +97,132 @@
     </div>
 
     <!-- Analytics Chart -->
-    {% if history and history|length >= 2 %}
-    <div class="card mb-2" style="border: 1px solid var(--border-color);">
-        <h3 class="mb-1" style="color: var(--text-color);">📈 الانخفاض والارتفاع في المستوى
-            (المباريات السابقة)</h3>
-        <canvas id="performanceChart" height="100"
-            data-labels="{% for stat in history|reverse %}{{ stat.match.date.strftime('%m-%d') }}{% if not loop.last %},{% endif %}{% endfor %}"
-            data-points="{% for stat in history|reverse %}{{ stat.points_earned }}{% if not loop.last %},{% endif %}{% endfor %}"
-            data-goals="{% for stat in history|reverse %}{{ stat.goals }}{% if not loop.last %},{% endif %}{% endfor %}"
-            data-assists="{% for stat in history|reverse %}{{ stat.assists }}{% if not loop.last %},{% endif %}{% endfor %}"
-            data-outcomes="{% for stat in history|reverse %}{{ 'W' if stat.is_winner else 'L' }}{% if not loop.last %},{% endif %}{% endfor %}">
-        </canvas>
+    {% if history and history|length >= 1 %}
+    <div class="card mb-2" style="border: 1px solid var(--border-color); background: var(--card-bg);">
+        <h3 class="mb-2" style="color: var(--text-color); font-size: 1.2rem;">📈 تحليل الأداء والنقاط</h3>
+        <div style="height: 300px; width: 100%;">
+            <canvas id="performanceChart" data-labels="{{ chart_labels|join(',') }}"
+                data-points="{{ chart_data|join(',') }}" data-point-colors="{{ point_colors|join(',') }}"
+                data-goals="{% for stat in history|reverse %}{{ stat.goals }}{% if not loop.last %},{% endif %}{% endfor %}"
+                data-assists="{% for stat in history|reverse %}{{ stat.assists }}{% if not loop.last %},{% endif %}{% endfor %}"
+                data-outcomes="{% for stat in history|reverse %}{{ 'W' if stat.is_winner else 'L' }}{% if not loop.last %},{% endif %}{% endfor %}">
+            </canvas>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/static/js/player_chart.js"></script>
+    {% endif %}
+
+    <!-- Badges & Achievements Section -->
+    {% if badges %}
+    <h2 class="mb-2" style="color: var(--text-color);">🏆 الأوسمة والإنجازات</h2>
+    <div class="achievements-grid mb-3">
+        {% for badge in badges %}
+        <div class="achievement-card" title="{{ badge.description }}">
+            <div class="achievement-icon">{{ badge.icon }}</div>
+            <div class="achievement-info">
+                <div class="achievement-name">{{ badge.name }}</div>
+                <div class="achievement-desc">{{ badge.description }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <style>
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .achievement-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            cursor: help;
+        }
+
+        .achievement-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .achievement-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+        }
+
+        .achievement-name {
+            font-weight: bold;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .achievement-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Form Badges */
+        .form-badge {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            line-height: 28px;
+            font-weight: bold;
+            text-align: center;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-badge.win {
+            background: #27ae60;
+        }
+
+        .form-badge.loss {
+            background: #e74c3c;
+        }
+
+        .form-badge.draw {
+            background: #f39c12;
+        }
+
+        /* Mini Form Badges for Card Export */
+        .form-badge-mini {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 5px;
+            font-size: 0.65rem;
+            line-height: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: white;
+        }
+
+        .form-badge-mini.win {
+            background: #27ae60;
+        }
+
+        .form-badge-mini.loss {
+            background: #e74c3c;
+        }
+
+        .form-badge-mini.draw {
+            background: #f39c12;
+        }
+    </style>
     {% endif %}
 
     <h2 class="mb-2" style="color: var(--text-color);">📜 سجل المباريات الخاص باللاعب</h2>
@@ -204,7 +310,7 @@
                     font-size: 2.5rem;
                     box-shadow: 0 5px 20px rgba(255,215,0,0.3);
                 ">⚽</div>
-                <div style="font-size: 2rem; font-weight: 800; letter-spacing: 1px;">{{ player.name }}</div>
+                <div style="font-size: 2rem; font-weight: 800;">{{ player.name }}</div>
                 <div style="font-size: 0.9rem; opacity: 0.7; margin-top: 0.25rem;">{{ league.name }}</div>
             </div>
 
@@ -249,35 +355,28 @@
                 </div>
                 <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
                     <div style="font-size: 1.4rem; font-weight: 800; color: #f39c12;">{{ total_matches }}</div>
-                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">مباريات</div>
+                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">لعب</div>
                 </div>
                 <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
                     <div style="font-size: 1.4rem; font-weight: 800; color: #1abc9c;">{{ win_rate }}%</div>
                     <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">فوز</div>
                 </div>
                 <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #e74c3c;">{{ player.total_clean_sheets }}
-                    </div>
-                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">شباك نظيفة</div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #3498db;">{{ ga_per_match }}</div>
+                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">مساهمة/م</div>
                 </div>
             </div>
 
             <!-- Form Bar -->
-            {% if history %}
+            {% if form_history %}
             <div style="text-align: center; margin: 0.5rem 1.5rem;">
                 <div style="font-size: 0.7rem; opacity: 0.5; margin-bottom: 0.3rem;">الفورمة (آخر 5 مباريات)</div>
                 <div style="display: flex; justify-content: center; gap: 6px;">
-                    {% for stat in history[:5] %}
-                    <span style="
-                        display: inline-block;
-                        width: 24px; height: 24px;
-                        border-radius: 5px;
-                        font-size: 0.65rem;
-                        line-height: 24px;
-                        font-weight: bold;
-                        background: {{ '#27ae60' if stat.is_winner else '#e74c3c' }};
-                        color: white;
-                    ">{{ 'W' if stat.is_winner else 'L' }}</span>
+                    {% for outcome in form_history %}
+                    <span
+                        class="form-badge-mini {{ 'win' if outcome == 'W' else 'loss' if outcome == 'L' else 'draw' }}">
+                        {{ outcome }}
+                    </span>
                     {% endfor %}
                 </div>
             </div>
@@ -294,7 +393,8 @@
                         padding: 0.2rem 0.6rem;
                         border-radius: 20px;
                         font-size: 0.7rem;
-                    ">{{ badge }}</span>
+                        color: #ffd700;
+                    ">{{ badge.icon }} {{ badge.name }}</span>
                     {% endfor %}
                 </div>
             </div>

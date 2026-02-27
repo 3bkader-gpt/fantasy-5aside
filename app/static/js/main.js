@@ -114,3 +114,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+// Copy League Link Function
+function copyLeagueLink() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast("تم نسخ رابط الدوري بنجاح! شاركه مع فريقك 🚀", "success");
+    }).catch(err => {
+        showToast("عذراً، حدث خطأ أثناء نسخ الرابط", "error");
+    });
+}
