@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="5-a-side Fantasy Football", lifespan=lifespan)
 templates = Jinja2Templates(directory="app/templates")
 
-@app.get("/health", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "ok"}
 
