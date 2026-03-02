@@ -122,34 +122,40 @@ class AnalyticsService(IAnalyticsService):
         ga_per_match = (total_goals_assists_all_time / total_matches) if total_matches > 0 else 0
 
         # Sort history properly by match date (desc for UI)
-        history.sort(key=lambda s: s.match.date, reverse=True)
+        history_desc = sorted(history, key=lambda s: s.match.date, reverse=True)
 
         # Dynamic Badges Calculation using Strategy Pattern
-        badges = default_badge_calculator.calculate_badges(player, history, total_matches, win_rate)
+        badges = default_badge_calculator.calculate_badges(player, history_desc, total_matches, win_rate)
+
+        # Get chart data using the already fetched history
+        form_and_chart = self.get_player_form_and_chart_data(player_id, league_id, history=history)
 
         return {
             "player": player,
-            "history": history,
+            "history": history_desc,
             "total_matches": total_matches,
             "win_rate": round(win_rate, 2),
             "ga_per_match": round(ga_per_match, 2),
-            "badges": badges
+            "badges": badges,
+            "form_and_chart": form_and_chart
         }
 
-    def get_player_form_and_chart_data(self, player_id: int, league_id: int):
-        player = self.player_repo.get_by_id(player_id)
-        if not player or player.league_id != league_id:
-            return None
-
-        # Chronological order for chart (Oldest to Newest)
-        history = self.match_repo.get_player_history(player.id)
-        history.sort(key=lambda s: s.match.date)
+    def get_player_form_and_chart_data(self, player_id: int, league_id: int, history: List[models.MatchStat] = None):
+        if history is None:
+            player = self.player_repo.get_by_id(player_id)
+            if not player or player.league_id != league_id:
+                return None
+            # Chronological order for chart (Oldest to Newest)
+            history = self.match_repo.get_player_history(player.id)
+        
+        # Chronological sort for chart
+        history_chron = sorted(history, key=lambda s: s.match.date)
 
         chart_labels = []
         chart_data = []
         point_colors = []
         
-        for stat in history:
+        for stat in history_chron:
             match = stat.match
             chart_labels.append(match.date.strftime("%m/%d"))
             chart_data.append(stat.points_earned)

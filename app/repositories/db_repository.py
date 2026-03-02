@@ -104,7 +104,14 @@ class PlayerRepository(IPlayerRepository):
         self.db.commit()
         return True
     def get_leaderboard(self, league_id: int) -> List[models.Player]:
-        return self.db.query(models.Player).filter(models.Player.league_id == league_id).order_by(models.Player.total_points.desc(), models.Player.total_goals.desc()).all()
+        return self.db.query(models.Player).filter(
+            models.Player.league_id == league_id
+        ).options(
+            joinedload(models.Player.match_stats).joinedload(models.MatchStat.match)
+        ).order_by(
+            models.Player.total_points.desc(), 
+            models.Player.total_goals.desc()
+        ).all()
     def save(self, player: models.Player) -> models.Player:
         self.db.add(player)
         self.db.commit()
@@ -132,7 +139,11 @@ class MatchRepository(IMatchRepository):
         self.db.query(models.MatchStat).filter(models.MatchStat.match_id == match_id).delete(synchronize_session=False)
         self.db.commit()
     def get_player_history(self, player_id: int) -> List[models.MatchStat]:
-        return self.db.query(models.MatchStat).options(joinedload(models.MatchStat.match)).filter(models.MatchStat.player_id == player_id).order_by(models.MatchStat.match_id.desc()).all()
+        return self.db.query(models.MatchStat).options(
+            joinedload(models.MatchStat.match).joinedload(models.Match.stats)
+        ).filter(models.MatchStat.player_id == player_id).order_by(models.MatchStat.match_id.desc()).all()
+    def get_active_voting_match(self, league_id: int) -> Optional[models.Match]:
+        return self.db.query(models.Match).filter(models.Match.league_id == league_id, models.Match.voting_round > 0).first()
 
 class CupRepository(ICupRepository):
     def __init__(self, db: Session): self.db = db

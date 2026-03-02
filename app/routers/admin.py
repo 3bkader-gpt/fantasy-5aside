@@ -263,9 +263,8 @@ def export_stats_csv(
     ])
 
     for player in players:
-        # Fetch history to evaluate badges
-        history = match_repo.get_player_history(player.id)
-        earned_badges = achievement_service.get_earned_badges(player, history)
+        # Fetch history from preloaded stats to evaluate badges
+        earned_badges = achievement_service.get_earned_badges(player, player.match_stats)
         badge_names = ", ".join([b['name'] for b in earned_badges]) if earned_badges else "لا يوجد"
 
         writer.writerow([

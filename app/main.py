@@ -51,15 +51,27 @@ async def lifespan(app: FastAPI):
         ("players", "all_time_goals", "INTEGER DEFAULT 0"),
         ("players", "all_time_assists", "INTEGER DEFAULT 0"),
         ("players", "all_time_saves", "INTEGER DEFAULT 0"),
-        ("players", "all_time_clean_sheets", "INTEGER DEFAULT 0")
+        ("players", "all_time_clean_sheets", "INTEGER DEFAULT 0"),
+        # Indexing for performance
+        ("players", "league_id", "INDEX"),
+        ("matches", "league_id", "INDEX"),
+        ("match_stats", "player_id", "INDEX"),
+        ("match_stats", "match_id", "INDEX"),
+        ("votes", "match_id", "INDEX"),
+        ("cup_matchups", "league_id", "INDEX")
     ]
     
     for table, col_name, col_type in migrations:
         # Each column in its own transaction to prevent poisoning
         try:
             with engine.begin() as conn:
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type};"))
-                logger.info(f"Migration: added '{col_name}' to '{table}'.")
+                if col_type == "INDEX":
+                    index_name = f"idx_{table}_{col_name}"
+                    conn.execute(text(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table} ({col_name});"))
+                    logger.info(f"Migration: created index '{index_name}' on '{table}'.")
+                else:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type};"))
+                    logger.info(f"Migration: added '{col_name}' to '{table}'.")
         except Exception:
             # Expected if column already exists
             logger.debug(f"Skipping migration for '{col_name}' in '{table}' (likely exists).")

@@ -52,6 +52,8 @@ class IMatchRepository(ABC):
     def delete_match_stats(self, match_id: int) -> None: pass
     @abstractmethod
     def get_player_history(self, player_id: int) -> List[models.MatchStat]: pass
+    @abstractmethod
+    def get_active_voting_match(self, league_id: int) -> Optional[models.Match]: pass
 
 class ICupRepository(ABC):
     @abstractmethod
