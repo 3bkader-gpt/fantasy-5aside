@@ -114,3 +114,28 @@ class CupMatchupResponse(BaseModel):
     player2: Optional[PlayerResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Voting Schemas ---
+class VoteCreate(BaseModel):
+    match_id: int
+    voter_id: int
+    candidate_id: int
+    round_number: int  # 1, 2, or 3
+
+class VoteResponse(BaseModel):
+    id: int
+    match_id: int
+    voter_id: int
+    candidate_id: int
+    round_number: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class VotingStatusResponse(BaseModel):
+    match_id: int
+    voting_round: int  # 0=Not Started, 1, 2, 3, 4=Closed
+    has_voted: bool
+    round_winner: Optional[int] = None # player_id
+    excluded_ids: List[int] = []

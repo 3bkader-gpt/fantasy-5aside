@@ -258,17 +258,15 @@
     </tr>
 </template>
 
+<div id="league-data" data-slug="{{ league.slug }}" data-players-json="{{ players | tojson | forceescape }}">
+</div>
+
 <script>
-    window.LEAGUE_SLUG = "{{ league.slug }}";
-    window.LEAGUE_PLAYERS = [
-        {% for player in players %}
-    {
-        "name": "{{ player.name }}",
-            "team": "{{ player.team or '' }}",
-                "default_is_gk": { { 'true' if player.default_is_gk else 'false' } }
-    } {% if not loop.last %}, {% endif %}
-    {% endfor %}
-    ];
+    (function () {
+        const leagueData = document.getElementById('league-data').dataset;
+        window.LEAGUE_SLUG = leagueData.slug;
+        window.LEAGUE_PLAYERS = JSON.parse(leagueData.playersJson);
+    })();
 </script>
 <script src="/static/js/admin_dashboard.js"></script>
 {% else %}

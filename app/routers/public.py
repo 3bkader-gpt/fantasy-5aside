@@ -104,6 +104,9 @@ def read_leaderboard(
     
     is_admin = check_admin_status(slug, request)
     
+    # Check for active voting
+    active_voting_match = next((m for m in league.matches if m.voting_round > 0), None)
+    
     # Add badges to each player
     for player in players:
         # We need history for badges that depend on it
@@ -113,7 +116,14 @@ def read_leaderboard(
     return templates.TemplateResponse(
         request=request,
         name="leaderboard.html", 
-        context={"league": league, "players": players, "latest_hof": latest_hof, "next_cup": next_cup, "is_admin": is_admin}
+        context={
+            "league": league, 
+            "players": players, 
+            "latest_hof": latest_hof, 
+            "next_cup": next_cup, 
+            "is_admin": is_admin,
+            "active_voting_match": active_voting_match
+        }
     )
 
 @router.get("/l/{slug}/matches")

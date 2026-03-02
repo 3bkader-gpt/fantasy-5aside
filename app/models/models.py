@@ -18,6 +18,7 @@ class League(Base):
 
     players = relationship("Player", back_populates="league", cascade="all, delete")
     matches = relationship("Match", back_populates="league", cascade="all, delete")
+    votes = relationship("Vote", back_populates="league", cascade="all, delete")
     cup_matchups = relationship("CupMatchup", back_populates="league", cascade="all, delete")
     hall_of_fame_records = relationship("HallOfFame", back_populates="league", cascade="all, delete")
 
@@ -71,9 +72,13 @@ class Match(Base):
     team_b_name = Column(String, default="Team B")
     team_a_score = Column(Integer, default=0)
     team_b_score = Column(Integer, default=0)
+    
+    # Voting State: 0=Not Started, 1=Round 1, 2=Round 2, 3=Round 3, 4=Closed
+    voting_round = Column(Integer, default=0)
 
     league = relationship("League", back_populates="matches")
     stats = relationship("MatchStat", back_populates="match", cascade="all, delete")
+    votes = relationship("Vote", back_populates="match", cascade="all, delete")
 
 
 class MatchStat(Base):
@@ -133,3 +138,20 @@ class HallOfFame(Base):
 
     league = relationship("League", back_populates="hall_of_fame_records")
     player = relationship("Player")
+
+
+class Vote(Base):
+    __tablename__ = "votes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"))
+    match_id = Column(Integer, ForeignKey("matches.id"))
+    voter_id = Column(Integer, ForeignKey("players.id"))
+    candidate_id = Column(Integer, ForeignKey("players.id"))
+    round_number = Column(Integer)  # 1, 2, or 3
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    league = relationship("League", back_populates="votes")
+    match = relationship("Match", back_populates="votes")
+    voter = relationship("Player", foreign_keys=[voter_id])
+    candidate = relationship("Player", foreign_keys=[candidate_id])

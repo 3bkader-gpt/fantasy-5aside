@@ -7,8 +7,29 @@ from ..schemas import schemas
 from ..core import security
 from .interfaces import (
     ILeagueRepository, IPlayerRepository, IMatchRepository, 
-    ICupRepository, IHallOfFameRepository
+    ICupRepository, IHallOfFameRepository, IVotingRepository
 )
+
+class VotingRepository(IVotingRepository):
+    def __init__(self, db: Session): self.db = db
+    def get_votes_for_match(self, match_id: int, round_number: int) -> List[models.Vote]:
+        return self.db.query(models.Vote).filter(models.Vote.match_id == match_id, models.Vote.round_number == round_number).all()
+    def get_vote_by_voter(self, match_id: int, voter_id: int, round_number: int) -> Optional[models.Vote]:
+        return self.db.query(models.Vote).filter(models.Vote.match_id == match_id, models.Vote.voter_id == voter_id, models.Vote.round_number == round_number).first()
+    def save_vote(self, vote: models.Vote) -> models.Vote:
+        self.db.add(vote)
+        self.db.commit()
+        self.db.refresh(vote)
+        return vote
+    def get_round_results(self, match_id: int, round_number: int) -> List[dict]:
+        results = self.db.query(
+            models.Vote.candidate_id, 
+            func.count(models.Vote.id).label("count")
+        ).filter(
+            models.Vote.match_id == match_id, 
+            models.Vote.round_number == round_number
+        ).group_by(models.Vote.candidate_id).order_by(text("count DESC")).all()
+        return [{"candidate_id": r.candidate_id, "count": r.count} for r in results]
 
 class LeagueRepository(ILeagueRepository):
     def __init__(self, db: Session): self.db = db

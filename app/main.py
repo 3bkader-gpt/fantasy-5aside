@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from .database import Base, engine
-from .routers import admin, public, auth
+from .routers import admin, public, auth, voting
 
 # Use Uvicorn's logger so logs appear in the same output
 logger = logging.getLogger("uvicorn.error")
@@ -45,7 +45,8 @@ async def lifespan(app: FastAPI):
         ("match_stats", "bonus_points", "INTEGER DEFAULT 0"),
         ("match_stats", "own_goals", "INTEGER DEFAULT 0"),
         ("leagues", "current_season_matches", "INTEGER DEFAULT 0"),
-        ("leagues", "season_number", "INTEGER DEFAULT 1")
+        ("leagues", "season_number", "INTEGER DEFAULT 1"),
+        ("matches", "voting_round", "INTEGER DEFAULT 0")
     ]
     
     for table, col_name, col_type in migrations:
@@ -120,3 +121,4 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(auth.router)
 app.include_router(public.router)
 app.include_router(admin.router)
+app.include_router(voting.router)

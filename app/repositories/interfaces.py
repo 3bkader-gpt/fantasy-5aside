@@ -72,3 +72,13 @@ class IHallOfFameRepository(ABC):
     def save(self, hof_record: models.HallOfFame) -> models.HallOfFame: pass
     @abstractmethod
     def delete(self, hof_id: int) -> None: pass
+
+class IVotingRepository(ABC):
+    @abstractmethod
+    def get_votes_for_match(self, match_id: int, round_number: int) -> List[models.Vote]: pass
+    @abstractmethod
+    def get_vote_by_voter(self, match_id: int, voter_id: int, round_number: int) -> Optional[models.Vote]: pass
+    @abstractmethod
+    def save_vote(self, vote: models.Vote) -> models.Vote: pass
+    @abstractmethod
+    def get_round_results(self, match_id: int, round_number: int) -> List[dict]: pass # List of {candidate_id, count}

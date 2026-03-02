@@ -50,6 +50,13 @@
                     مشاركة 📤
                 </button>
                 {% if is_admin %}
+                <button class="btn btn-outline btn-sm voting-btn" data-match-id="{{ match.id }}"
+                    data-round="{{ match.voting_round }}"
+                    data-is-open="{{ 'true' if match.voting_round > 0 else 'false' }}"
+                    style="font-size: 0.8rem; color: #fff; border: none; padding: 4px 10px; min-height: auto; width: auto; margin: 0;">
+                    {% if match.voting_round == 0 %}فتح التصويت 🗳️{% else %}إغلاق الجولة {{ match.voting_round }} 🏁{%
+                    endif %}
+                </button>
                 <button class="edit-match-btn" data-match-id="{{ match.id }}" title="تعديل المباراة"
                     style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #4da8da; min-height: auto; width: auto; margin: 0; padding: 4px;">
                     ✏️
@@ -289,17 +296,25 @@
 </script>
 {% endif %}
 
+<div id="matches-config" data-slug="{{ league.slug }}" data-is-admin="{{ is_admin | tojson }}"></div>
 <script>
-    window.LEAGUE_SLUG = "{{ league.slug }}";
-    {% if is_admin %}
-    try {
-        const matchesDataText = document.getElementById('matches-data-json').textContent;
-        window.MATCHES_DATA = JSON.parse(matchesDataText);
-    } catch (e) {
-        console.error("Match data parsing error:", e);
-        window.MATCHES_DATA = {};
-    }
-    {% endif %}
+    (function () {
+        const config = document.getElementById('matches-config').dataset;
+        window.LEAGUE_SLUG = config.slug;
+        const isAdmin = config.isAdmin === 'true';
+
+        if (isAdmin) {
+            try {
+                const matchesDataElement = document.getElementById('matches-data-json');
+                if (matchesDataElement) {
+                    window.MATCHES_DATA = JSON.parse(matchesDataElement.textContent);
+                }
+            } catch (e) {
+                console.error("Match data parsing error:", e);
+                window.MATCHES_DATA = {};
+            }
+        }
+    })();
 </script>
 <script src="/static/js/matches.js"></script>
 {% endblock %}

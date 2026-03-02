@@ -7,18 +7,22 @@ from .models import models
 
 from .repositories.interfaces import (
     ILeagueRepository, IPlayerRepository, IMatchRepository, 
-    ICupRepository, IHallOfFameRepository
+    ICupRepository, IHallOfFameRepository, IVotingRepository
 )
 from .repositories.db_repository import (
     LeagueRepository, PlayerRepository, MatchRepository, 
-    CupRepository, HallOfFameRepository
+    CupRepository, HallOfFameRepository, VotingRepository
 )
 
-from .services.interfaces import ILeagueService, ICupService, IMatchService, IAnalyticsService
+from .services.interfaces import (
+    ILeagueService, ICupService, IMatchService, 
+    IAnalyticsService, IVotingService
+)
 from .services.league_service import LeagueService
 from .services.cup_service import CupService
 from .services.match_service import MatchService
 from .services.analytics_service import AnalyticsService
+from .services.voting_service import VotingService
 
 # --- Repositories ---
 def get_league_repository(db: Session = Depends(get_db)) -> ILeagueRepository:
@@ -36,6 +40,9 @@ def get_cup_repository(db: Session = Depends(get_db)) -> ICupRepository:
 def get_hof_repository(db: Session = Depends(get_db)) -> IHallOfFameRepository:
     return HallOfFameRepository(db)
 
+def get_voting_repository(db: Session = Depends(get_db)) -> IVotingRepository:
+    return VotingRepository(db)
+
 # --- Services ---
 def get_league_service(
     league_repo: ILeagueRepository = Depends(get_league_repository),
@@ -44,6 +51,13 @@ def get_league_service(
     cup_repo: ICupRepository = Depends(get_cup_repository)
 ) -> ILeagueService:
     return LeagueService(league_repo, player_repo, hof_repo, cup_repo)
+
+def get_voting_service(
+    voting_repo: IVotingRepository = Depends(get_voting_repository),
+    match_repo: IMatchRepository = Depends(get_match_repository),
+    player_repo: IPlayerRepository = Depends(get_player_repository)
+) -> IVotingService:
+    return VotingService(voting_repo, match_repo, player_repo)
 
 def get_cup_service(
     player_repo: IPlayerRepository = Depends(get_player_repository),

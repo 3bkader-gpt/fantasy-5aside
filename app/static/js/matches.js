@@ -308,4 +308,47 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // =========================================
+    // Voting Round Control Logic
+    // =========================================
+    document.querySelectorAll('.voting-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const matchId = this.getAttribute('data-match-id');
+            const round = parseInt(this.getAttribute('data-round'));
+            const leagueSlug = window.LEAGUE_SLUG;
+
+            let action = round === 0 ? "فتح التصويت" : `إغلاق الجولة ${round}`;
+            let endpoint = round === 0 ? `/api/voting/${leagueSlug}/open/${matchId}` : `/api/voting/${leagueSlug}/close/${matchId}`;
+
+            const password = await showPromptModal(action, `أدخل كلمة مرور الآدمن لـ ${action} للمباراة رقم #${matchId}:`);
+            if (!password) return;
+
+            try {
+                this.disabled = true;
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin_password: password })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showToast(result.message || 'تمت العملية بنجاح!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(result.detail || 'حدث خطأ.', 'error');
+                    this.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('حدث خطأ أثناء الاتصال بالخادم.', 'error');
+                this.disabled = false;
+            }
+        });
+    });
+    // Initialize voting button colors
+    document.querySelectorAll('.voting-btn').forEach(btn => {
+        const isOpen = btn.getAttribute('data-is-open') === 'true';
+        btn.style.backgroundColor = isOpen ? '#f39c12' : '#27ae60';
+    });
 });

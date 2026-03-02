@@ -46,3 +46,13 @@ class IAnalyticsService(ABC):
     @abstractmethod
     def get_player_form_and_chart_data(self, player_id: int, league_id: int) -> Optional[Dict[str, Any]]:
         pass
+
+class IVotingService(ABC):
+    @abstractmethod
+    def get_voting_status(self, match_id: int, voter_id: int) -> schemas.VotingStatusResponse: pass
+    @abstractmethod
+    def submit_vote(self, match_id: int, vote_in: schemas.VoteCreate) -> models.Vote: pass
+    @abstractmethod
+    def close_round(self, match_id: int) -> dict: pass # Returns results/status
+    @abstractmethod
+    def open_voting(self, match_id: int) -> dict: pass
