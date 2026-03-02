@@ -46,7 +46,12 @@ async def lifespan(app: FastAPI):
         ("match_stats", "own_goals", "INTEGER DEFAULT 0"),
         ("leagues", "current_season_matches", "INTEGER DEFAULT 0"),
         ("leagues", "season_number", "INTEGER DEFAULT 1"),
-        ("matches", "voting_round", "INTEGER DEFAULT 0")
+        ("matches", "voting_round", "INTEGER DEFAULT 0"),
+        ("players", "all_time_points", "INTEGER DEFAULT 0"),
+        ("players", "all_time_goals", "INTEGER DEFAULT 0"),
+        ("players", "all_time_assists", "INTEGER DEFAULT 0"),
+        ("players", "all_time_saves", "INTEGER DEFAULT 0"),
+        ("players", "all_time_clean_sheets", "INTEGER DEFAULT 0")
     ]
     
     for table, col_name, col_type in migrations:

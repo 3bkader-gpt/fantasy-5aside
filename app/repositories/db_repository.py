@@ -28,7 +28,7 @@ class VotingRepository(IVotingRepository):
         ).filter(
             models.Vote.match_id == match_id, 
             models.Vote.round_number == round_number
-        ).group_by(models.Vote.candidate_id).order_by(text("count DESC")).all()
+        ).group_by(models.Vote.candidate_id).order_by(func.count(models.Vote.id).desc()).all()
         return [{"candidate_id": r.candidate_id, "count": r.count} for r in results]
 
 class LeagueRepository(ILeagueRepository):
