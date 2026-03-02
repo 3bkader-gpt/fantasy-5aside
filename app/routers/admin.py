@@ -40,7 +40,10 @@ def admin_dashboard(
     if league.slug != slug:
         return _canonical_admin_redirect(request, slug, league.slug)
         
-    players = player_repo.get_all_for_league(league.id)
+    players_raw = player_repo.get_all_for_league(league.id)
+    # Serialize players to dicts for the 'tojson' filter in the template
+    players = [schemas.PlayerResponse.model_validate(p).model_dump() for p in players_raw]
+    
     return templates.TemplateResponse(
         request=request,
         name="admin/dashboard.html", 
