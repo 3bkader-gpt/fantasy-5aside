@@ -16,7 +16,12 @@ def _make_engine(url: str):
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return create_engine(url, connect_args=connect_args)
+    return create_engine(
+        url, 
+        connect_args=connect_args,
+        pool_pre_ping=True,  # بصورة تلقائية بيفحص الاتصال قبل استخدامه لمنع الـ Timeouts
+        pool_recycle=3600    # بيعيد فتح الاتصال كل ساعة لتجنب القفل المفاجئ من Supabase
+    )
 
 # استخدم SQLite إذا USE_SQLITE=1، وإلا الـ URL من الإعدادات
 SQLALCHEMY_DATABASE_URL = settings.effective_database_url
