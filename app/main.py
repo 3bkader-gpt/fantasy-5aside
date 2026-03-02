@@ -25,56 +25,59 @@ async def lifespan(app: FastAPI):
         if db_path and not os.path.exists(db_path):
             os.makedirs(db_path)
     
-    Base.metadata.create_all(bind=engine)
-    
-    logger.info("Starting application lifespan: running manual schema migrations.")
-    # Manual schema migrations
-    # Format: (table_name, column_name, column_definition)
-    migrations = [
-        ("players", "previous_rank", "INTEGER DEFAULT 0"),
-        ("players", "last_season_points", "INTEGER DEFAULT 0"),
-        ("players", "last_season_goals", "INTEGER DEFAULT 0"),
-        ("players", "last_season_assists", "INTEGER DEFAULT 0"),
-        ("players", "last_season_saves", "INTEGER DEFAULT 0"),
-        ("players", "last_season_clean_sheets", "INTEGER DEFAULT 0"),
-        ("players", "total_own_goals", "INTEGER DEFAULT 0"),
-        ("players", "all_time_own_goals", "INTEGER DEFAULT 0"),
-        ("players", "last_season_own_goals", "INTEGER DEFAULT 0"),
-        ("players", "team", "VARCHAR(50) DEFAULT NULL"),
-        ("players", "default_is_gk", "BOOLEAN DEFAULT FALSE"),
-        ("match_stats", "bonus_points", "INTEGER DEFAULT 0"),
-        ("match_stats", "own_goals", "INTEGER DEFAULT 0"),
-        ("leagues", "current_season_matches", "INTEGER DEFAULT 0"),
-        ("leagues", "season_number", "INTEGER DEFAULT 1"),
-        ("matches", "voting_round", "INTEGER DEFAULT 0"),
-        ("players", "all_time_points", "INTEGER DEFAULT 0"),
-        ("players", "all_time_goals", "INTEGER DEFAULT 0"),
-        ("players", "all_time_assists", "INTEGER DEFAULT 0"),
-        ("players", "all_time_saves", "INTEGER DEFAULT 0"),
-        ("players", "all_time_clean_sheets", "INTEGER DEFAULT 0"),
-        # Indexing for performance
-        ("players", "league_id", "INDEX"),
-        ("matches", "league_id", "INDEX"),
-        ("match_stats", "player_id", "INDEX"),
-        ("match_stats", "match_id", "INDEX"),
-        ("votes", "match_id", "INDEX"),
-        ("cup_matchups", "league_id", "INDEX")
-    ]
-    
-    for table, col_name, col_type in migrations:
-        # Each column in its own transaction to prevent poisoning
-        try:
-            with engine.begin() as conn:
-                if col_type == "INDEX":
-                    index_name = f"idx_{table}_{col_name}"
-                    conn.execute(text(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table} ({col_name});"))
-                    logger.info(f"Migration: created index '{index_name}' on '{table}'.")
-                else:
-                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type};"))
-                    logger.info(f"Migration: added '{col_name}' to '{table}'.")
-        except Exception:
-            # Expected if column already exists
-            logger.debug(f"Skipping migration for '{col_name}' in '{table}' (likely exists).")
+    try:
+        Base.metadata.create_all(bind=engine)
+        
+        logger.info("Starting application lifespan: running manual schema migrations.")
+        # Manual schema migrations
+        # Format: (table_name, column_name, column_definition)
+        migrations = [
+            ("players", "previous_rank", "INTEGER DEFAULT 0"),
+            ("players", "last_season_points", "INTEGER DEFAULT 0"),
+            ("players", "last_season_goals", "INTEGER DEFAULT 0"),
+            ("players", "last_season_assists", "INTEGER DEFAULT 0"),
+            ("players", "last_season_saves", "INTEGER DEFAULT 0"),
+            ("players", "last_season_clean_sheets", "INTEGER DEFAULT 0"),
+            ("players", "total_own_goals", "INTEGER DEFAULT 0"),
+            ("players", "all_time_own_goals", "INTEGER DEFAULT 0"),
+            ("players", "last_season_own_goals", "INTEGER DEFAULT 0"),
+            ("players", "team", "VARCHAR(50) DEFAULT NULL"),
+            ("players", "default_is_gk", "BOOLEAN DEFAULT FALSE"),
+            ("match_stats", "bonus_points", "INTEGER DEFAULT 0"),
+            ("match_stats", "own_goals", "INTEGER DEFAULT 0"),
+            ("leagues", "current_season_matches", "INTEGER DEFAULT 0"),
+            ("leagues", "season_number", "INTEGER DEFAULT 1"),
+            ("matches", "voting_round", "INTEGER DEFAULT 0"),
+            ("players", "all_time_points", "INTEGER DEFAULT 0"),
+            ("players", "all_time_goals", "INTEGER DEFAULT 0"),
+            ("players", "all_time_assists", "INTEGER DEFAULT 0"),
+            ("players", "all_time_saves", "INTEGER DEFAULT 0"),
+            ("players", "all_time_clean_sheets", "INTEGER DEFAULT 0"),
+            # Indexing for performance
+            ("players", "league_id", "INDEX"),
+            ("matches", "league_id", "INDEX"),
+            ("match_stats", "player_id", "INDEX"),
+            ("match_stats", "match_id", "INDEX"),
+            ("votes", "match_id", "INDEX"),
+            ("cup_matchups", "league_id", "INDEX")
+        ]
+        
+        for table, col_name, col_type in migrations:
+            # Each column in its own transaction to prevent poisoning
+            try:
+                with engine.begin() as conn:
+                    if col_type == "INDEX":
+                        index_name = f"idx_{table}_{col_name}"
+                        conn.execute(text(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table} ({col_name});"))
+                        logger.info(f"Migration: created index '{index_name}' on '{table}'.")
+                    else:
+                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type};"))
+                        logger.info(f"Migration: added '{col_name}' to '{table}'.")
+            except Exception:
+                # Expected if column already exists
+                logger.debug(f"Skipping migration for '{col_name}' in '{table}' (likely exists).")
+    except Exception as e:
+        logger.warning(f"Database startup tasks failed (app will still run): {e}")
                 
     logger.info("Application startup complete inside lifespan, handing control back to FastAPI.")
     yield

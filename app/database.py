@@ -28,6 +28,13 @@ SQLALCHEMY_DATABASE_URL = settings.effective_database_url
 engine = _make_engine(SQLALCHEMY_DATABASE_URL)
 logger = logging.getLogger("uvicorn.error")
 
+# Log the resolved database URL (mask password for security)
+_masked_url = SQLALCHEMY_DATABASE_URL
+if "@" in _masked_url:
+    _prefix, _suffix = _masked_url.split("@", 1)
+    _masked_url = _prefix.rsplit(":", 1)[0] + ":***@" + _suffix
+logger.info(f"Database URL resolved to: {_masked_url}")
+
 # NOTE: We removed the top-level engine.connect() test as it causes issues in CI/CD 
 # when the database isn't ready or during module import.
 
