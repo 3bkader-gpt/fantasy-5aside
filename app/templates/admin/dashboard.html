@@ -54,6 +54,12 @@
 
 <div class="card match-form-container">
 
+    <!-- Season Progress Banner -->
+    <div class="alert alert-info text-center"
+        style="font-size: 1.2rem; font-weight: bold; background-color: rgba(52, 152, 219, 0.1); border: 2px solid var(--info-color, #3498db); color: var(--text-color);">
+        🏆 الموسم الحالي: <span>الموسم {{ league.season_number }}</span> | 📊 المباراة الحالية: <span>{{
+            league.current_season_matches + 1 }} من 4</span>
+    </div>
 
     <!-- Tactical Board -->
     <div class="tactical-board" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
@@ -70,6 +76,7 @@
                             <th style="min-width: 120px;">اسم اللاعب</th>
                             <th>⚽ أهداف</th>
                             <th>👟 أسيست</th>
+                            <th>🤡 عكسية</th>
                             <th>🧤 حارس؟</th>
                             <th>✋ تصديات</th>
                             <th>❌ عليه</th>
@@ -97,6 +104,7 @@
                             <th style="min-width: 120px;">اسم اللاعب</th>
                             <th>⚽ أهداف</th>
                             <th>👟 أسيست</th>
+                            <th>🤡 عكسية</th>
                             <th>🧤 حارس؟</th>
                             <th>✋ تصديات</th>
                             <th>❌ عليه</th>
@@ -137,6 +145,27 @@
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">حفظ التعديلات
             الشاملة</button>
+    </form>
+</div>
+
+<!-- New Section: Add Player (Fixed Teams) -->
+<div class="card mb-4" style="border-right: 5px solid var(--success-color);">
+    <h3 style="color: var(--success-color);">➕ إضافة لاعب للدوري (الفرق الثابتة)</h3>
+    <form action="/l/{{ league.slug }}/admin/player/add" method="POST">
+        <div class="form-group mb-1">
+            <input type="text" name="name" placeholder="اسم اللاعب" required class="form-control">
+        </div>
+        <div class="form-group mb-1" style="display: flex; gap: 10px;">
+            <select name="team" class="form-control" required style="flex: 1;">
+                <option value="A">فريق أ</option>
+                <option value="B">فريق ب</option>
+            </select>
+            <select name="default_is_gk" class="form-control" required style="flex: 1;">
+                <option value="false">لاعب (Outfield)</option>
+                <option value="true">حارس مرمى (GK)</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success" style="width: 100%;">حفظ اللاعب</button>
     </form>
 </div>
 
@@ -202,6 +231,10 @@
             <input type="number" class="assists-input form-control" value="0" min="0"
                 style="min-width: 50px; padding: 5px;">
         </td>
+        <td data-label="عكسية">
+            <input type="number" class="own-goals-input form-control" value="0" min="0"
+                style="min-width: 50px; padding: 5px;">
+        </td>
         <td data-label="حارس؟">
             <input type="checkbox" class="is-gk-check">
         </td>
@@ -227,6 +260,15 @@
 
 <script>
     window.LEAGUE_SLUG = "{{ league.slug }}";
+    window.LEAGUE_PLAYERS = [
+        {% for player in players %}
+    {
+        "name": "{{ player.name }}",
+            "team": "{{ player.team or '' }}",
+                "default_is_gk": { { 'true' if player.default_is_gk else 'false' } }
+    } {% if not loop.last %}, {% endif %}
+    {% endfor %}
+    ];
 </script>
 <script src="/static/js/admin_dashboard.js"></script>
 {% else %}

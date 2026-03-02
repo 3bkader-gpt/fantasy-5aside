@@ -65,13 +65,25 @@ class TheRocketBadge(BadgeRule):
                 }
         return None
 
+class ClownBadge(BadgeRule):
+    def evaluate(self, player, history):
+        total_own_goals = (player.total_own_goals or 0) + (player.all_time_own_goals or 0)
+        if total_own_goals > 0:
+            return {
+                "name": "مهرج الدفاع",
+                "icon": "🤡",
+                "description": f"سجل {total_own_goals} أهداف عكسية مسيرته"
+            }
+        return None
+
 class AchievementService:
     def __init__(self):
         self.rules = [
             SniperBadge(),
             TheWallBadge(),
             PlaymakerBadge(),
-            TheRocketBadge()
+            TheRocketBadge(),
+            ClownBadge()
         ]
 
     def get_earned_badges(self, player: Player, history: List[MatchStat]) -> List[Dict[str, Any]]:

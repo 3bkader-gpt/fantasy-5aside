@@ -24,11 +24,14 @@ class LeagueResponse(LeagueBase):
 # --- Player Schemas ---
 class PlayerBase(BaseModel):
     name: str
+    team: Optional[str] = None
+    default_is_gk: bool = False
     total_points: int = 0
     total_goals: int = 0
     total_assists: int = 0
     total_saves: int = 0
     total_clean_sheets: int = 0
+    total_own_goals: int = 0
 
 class PlayerCreate(PlayerBase):
     league_id: int
@@ -48,6 +51,7 @@ class MatchStatBase(BaseModel):
     assists: int = 0
     saves: int = 0
     goals_conceded: int = 0
+    own_goals: int = 0
     is_gk: bool = False
     clean_sheet: bool = False
 
@@ -83,6 +87,7 @@ class MatchCreate(MatchBase):
     is_goalkeeper: bool = False
     saves: int = 0
     goals_conceded: int = 0
+    own_goals: int = 0
     clean_sheet: bool = False
 
 class MatchEditRequest(MatchBase):

@@ -13,6 +13,7 @@ class PointsContext:
     clean_sheet: bool
     saves: int
     goals_conceded: int
+    own_goals: int
 
 class PointsStrategy(ABC):
     """Abstract base class for points calculation strategies"""
@@ -64,6 +65,10 @@ class GoalsConcededPenalty(PointsStrategy):
             return -(ctx.goals_conceded // 3)
         return 0
 
+class OwnGoalPenalty(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        return -ctx.own_goals
+
 class PointsCalculator:
     def __init__(self, strategies: Optional[List[PointsStrategy]] = None):
         # السماح بالإنشاء الافتراضي بدون تمرير استراتيجيات (متوافق مع الاختبارات)
@@ -74,6 +79,7 @@ class PointsCalculator:
             CleanSheetPoints(),
             SavePoints(),
             GoalsConcededPenalty(),
+            OwnGoalPenalty(),
         ]
 
     def calculate_total(self, ctx: PointsContext) -> int:
@@ -102,6 +108,7 @@ class PointsCalculator:
             clean_sheet=clean_sheet,
             saves=match_data.saves,
             goals_conceded=match_data.goals_conceded,
+            own_goals=getattr(match_data, "own_goals", 0),
         )
         return self.calculate_total(ctx)
 
@@ -117,6 +124,7 @@ def calculate_player_points(
     clean_sheet: bool,
     saves: int,
     goals_conceded: int,
+    own_goals: int = 0,
 ) -> int:
     """
     تابعة مساعدة للاستخدام في الخدمات الحالية.
@@ -130,6 +138,7 @@ def calculate_player_points(
         clean_sheet=clean_sheet,
         saves=saves,
         goals_conceded=goals_conceded,
+        own_goals=own_goals,
     )
     return default_calculator.calculate_total(ctx)
 

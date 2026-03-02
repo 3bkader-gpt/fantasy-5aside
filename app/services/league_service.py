@@ -62,6 +62,13 @@ class LeagueService(ILeagueService):
 
         self.hof_repo.delete(latest_hof.id)
 
+        league = self.league_repo.get_by_id(league_id)
+        if league:
+            league.current_season_matches = 4
+            if league.season_number > 1:
+                league.season_number -= 1
+            self.league_repo.save(league)
+
         players = self.player_repo.get_all_for_league(league_id)
         for player in players:
             # Restore totals from snapshot

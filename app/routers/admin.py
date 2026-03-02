@@ -51,12 +51,26 @@ def admin_dashboard(
 def create_match(
     match_data: schemas.MatchCreate, 
     league: models.League = Depends(get_current_admin_league),
-    match_service: IMatchService = Depends(get_match_service)
+    match_service: IMatchService = Depends(get_match_service),
+    league_service: ILeagueService = Depends(get_league_service),
+    league_repo: ILeagueRepository = Depends(get_league_repository)
 ):
         
     try:
         match = match_service.register_match(league.id, match_data)
-        return {"message": "Match registered successfully", "match_id": match.id}
+        
+        season_ended = False
+        league.current_season_matches += 1
+        if league.current_season_matches >= 4:
+            month_name = f"الموسم {league.season_number}"
+            league_service.end_current_season(league.id, month_name)
+            league.current_season_matches = 0
+            league.season_number += 1
+            season_ended = True
+            
+        league_repo.save(league)
+            
+        return {"message": "Match registered successfully", "match_id": match.id, "season_ended": season_ended}
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -153,11 +167,15 @@ def delete_match(
     match_id: int, 
     payload: dict,
     league: models.League = Depends(get_current_admin_league),
-    match_service: IMatchService = Depends(get_match_service)
+    match_service: IMatchService = Depends(get_match_service),
+    league_repo: ILeagueRepository = Depends(get_league_repository)
 ):
         
     try:
         match_service.delete_match(match_id, league.id)
+        if league.current_season_matches > 0:
+            league.current_season_matches -= 1
+            league_repo.save(league)
         return {"success": True, "message": "تم حذف المباراة بنجاح"}
     except HTTPException as e:
         raise e
@@ -378,3 +396,28 @@ def update_player_name(
         raise HTTPException(status_code=404, detail="Player not found")
         
     return {"success": True, "player": {"id": player.id, "name": player.name}}
+
+@router.post("/player/add")
+def add_player(
+    name: str = Form(...),
+    team: str = Form(...),
+    default_is_gk: bool = Form(False),
+    league: models.League = Depends(get_current_admin_league),
+    player_repo: IPlayerRepository = Depends(get_player_repository)
+):
+    """Add a new player to a fixed team or update existing player."""
+    player = player_repo.get_by_name(league.id, name)
+    if player:
+        player.team = team
+        player.default_is_gk = default_is_gk
+        player_repo.save(player)
+    else:
+        new_player = models.Player(
+            league_id=league.id,
+            name=name,
+            team=team,
+            default_is_gk=default_is_gk
+        )
+        player_repo.save(new_player)
+    
+    return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)

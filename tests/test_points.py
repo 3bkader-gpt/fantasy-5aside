@@ -96,3 +96,19 @@ class TestPointsCalculation:
         # Expected: 2 (win) + 2 (defender clean sheet) = 4
         points = self.calculator.calculate_player_points(match_data)
         assert points == 4
+
+    def test_own_goal_penalty(self):
+        match_data = MatchCreate(
+            score=1, # Win: +2
+            goals=1, # Goal: +3
+            assists=0,
+            is_mvp=False,
+            is_captain=False,
+            is_goalkeeper=False,
+            saves=0,
+            goals_conceded=0,
+            own_goals=1
+        )
+        # Expected: 2 (win) + 3 (goal) - 1 (own goal) = 4
+        points = self.calculator.calculate_player_points(match_data)
+        assert points == 4

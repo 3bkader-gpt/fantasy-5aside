@@ -89,7 +89,8 @@ class MatchService(IMatchService):
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
                 saves=stat_data.saves,
-                goals_conceded=stat_data.goals_conceded
+                goals_conceded=stat_data.goals_conceded,
+                own_goals=stat_data.own_goals
             )
 
             stat_dict = {
@@ -126,6 +127,7 @@ class MatchService(IMatchService):
                 assists=stat_data.assists,
                 saves=stat_data.saves,
                 goals_conceded=stat_data.goals_conceded,
+                own_goals=stat_data.own_goals,
                 is_winner=s['is_winner'],
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
@@ -139,6 +141,7 @@ class MatchService(IMatchService):
             player.total_goals += stat_data.goals
             player.total_assists += stat_data.assists
             player.total_saves += stat_data.saves
+            player.total_own_goals += stat_data.own_goals
             if stat_data.clean_sheet:
                 player.total_clean_sheets += 1
             self.player_repo.save(player)
@@ -166,6 +169,7 @@ class MatchService(IMatchService):
             player.total_goals = max(0, player.total_goals - stat.goals)
             player.total_assists = max(0, player.total_assists - stat.assists)
             player.total_saves = max(0, player.total_saves - stat.saves)
+            player.total_own_goals = max(0, getattr(player, "total_own_goals", 0) - stat.own_goals)
             if stat.clean_sheet:
                 player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
             self.player_repo.save(player)
@@ -209,7 +213,8 @@ class MatchService(IMatchService):
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
                 saves=stat_data.saves,
-                goals_conceded=stat_data.goals_conceded
+                goals_conceded=stat_data.goals_conceded,
+                own_goals=stat_data.own_goals
             )
 
             stat_dict = {
@@ -246,6 +251,7 @@ class MatchService(IMatchService):
                 assists=stat_data.assists,
                 saves=stat_data.saves,
                 goals_conceded=stat_data.goals_conceded,
+                own_goals=stat_data.own_goals,
                 is_winner=s['is_winner'],
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
@@ -259,6 +265,7 @@ class MatchService(IMatchService):
             player.total_goals += stat_data.goals
             player.total_assists += stat_data.assists
             player.total_saves += stat_data.saves
+            player.total_own_goals += stat_data.own_goals
             if stat_data.clean_sheet:
                 player.total_clean_sheets += 1
             self.player_repo.save(player)
@@ -282,6 +289,7 @@ class MatchService(IMatchService):
             player.total_goals = max(0, player.total_goals - stat.goals)
             player.total_assists = max(0, player.total_assists - stat.assists)
             player.total_saves = max(0, player.total_saves - stat.saves)
+            player.total_own_goals = max(0, getattr(player, "total_own_goals", 0) - stat.own_goals)
             if stat.clean_sheet:
                 player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
             self.player_repo.save(player)

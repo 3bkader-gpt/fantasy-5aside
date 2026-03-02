@@ -4,10 +4,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const template = document.getElementById('player-row-template');
 
     // Function to add a new row
-    function addPlayerRow(targetBody) {
+    function addPlayerRow(targetBody, player = null) {
         if (!template) return;
         const clone = template.content.cloneNode(true);
         const tr = clone.querySelector('tr');
+
+        if (player) {
+            tr.querySelector('.player-name-input').value = player.name;
+            if (player.default_is_gk) {
+                tr.querySelector('.is-gk-check').checked = true;
+            }
+        }
 
         // Remove
         clone.querySelector('.remove-row-btn').addEventListener('click', function () {
@@ -52,13 +59,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         targetBody.appendChild(clone);
+
+        // Trigger GK UI update if needed
+        if (player && player.default_is_gk) {
+            const isGkBox = tr.querySelector('.is-gk-check');
+            if (isGkBox) isGkBox.dispatchEvent(new Event('change'));
+        }
     }
 
     if (teamABody && teamBBody) {
-        // Add 5 initial rows for each team
-        for (let i = 0; i < 5; i++) {
-            addPlayerRow(teamABody);
-            addPlayerRow(teamBBody);
+        if (window.LEAGUE_PLAYERS && window.LEAGUE_PLAYERS.length > 0) {
+            window.LEAGUE_PLAYERS.forEach(player => {
+                const targetBody = player.team === 'B' ? teamBBody : teamABody;
+                addPlayerRow(targetBody, player);
+            });
+        } else {
+            // Add 5 initial rows for each team if no players
+            for (let i = 0; i < 5; i++) {
+                addPlayerRow(teamABody);
+                addPlayerRow(teamBBody);
+            }
         }
 
         document.getElementById('add-player-a-btn').addEventListener('click', () => addPlayerRow(teamABody));
@@ -98,7 +118,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 if (response.ok) {
-                    alert('✅ تم حفظ المباراة بنجاح وإحتساب النقاط تلقائياً لكل فريق!');
+                    const data = await response.json();
+                    if (data.season_ended) {
+                        alert('🎉 تم اكتمال 4 مباريات وتم إنهاء الموسم بنجاح وتوزيع الأوسمة وتصفير النقاط! 🏆\nبدأ الموسم الجديد تلقائياً الآن.');
+                    } else {
+                        alert('✅ تم حفظ المباراة بنجاح وإحتساب النقاط تلقائياً لكل فريق!');
+                    }
                     window.location.reload();
                 } else {
                     const errorData = await response.json();
@@ -130,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 team: teamIdentifier,
                 goals: parseInt(row.querySelector('.goals-input').value) || 0,
                 assists: parseInt(row.querySelector('.assists-input').value) || 0,
+                own_goals: parseInt(row.querySelector('.own-goals-input').value) || 0,
                 saves: parseInt(row.querySelector('.saves-input').value) || 0,
                 goals_conceded: goalsConceded,
                 is_gk: isGk,
