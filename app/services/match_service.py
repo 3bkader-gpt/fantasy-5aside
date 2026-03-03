@@ -142,6 +142,7 @@ class MatchService(IMatchService):
             player.total_assists += stat_data.assists
             player.total_saves += stat_data.saves
             player.total_own_goals += stat_data.own_goals
+            player.total_matches += 1
             if stat_data.clean_sheet:
                 player.total_clean_sheets += 1
             self.player_repo.save(player)
@@ -170,6 +171,7 @@ class MatchService(IMatchService):
             player.total_assists = max(0, player.total_assists - stat.assists)
             player.total_saves = max(0, player.total_saves - stat.saves)
             player.total_own_goals = max(0, getattr(player, "total_own_goals", 0) - stat.own_goals)
+            player.total_matches = max(0, player.total_matches - 1)
             if stat.clean_sheet:
                 player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
             self.player_repo.save(player)
@@ -266,6 +268,7 @@ class MatchService(IMatchService):
             player.total_assists += stat_data.assists
             player.total_saves += stat_data.saves
             player.total_own_goals += stat_data.own_goals
+            player.total_matches += 1
             if stat_data.clean_sheet:
                 player.total_clean_sheets += 1
             self.player_repo.save(player)
@@ -290,6 +293,7 @@ class MatchService(IMatchService):
             player.total_assists = max(0, player.total_assists - stat.assists)
             player.total_saves = max(0, player.total_saves - stat.saves)
             player.total_own_goals = max(0, getattr(player, "total_own_goals", 0) - stat.own_goals)
+            player.total_matches = max(0, player.total_matches - 1)
             if stat.clean_sheet:
                 player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
             self.player_repo.save(player)

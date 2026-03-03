@@ -31,6 +31,7 @@ class LeagueService(ILeagueService):
             player.last_season_assists = player.total_assists
             player.last_season_saves = player.total_saves
             player.last_season_clean_sheets = player.total_clean_sheets
+            player.last_season_matches = player.total_matches
 
             # Add to all-time
             player.all_time_points += player.total_points
@@ -38,6 +39,7 @@ class LeagueService(ILeagueService):
             player.all_time_assists += player.total_assists
             player.all_time_saves += player.total_saves
             player.all_time_clean_sheets += player.total_clean_sheets
+            player.all_time_matches += player.total_matches
 
             # Reset totals
             player.total_points = 0
@@ -45,6 +47,7 @@ class LeagueService(ILeagueService):
             player.total_assists = 0
             player.total_saves = 0
             player.total_clean_sheets = 0
+            player.total_matches = 0
             self.player_repo.save(player)
 
         self.cup_repo.delete_all_for_league(league_id)
@@ -77,6 +80,7 @@ class LeagueService(ILeagueService):
             player.total_assists = player.last_season_assists
             player.total_saves = player.last_season_saves
             player.total_clean_sheets = player.last_season_clean_sheets
+            player.total_matches = player.last_season_matches
 
             # Subtract from all-time (correcting the previous addition)
             player.all_time_points = max(0, player.all_time_points - player.last_season_points)
@@ -84,6 +88,7 @@ class LeagueService(ILeagueService):
             player.all_time_assists = max(0, player.all_time_assists - player.last_season_assists)
             player.all_time_saves = max(0, player.all_time_saves - player.last_season_saves)
             player.all_time_clean_sheets = max(0, player.all_time_clean_sheets - player.last_season_clean_sheets)
+            player.all_time_matches = max(0, player.all_time_matches - player.last_season_matches)
 
             # Clear snapshot
             player.last_season_points = 0
@@ -91,6 +96,7 @@ class LeagueService(ILeagueService):
             player.last_season_assists = 0
             player.last_season_saves = 0
             player.last_season_clean_sheets = 0
+            player.last_season_matches = 0
 
             self.player_repo.save(player)
 

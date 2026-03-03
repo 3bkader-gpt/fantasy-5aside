@@ -40,6 +40,7 @@ class Player(Base):
     total_saves = Column(Integer, default=0)
     total_clean_sheets = Column(Integer, default=0)
     total_own_goals = Column(Integer, default=0)
+    total_matches = Column(Integer, default=0)
     previous_rank = Column(Integer, default=0)
 
     # All-time stats
@@ -49,6 +50,7 @@ class Player(Base):
     all_time_saves = Column(Integer, default=0)
     all_time_clean_sheets = Column(Integer, default=0)
     all_time_own_goals = Column(Integer, default=0)
+    all_time_matches = Column(Integer, default=0)
 
     # Last season snapshot (for undo)
     last_season_points = Column(Integer, default=0)
@@ -57,6 +59,7 @@ class Player(Base):
     last_season_saves = Column(Integer, default=0)
     last_season_clean_sheets = Column(Integer, default=0)
     last_season_own_goals = Column(Integer, default=0)
+    last_season_matches = Column(Integer, default=0)
 
     league = relationship("League", back_populates="players")
     match_stats = relationship("MatchStat", back_populates="player")
