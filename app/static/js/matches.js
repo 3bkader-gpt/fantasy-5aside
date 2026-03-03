@@ -104,26 +104,20 @@ document.addEventListener('DOMContentLoaded', function () {
         row.querySelector('.is-gk-check').addEventListener('change', function () {
             const isGK = this.checked;
             const savesInput = row.querySelector('.saves-input');
-            const concededInput = row.querySelector('.conceded-input');
             const cleanSheetCheck = row.querySelector('.clean-sheet-check');
 
             if (isGK) {
                 savesInput.disabled = false;
-                concededInput.disabled = false;
                 cleanSheetCheck.disabled = false;
                 savesInput.style.opacity = '1';
-                concededInput.style.opacity = '1';
                 cleanSheetCheck.style.opacity = '1';
                 savesInput.required = true;
             } else {
                 savesInput.disabled = true;
-                concededInput.disabled = true;
                 cleanSheetCheck.disabled = true;
                 savesInput.style.opacity = '0.5';
-                concededInput.style.opacity = '0.5';
                 cleanSheetCheck.style.opacity = '0.5';
                 savesInput.value = '0';
-                concededInput.value = '0';
                 cleanSheetCheck.checked = false;
                 savesInput.required = false;
             }
@@ -176,7 +170,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 row.querySelector('.player-name-input').value = stat.player_name || '';
                 row.querySelector('.goals-input').value = stat.goals ?? 0;
                 row.querySelector('.assists-input').value = stat.assists ?? 0;
-                row.querySelector('.conceded-input').value = stat.goals_conceded ?? 0;
 
                 if (stat.is_gk) {
                     row.querySelector('.is-gk-check').checked = true;
@@ -186,20 +179,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     savesInput.style.opacity = '1';
                     savesInput.value = stat.saves ?? 0;
 
-                    const concededInput = row.querySelector('.conceded-input');
-                    // GK goals conceded will be auto-calculated on save; keep field read-only
-                    concededInput.disabled = true;
-                    concededInput.style.opacity = '1';
-                    concededInput.value = stat.goals_conceded ?? 0;
-
                     const cleanSheetCheck = row.querySelector('.clean-sheet-check');
                     cleanSheetCheck.disabled = false;
                     cleanSheetCheck.style.opacity = '1';
                     cleanSheetCheck.checked = !!stat.clean_sheet;
                 } else {
-                    // Ensure non-GK rows have these disabled (though template should handle it)
                     row.querySelector('.saves-input').disabled = true;
-                    row.querySelector('.conceded-input').disabled = true;
                     row.querySelector('.clean-sheet-check').disabled = true;
                 }
             });
@@ -264,10 +249,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     if (isGk) {
                         goalsConceded = opponentGoals || 0;
-                        const concededInput = row.querySelector('.conceded-input');
-                        if (concededInput) {
-                            concededInput.value = goalsConceded;
-                        }
                     }
 
                     const statData = {

@@ -56,13 +56,13 @@ class CleanSheetPoints(PointsStrategy):
 class SavePoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
         if ctx.is_gk:
-            return ctx.saves // 3
+            return (ctx.saves // 3) * 2
         return 0
 
 class GoalsConcededPenalty(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
         if ctx.is_gk:
-            return -(ctx.goals_conceded // 3)
+            return -(ctx.goals_conceded // 4)
         return 0
 
 class OwnGoalPenalty(PointsStrategy):

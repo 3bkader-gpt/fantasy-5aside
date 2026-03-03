@@ -15,12 +15,12 @@ class TestPointsCalculation:
             is_mvp=False,
             is_captain=False,
             is_goalkeeper=True,
-            saves=5,   # saves // 3 = 1 -> +1
+            saves=5,   # (saves // 3) * 2 = 2
             goals_conceded=0 # Clean Sheet -> +10
         )
-        # Expected: 2 (win) + 6 (goal) + 4 (assist) + 1 (saves) + 10 (clean sheet) = 23
+        # Expected: 2 (win) + 6 (goal) + 4 (assist) + 2 (saves) + 10 (clean sheet) = 24
         points = self.calculator.calculate_player_points(match_data)
-        assert points == 23
+        assert points == 24
 
     def test_normal_player_scoring(self):
         match_data = MatchCreate(

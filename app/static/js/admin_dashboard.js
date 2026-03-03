@@ -34,27 +34,21 @@ document.addEventListener('DOMContentLoaded', function () {
         // GK logic
         const gkCheck = clone.querySelector('.is-gk-check');
         const savesInput = clone.querySelector('.saves-input');
-        const concededInput = clone.querySelector('.conceded-input');
         const cleanSheetCheck = clone.querySelector('.clean-sheet-check');
 
         gkCheck.addEventListener('change', function () {
             const isGK = this.checked;
             savesInput.disabled = !isGK;
-            // Goals conceded for GK are auto-calculated from opponent goals, keep input read-only
-            concededInput.disabled = true;
             cleanSheetCheck.disabled = !isGK;
 
             if (isGK) {
                 savesInput.style.opacity = '1';
-                concededInput.style.opacity = '1';
                 cleanSheetCheck.style.opacity = '1';
                 savesInput.focus();
             } else {
                 savesInput.style.opacity = '0.5';
-                concededInput.style.opacity = '0.5';
                 cleanSheetCheck.style.opacity = '0.5';
                 savesInput.value = 0;
-                concededInput.value = 0;
                 cleanSheetCheck.checked = false;
             }
         });
@@ -157,12 +151,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let cleanSheet = row.querySelector('.clean-sheet-check').checked;
 
             if (isGk) {
-                // For goalkeepers, conceded goals = goals scored by the opponent team
                 goalsConceded = opponentGoals || 0;
-                const concededInput = row.querySelector('.conceded-input');
-                if (concededInput) {
-                    concededInput.value = goalsConceded;
-                }
             }
 
             // Apply new Clean Sheet rule: GK conceding 6 or fewer goals gets a clean sheet automatically
