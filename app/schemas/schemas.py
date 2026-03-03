@@ -17,8 +17,6 @@ class LeagueUpdate(BaseModel):
     current_admin_password: Optional[str] = None
     team_a_label: Optional[str] = None
     team_b_label: Optional[str] = None
-    team_a_label: Optional[str] = None
-    team_b_label: Optional[str] = None
 
 class LeagueResponse(LeagueBase):
     id: int
@@ -110,9 +108,12 @@ class CupMatchupResponse(BaseModel):
     id: int
     league_id: int
     player1_id: int
-    player2_id: int
+    player2_id: Optional[int] = None
     round_name: str
     is_active: bool
+    bracket_type: str = "outfield"
+    is_revealed: bool = False
+    match_id: Optional[int] = None
     winner_id: Optional[int] = None
     player1: Optional[PlayerResponse] = None
     player2: Optional[PlayerResponse] = None

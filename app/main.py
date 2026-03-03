@@ -55,6 +55,10 @@ async def lifespan(app: FastAPI):
             ("players", "all_time_clean_sheets", "INTEGER DEFAULT 0"),
             ("leagues", "team_a_label", "VARCHAR(100) DEFAULT 'فريق أ'"),
             ("leagues", "team_b_label", "VARCHAR(100) DEFAULT 'فريق ب'"),
+            ("players", "is_active_in_cup", "BOOLEAN DEFAULT FALSE"),
+            ("cup_matchups", "bracket_type", "VARCHAR(20) DEFAULT 'outfield'"),
+            ("cup_matchups", "is_revealed", "BOOLEAN DEFAULT FALSE"),
+            ("cup_matchups", "match_id", "INTEGER DEFAULT NULL"),
             # Indexing for performance
             ("players", "league_id", "INDEX"),
             ("matches", "league_id", "INDEX"),

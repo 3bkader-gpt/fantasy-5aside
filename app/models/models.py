@@ -56,6 +56,9 @@ class Player(Base):
     all_time_own_goals = Column(Integer, default=0)
     all_time_matches = Column(Integer, default=0)
 
+    # Cup participation flag
+    is_active_in_cup = Column(Boolean, default=False)
+
     # Last season snapshot (for undo)
     last_season_points = Column(Integer, default=0)
     last_season_goals = Column(Integer, default=0)
@@ -123,10 +126,13 @@ class CupMatchup(Base):
     id = Column(Integer, primary_key=True, index=True)
     league_id = Column(Integer, ForeignKey("leagues.id"))
     player1_id = Column(Integer, ForeignKey("players.id"))
-    player2_id = Column(Integer, ForeignKey("players.id"))
-    round_name = Column(String)  # e.g., 'Quarter-Final', 'Semi-Final', 'Final'
+    player2_id = Column(Integer, ForeignKey("players.id"), nullable=True)
+    round_name = Column(String)
     winner_id = Column(Integer, ForeignKey("players.id"), nullable=True)
     is_active = Column(Boolean, default=True)
+    bracket_type = Column(String(20), default="outfield")  # "outfield" or "goalkeeper"
+    is_revealed = Column(Boolean, default=False)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
 
     league = relationship("League", back_populates="cup_matchups")
     player1 = relationship("Player", foreign_keys=[player1_id])
