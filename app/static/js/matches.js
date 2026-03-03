@@ -187,7 +187,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     savesInput.value = stat.saves ?? 0;
 
                     const concededInput = row.querySelector('.conceded-input');
-                    concededInput.disabled = false;
+                    // GK goals conceded will be auto-calculated on save; keep field read-only
+                    concededInput.disabled = true;
                     concededInput.style.opacity = '1';
                     concededInput.value = stat.goals_conceded ?? 0;
 
@@ -243,11 +244,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const stats = [];
 
-            const collectStats = (tbodyId, teamCode) => {
-                const rows = document.querySelectorAll(`#${tbodyId} tr`);
+            const rowsA = Array.from(document.querySelectorAll(`#edit-team-a-body tr`));
+            const rowsB = Array.from(document.querySelectorAll(`#edit-team-b-body tr`));
+
+            const teamAGoalsTotal = rowsA.reduce((sum, row) => {
+                return sum + (parseInt(row.querySelector('.goals-input').value) || 0);
+            }, 0);
+            const teamBGoalsTotal = rowsB.reduce((sum, row) => {
+                return sum + (parseInt(row.querySelector('.goals-input').value) || 0);
+            }, 0);
+
+            const collectStats = (rows, teamCode, opponentGoals) => {
                 rows.forEach(row => {
                     const playerName = row.querySelector('.player-name-input').value.trim();
                     if (!playerName) return;
+
+                    const isGk = row.querySelector('.is-gk-check').checked;
+                    let goalsConceded = 0;
+
+                    if (isGk) {
+                        goalsConceded = opponentGoals || 0;
+                        const concededInput = row.querySelector('.conceded-input');
+                        if (concededInput) {
+                            concededInput.value = goalsConceded;
+                        }
+                    }
 
                     const statData = {
                         player_name: playerName,
@@ -255,16 +276,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         goals: parseInt(row.querySelector('.goals-input').value) || 0,
                         assists: parseInt(row.querySelector('.assists-input').value) || 0,
                         saves: parseInt(row.querySelector('.saves-input').value) || 0,
-                        goals_conceded: parseInt(row.querySelector('.conceded-input').value) || 0,
-                        is_gk: row.querySelector('.is-gk-check').checked,
+                        goals_conceded: goalsConceded,
+                        is_gk: isGk,
                         clean_sheet: row.querySelector('.clean-sheet-check').checked
                     };
                     stats.push(statData);
                 });
             };
 
-            collectStats('edit-team-a-body', 'A');
-            collectStats('edit-team-b-body', 'B');
+            collectStats(rowsA, 'A', teamBGoalsTotal);
+            collectStats(rowsB, 'B', teamAGoalsTotal);
 
             if (stats.length === 0) {
                 alert("يجب إضافة لاعبين");

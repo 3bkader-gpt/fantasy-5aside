@@ -40,7 +40,8 @@ document.addEventListener('DOMContentLoaded', function () {
         gkCheck.addEventListener('change', function () {
             const isGK = this.checked;
             savesInput.disabled = !isGK;
-            concededInput.disabled = !isGK;
+            // Goals conceded for GK are auto-calculated from opponent goals, keep input read-only
+            concededInput.disabled = true;
             cleanSheetCheck.disabled = !isGK;
 
             if (isGK) {
@@ -89,13 +90,23 @@ document.addEventListener('DOMContentLoaded', function () {
             const teamBName = document.getElementById('team_b_name').value.trim() || 'فريق ب';
             const stats = [];
 
-            // Parse Team A
-            const rowsA = teamABody.querySelectorAll('.player-row');
-            rowsA.forEach(row => collectRowStats(row, 'A', stats));
+            // Parse rows
+            const rowsA = Array.from(teamABody.querySelectorAll('.player-row'));
+            const rowsB = Array.from(teamBBody.querySelectorAll('.player-row'));
 
-            // Parse Team B
-            const rowsB = teamBBody.querySelectorAll('.player-row');
-            rowsB.forEach(row => collectRowStats(row, 'B', stats));
+            // Compute team goals (used to auto-set GK \"عليه\")
+            const teamAGoalsTotal = rowsA.reduce((sum, row) => {
+                return sum + (parseInt(row.querySelector('.goals-input').value) || 0);
+            }, 0);
+            const teamBGoalsTotal = rowsB.reduce((sum, row) => {
+                return sum + (parseInt(row.querySelector('.goals-input').value) || 0);
+            }, 0);
+
+            // Parse Team A (GK conceded = goals of Team B)
+            rowsA.forEach(row => collectRowStats(row, 'A', stats, teamBGoalsTotal));
+
+            // Parse Team B (GK conceded = goals of Team A)
+            rowsB.forEach(row => collectRowStats(row, 'B', stats, teamAGoalsTotal));
 
             if (stats.length === 0) {
                 alert('⚠️ يرجى إدخال بيانات لاعب واحد على الأقل.');
@@ -136,14 +147,23 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function collectRowStats(row, teamIdentifier, statsArray) {
+    function collectRowStats(row, teamIdentifier, statsArray, opponentGoals) {
         const nameInput = row.querySelector('.player-name-input');
         const name = nameInput.value.trim();
 
         if (name) {
             const isGk = row.querySelector('.is-gk-check').checked;
-            const goalsConceded = parseInt(row.querySelector('.conceded-input').value) || 0;
+            let goalsConceded = 0;
             let cleanSheet = row.querySelector('.clean-sheet-check').checked;
+
+            if (isGk) {
+                // For goalkeepers, conceded goals = goals scored by the opponent team
+                goalsConceded = opponentGoals || 0;
+                const concededInput = row.querySelector('.conceded-input');
+                if (concededInput) {
+                    concededInput.value = goalsConceded;
+                }
+            }
 
             // Apply new Clean Sheet rule: GK conceding 6 or fewer goals gets a clean sheet automatically
             if (isGk && goalsConceded <= 6) {
