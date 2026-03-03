@@ -18,23 +18,6 @@
         ربع النهائي.</p>
 </div>
 
-<div class="card mb-2" style="border-right: 5px solid var(--danger-color);">
-    <h3 style="color: var(--danger-color);">🚨 إنهاء الشهر الحالي</h3>
-    <form action="/l/{{ league.slug }}/admin/season/end" method="POST"
-        onsubmit="return confirm('هل أنت متأكد من إنهاء الشهر؟ سيتم إضافة المتصدر إلى لوحة الشرف وتصفير جميع النقاط الحالية!');">
-        <input type="text" name="month_name" placeholder="اسم الشهر (مثال: أغسطس 2026)" required class="form-control"
-            style="width: 230px; display: inline-block; margin-inline-end: 0.5rem;">
-        <button type="submit" class="btn btn-danger">
-            إنهاء الشهر والأرشفة
-        </button>
-    </form>
-    <form action="/l/{{ league.slug }}/admin/season/undo" method="POST" style="margin-top: 1rem;"
-        onsubmit="return confirm('هل أنت متأكد من التراجع عن نهاية الشهر؟');">
-        <button type="submit" class="btn" style="background: #7f8c8d; color: white; font-size: 0.85rem;">
-            إلغاء نهاية الشهر ⏪
-        </button>
-    </form>
-</div>
 
 <div class="card mb-2" style="border-right: 5px solid var(--info-color, #3498db);">
     <h3 style="color: var(--info-color, #3498db);">📊 تصدير الإحصائيات</h3>
