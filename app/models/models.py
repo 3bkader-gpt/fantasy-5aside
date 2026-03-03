@@ -16,6 +16,10 @@ class League(Base):
     current_season_matches = Column(Integer, default=0)
     season_number = Column(Integer, default=1)
 
+    # Fixed team labels (for UI)
+    team_a_label = Column(String(100), default="فريق أ")
+    team_b_label = Column(String(100), default="فريق ب")
+
     players = relationship("Player", back_populates="league", cascade="all, delete")
     matches = relationship("Match", back_populates="league", cascade="all, delete")
     votes = relationship("Vote", back_populates="league", cascade="all, delete")

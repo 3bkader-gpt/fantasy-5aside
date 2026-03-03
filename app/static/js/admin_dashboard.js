@@ -86,8 +86,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('add-player-b-btn').addEventListener('click', () => addPlayerRow(teamBBody));
 
         document.getElementById('save-match-btn').addEventListener('click', async () => {
-            const teamAName = document.getElementById('team_a_name').value.trim() || 'فريق أ';
-            const teamBName = document.getElementById('team_b_name').value.trim() || 'فريق ب';
+            const teamAName = document.getElementById('team_a_name').value.trim() || (window.TEAM_A_LABEL || 'فريق أ');
+            const teamBName = document.getElementById('team_b_name').value.trim() || (window.TEAM_B_LABEL || 'فريق ب');
             const stats = [];
 
             // Parse rows

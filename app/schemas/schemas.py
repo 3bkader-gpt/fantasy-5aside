@@ -15,6 +15,10 @@ class LeagueUpdate(BaseModel):
     slug: Optional[str] = None
     new_password: Optional[str] = None
     current_admin_password: Optional[str] = None
+    team_a_label: Optional[str] = None
+    team_b_label: Optional[str] = None
+    team_a_label: Optional[str] = None
+    team_b_label: Optional[str] = None
 
 class LeagueResponse(LeagueBase):
     id: int

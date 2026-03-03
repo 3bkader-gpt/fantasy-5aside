@@ -49,7 +49,7 @@
 
         <!-- Team A -->
         <div class="team-container team-a-container">
-            <input type="text" id="team_a_name" value="فريق أ" class="form-control text-center mb-1"
+            <input type="text" id="team_a_name" value="{{ league.team_a_label or 'فريق أ' }}" class="form-control text-center mb-1"
                 style="font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid var(--primary-color);">
             <button id="add-player-a-btn" class="btn btn-primary mb-1" style="width: 100%;">+ إضافة لاعب للفريق</button>
             <div class="table-responsive" style="margin-bottom: 0;">
@@ -76,7 +76,7 @@
 
         <!-- Team B -->
         <div class="team-container team-b-container">
-            <input type="text" id="team_b_name" value="فريق ب" class="form-control text-center mb-1"
+            <input type="text" id="team_b_name" value="{{ league.team_b_label or 'فريق ب' }}" class="form-control text-center mb-1"
                 style="font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid var(--warning-color);">
             <button id="add-player-b-btn" class="btn mb-1"
                 style="width: 100%; background: var(--warning-color); color: white;">+ إضافة لاعب للفريق</button>
@@ -126,6 +126,16 @@
             <input type="password" name="new_password" class="form-control"
                 placeholder="أدخل كلمة سر جديدة إذا أردت تغييرها">
         </div>
+        <div class="form-group mb-1">
+            <label>اسم الفريق A (يظهر في لوحة الماتشات)</label>
+            <input type="text" name="team_a_label" class="form-control"
+                value="{{ league.team_a_label or 'فريق أ' }}">
+        </div>
+        <div class="form-group mb-1">
+            <label>اسم الفريق B (يظهر في لوحة الماتشات)</label>
+            <input type="text" name="team_b_label" class="form-control"
+                value="{{ league.team_b_label or 'فريق ب' }}">
+        </div>
         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">حفظ التعديلات
             الشاملة</button>
     </form>
@@ -140,8 +150,8 @@
         </div>
         <div class="form-group mb-1" style="display: flex; gap: 10px;">
             <select name="team" class="form-control" required style="flex: 1;">
-                <option value="A">فريق أ</option>
-                <option value="B">فريق ب</option>
+                <option value="A">{{ league.team_a_label or 'فريق أ' }}</option>
+                <option value="B">{{ league.team_b_label or 'فريق ب' }}</option>
             </select>
             <select name="default_is_gk" class="form-control" required style="flex: 1;">
                 <option value="false">لاعب (Outfield)</option>
@@ -241,7 +251,11 @@
     </tr>
 </template>
 
-<div id="league-data" data-slug="{{ league.slug }}" data-players-json="{{ players | tojson | forceescape }}">
+<div id="league-data"
+    data-slug="{{ league.slug }}"
+    data-players-json="{{ players | tojson | forceescape }}"
+    data-team-a-label="{{ league.team_a_label or 'فريق أ' }}"
+    data-team-b-label="{{ league.team_b_label or 'فريق ب' }}">
 </div>
 
 <script>
@@ -249,6 +263,8 @@
         const leagueData = document.getElementById('league-data').dataset;
         window.LEAGUE_SLUG = leagueData.slug;
         window.LEAGUE_PLAYERS = JSON.parse(leagueData.playersJson);
+        window.TEAM_A_LABEL = leagueData.teamALabel || 'فريق أ';
+        window.TEAM_B_LABEL = leagueData.teamBLabel || 'فريق ب';
     })();
 </script>
 <script src="/static/js/admin_dashboard.js"></script>

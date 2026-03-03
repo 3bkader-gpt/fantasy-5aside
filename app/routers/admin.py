@@ -119,7 +119,9 @@ def undo_end_season(
 def update_league_settings(
     name: str = Form(None), 
     new_slug: str = Form(None), 
-    new_password: str = Form(None), 
+    new_password: str = Form(None),
+    team_a_label: str = Form(None),
+    team_b_label: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
     league_repo: ILeagueRepository = Depends(get_league_repository),
     league_service: ILeagueService = Depends(get_league_service)
@@ -137,10 +139,15 @@ def update_league_settings(
         if existing_slug and existing_slug.id != league.id:
             raise HTTPException(status_code=400, detail="هذا الرابط مستخدم بالفعل")
 
+    team_a_label_clean = team_a_label.strip() if team_a_label is not None else None
+    team_b_label_clean = team_b_label.strip() if team_b_label is not None else None
+
     update_data = schemas.LeagueUpdate(
         name=name,
         slug=new_slug,
-        new_password=new_password
+        new_password=new_password,
+        team_a_label=team_a_label_clean,
+        team_b_label=team_b_label_clean,
     )
     
     try:

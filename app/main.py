@@ -53,6 +53,8 @@ async def lifespan(app: FastAPI):
             ("players", "all_time_assists", "INTEGER DEFAULT 0"),
             ("players", "all_time_saves", "INTEGER DEFAULT 0"),
             ("players", "all_time_clean_sheets", "INTEGER DEFAULT 0"),
+            ("leagues", "team_a_label", "VARCHAR(100) DEFAULT 'فريق أ'"),
+            ("leagues", "team_b_label", "VARCHAR(100) DEFAULT 'فريق ب'"),
             # Indexing for performance
             ("players", "league_id", "INDEX"),
             ("matches", "league_id", "INDEX"),

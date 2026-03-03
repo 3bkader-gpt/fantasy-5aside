@@ -62,6 +62,10 @@ class LeagueRepository(ILeagueRepository):
         if update_data.name: league.name = update_data.name
         if update_data.slug: league.slug = update_data.slug.strip()
         if update_data.new_password: league.admin_password = security.get_password_hash(update_data.new_password)
+        if update_data.team_a_label is not None:
+            league.team_a_label = update_data.team_a_label.strip()
+        if update_data.team_b_label is not None:
+            league.team_b_label = update_data.team_b_label.strip()
         self.db.add(league)
         self.db.commit()
         self.db.refresh(league)
