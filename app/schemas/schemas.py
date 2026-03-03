@@ -122,6 +122,7 @@ class VoteCreate(BaseModel):
     voter_id: int
     candidate_id: int
     round_number: int  # 1, 2, or 3
+    device_fingerprint: str = ""
 
 class VoteResponse(BaseModel):
     id: int

@@ -171,8 +171,43 @@
     let currentVoterId = null;
     let currentCandidateId = null;
 
+    async function generateFingerprint() {
+        const components = [
+            screen.width, screen.height, screen.colorDepth,
+            navigator.language,
+            Intl.DateTimeFormat().resolvedOptions().timeZone,
+            navigator.userAgent,
+            navigator.hardwareConcurrency || '',
+            navigator.platform || ''
+        ];
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('fp_probe', 2, 2);
+            components.push(canvas.toDataURL().slice(-50));
+        } catch(e) {}
+        const raw = components.join('|');
+        const encoded = new TextEncoder().encode(raw);
+        const hashBuf = await crypto.subtle.digest('SHA-256', encoded);
+        return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function _voteStorageKey() {
+        return `voted_${currentMatchId}_${currentRound}`;
+    }
+
     function openVotingModal(matchId) {
         currentMatchId = matchId;
+        if (localStorage.getItem(_voteStorageKey())) {
+            if (typeof showToast !== 'undefined') {
+                showToast('يا غشاش يا حرامي يا وسخ! 🤡 انت صوّت قبل كده من الجهاز ده!', 'error');
+            } else {
+                alert('يا غشاش يا حرامي يا وسخ! 🤡 انت صوّت قبل كده من الجهاز ده!');
+            }
+            return;
+        }
         const modal = document.getElementById('voting-modal');
         if (modal) {
             modal.style.display = 'flex';
@@ -229,20 +264,22 @@
         btn.innerHTML = 'جاري الإرسال... ⏳';
 
         try {
+            const fp = await generateFingerprint();
             const response = await fetch('/api/voting/vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     match_id: currentMatchId,
-                    round: currentRound,
+                    round_number: currentRound,
                     voter_id: currentVoterId,
-                    candidate_id: currentCandidateId
+                    candidate_id: currentCandidateId,
+                    device_fingerprint: fp
                 })
             });
 
             const result = await response.json();
             if (response.ok) {
-                // Success Toast would be here if showToast is available globally
+                localStorage.setItem(_voteStorageKey(), '1');
                 if (typeof showToast !== 'undefined') {
                     showToast('تم تسجيل تصويتك بنجاح!', 'success');
                 } else {

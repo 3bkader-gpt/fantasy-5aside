@@ -48,34 +48,50 @@ class VotingService(IVotingService):
             excluded_player_ids=excluded_ids
         )
 
-    def submit_vote(self, match_id: int, vote_in: schemas.VoteCreate) -> models.Vote:
+    CHEAT_MESSAGE = "يا غشاش يا حرامي يا وسخ! 🤡 انت عملت تصويت قبل كده من الجهاز ده... فاكر إنك هتعدّيها علينا؟"
+    MAX_VOTES_PER_IP = 2
+
+    def submit_vote(self, match_id: int, vote_in: schemas.VoteCreate, ip_address: str = "") -> models.Vote:
+        from fastapi import HTTPException
+
         match = self.match_repo.get_by_id(match_id)
         if not match or match.voting_round == 0:
-            from fastapi import HTTPException
             raise HTTPException(status_code=400, detail="التصويت مغلق حالياً")
-            
+
         if vote_in.round_number != match.voting_round:
-            from fastapi import HTTPException
             raise HTTPException(status_code=400, detail="رقم الجولة غير صحيح")
-            
-        # Check if already voted
+
+        # Anti-cheat: check device fingerprint
+        fp = vote_in.device_fingerprint.strip() if vote_in.device_fingerprint else ""
+        if fp:
+            existing_fp = self.voting_repo.get_vote_by_fingerprint(match_id, fp, match.voting_round)
+            if existing_fp:
+                raise HTTPException(status_code=403, detail=self.CHEAT_MESSAGE)
+
+        # Anti-cheat: check IP address (allow up to MAX_VOTES_PER_IP from same IP)
+        if ip_address:
+            ip_votes = self.voting_repo.get_votes_by_ip(match_id, ip_address, match.voting_round)
+            if len(ip_votes) >= self.MAX_VOTES_PER_IP:
+                raise HTTPException(status_code=403, detail=self.CHEAT_MESSAGE)
+
+        # Check if voter_id already voted
         existing = self.voting_repo.get_vote_by_voter(match_id, vote_in.voter_id, match.voting_round)
         if existing:
-            from fastapi import HTTPException
             raise HTTPException(status_code=400, detail="لقد قمت بالتصويت بالفعل في هذه الجولة")
-            
+
         # Check if candidate is excluded
         status = self.get_voting_status(match_id, vote_in.voter_id)
         if vote_in.candidate_id in status.excluded_player_ids:
-            from fastapi import HTTPException
             raise HTTPException(status_code=400, detail="هذا اللاعب فاز بالفعل في جولة سابقة")
-            
+
         vote = models.Vote(
             match_id=match_id,
             league_id=match.league_id,
             voter_id=vote_in.voter_id,
             candidate_id=vote_in.candidate_id,
-            round_number=match.voting_round
+            round_number=match.voting_round,
+            ip_address=ip_address,
+            device_fingerprint=fp,
         )
         return self.voting_repo.save_vote(vote)
 

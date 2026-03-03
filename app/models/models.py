@@ -152,6 +152,8 @@ class Vote(Base):
     voter_id = Column(Integer, ForeignKey("players.id"))
     candidate_id = Column(Integer, ForeignKey("players.id"))
     round_number = Column(Integer)  # 1, 2, or 3
+    ip_address = Column(String, nullable=True)
+    device_fingerprint = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     league = relationship("League", back_populates="votes")

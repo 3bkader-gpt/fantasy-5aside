@@ -51,7 +51,7 @@ class IVotingService(ABC):
     @abstractmethod
     def get_voting_status(self, match_id: int, voter_id: int) -> schemas.VotingStatusResponse: pass
     @abstractmethod
-    def submit_vote(self, match_id: int, vote_in: schemas.VoteCreate) -> models.Vote: pass
+    def submit_vote(self, match_id: int, vote_in: schemas.VoteCreate, ip_address: str = "") -> models.Vote: pass
     @abstractmethod
     def close_round(self, match_id: int) -> dict: pass # Returns results/status
     @abstractmethod

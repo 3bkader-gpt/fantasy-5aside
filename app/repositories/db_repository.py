@@ -30,6 +30,18 @@ class VotingRepository(IVotingRepository):
             models.Vote.round_number == round_number
         ).group_by(models.Vote.candidate_id).order_by(func.count(models.Vote.id).desc()).all()
         return [{"candidate_id": r.candidate_id, "count": r.count} for r in results]
+    def get_votes_by_ip(self, match_id: int, ip: str, round_number: int) -> List[models.Vote]:
+        return self.db.query(models.Vote).filter(
+            models.Vote.match_id == match_id,
+            models.Vote.ip_address == ip,
+            models.Vote.round_number == round_number
+        ).all()
+    def get_vote_by_fingerprint(self, match_id: int, fingerprint: str, round_number: int) -> Optional[models.Vote]:
+        return self.db.query(models.Vote).filter(
+            models.Vote.match_id == match_id,
+            models.Vote.device_fingerprint == fingerprint,
+            models.Vote.round_number == round_number
+        ).first()
 
 class LeagueRepository(ILeagueRepository):
     def __init__(self, db: Session): self.db = db

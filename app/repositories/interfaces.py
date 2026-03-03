@@ -84,3 +84,7 @@ class IVotingRepository(ABC):
     def save_vote(self, vote: models.Vote) -> models.Vote: pass
     @abstractmethod
     def get_round_results(self, match_id: int, round_number: int) -> List[dict]: pass # List of {candidate_id, count}
+    @abstractmethod
+    def get_votes_by_ip(self, match_id: int, ip: str, round_number: int) -> List[models.Vote]: pass
+    @abstractmethod
+    def get_vote_by_fingerprint(self, match_id: int, fingerprint: str, round_number: int) -> Optional[models.Vote]: pass
