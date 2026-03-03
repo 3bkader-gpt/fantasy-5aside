@@ -12,6 +12,14 @@ A modern, fast, and fully functional multi-tenant Fantasy Football web applicati
 - **Form Indicator**: Players on the leaderboard show a 🔥 (hot) or ❄️ (cold) indicator based on the points scored in their last 3 matches.
 - **Hall of Fame & Seasons**: At the end of the month, the Admin can "End Season", archiving the winner to the Hall of Fame, moving current stats to All-Time stats, and resetting the leaderboard for a fresh start.
 
+## 🧾 v3.0 Highlights
+- **New Cup Engine**: Separate brackets for goalkeepers vs outfield players, automatic H2H resolution after each match, co‑op final rule (two winners if they play on the same team), and automatic progression between rounds.
+- **Goalkeeper Overhaul**: GK `goals_conceded` is now auto‑calculated from opponent goals; scoring updated so every 3 saves = **+2 points** and every 4 goals conceded = **−1 point**.
+- **Anti‑Cheat Voting System**: Triple‑layer protection against vote fraud (IP + browser fingerprint + localStorage) with fun sarcastic messages for cheaters.
+- **Automated Seasons & Fixed Teams**: Seasons auto‑reset every 4 matches, with persistent fixed teams (A/B) and configurable team labels used across the UI.
+- **Own Goals & Bonus System**: Own goals correctly apply a −1 penalty, and an improved BPS‑style bonus algorithm awards 3/2/1 bonus points per match.
+- **Performance & DX**: Multiple DB resilience and indexing improvements, cleaner admin flows, and a refined UI/UX suitable for a polished portfolio project.
+
 ## 🛠️ Tech Stack
 - **Backend**: Python 3, [FastAPI](https://fastapi.tiangolo.com/)
 - **Database**: 
