@@ -19,12 +19,17 @@ def _make_engine(url: str):
     if url.startswith("sqlite"):
         return create_engine(url, connect_args={"check_same_thread": False})
     else:
-        # Use NullPool for PostgreSQL to allow PgBouncer to handle pooling seamlessly in transaction mode
-        from sqlalchemy.pool import NullPool
-        # Fix query args if present (psycopg2 rejects pgbouncer=true)
+        # Use standard connection pooling for direct PostgreSQL connections
+        # Remove pgbouncer query parameter if accidentally included
         if "?pgbouncer=true" in url:
             url = url.replace("?pgbouncer=true", "")
-        return create_engine(url, poolclass=NullPool)
+        return create_engine(
+            url,
+            pool_pre_ping=True,
+            pool_recycle=300,
+            pool_size=5,
+            max_overflow=10
+        )
 
 # استخدم SQLite إذا USE_SQLITE=1، وإلا الـ URL من الإعدادات
 SQLALCHEMY_DATABASE_URL = settings.effective_database_url
