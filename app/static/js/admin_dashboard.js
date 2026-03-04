@@ -385,6 +385,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Manage players per team (scroll + filter)
+    const playerManagementCard = document.getElementById('player-management-card');
+    const playerTableBody = document.getElementById('player-management-body');
+    const manageTeamButtons = document.querySelectorAll('.manage-team-players-btn');
+
+    function filterPlayersByTeam(teamId) {
+        if (!playerTableBody) return;
+        const rows = playerTableBody.querySelectorAll('tr[data-team-id]');
+        rows.forEach(row => {
+            const rowTeamId = row.getAttribute('data-team-id') || '';
+            if (!teamId || String(rowTeamId) === String(teamId)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    manageTeamButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const teamId = btn.getAttribute('data-team-id') || '';
+            if (playerManagementCard) {
+                playerManagementCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            filterPlayersByTeam(teamId);
+        });
+    });
+
     // Delete Team
     document.querySelectorAll('.delete-team-btn').forEach(btn => {
         btn.addEventListener('click', async function () {

@@ -308,6 +308,11 @@
                 <button type="submit" class="btn btn-sm" style="background: var(--info-color, #3498db); color: white;"
                     title="حفظ إعدادات الفريق">💾</button>
             </form>
+            <!-- Manage Players Button -->
+            <button class="btn btn-sm manage-team-players-btn" data-team-id="{{ t.id }}" data-team-name="{{ t.name }}"
+                style="background: var(--hover-bg); color: var(--text-color);" title="إدارة لاعبي هذا الفريق">
+                👥
+            </button>
             <!-- Delete Button -->
             <button class="btn btn-sm btn-danger delete-team-btn" data-team-id="{{ t.id }}"
                 data-team-name="{{ t.name }}" data-player-count="{{ t.player_count }}"
@@ -322,7 +327,7 @@
 </div>
 
 <!-- New Section: Player Management -->
-<div class="card mb-4" style="border-right: 5px solid var(--secondary-color);">
+<div id="player-management-card" class="card mb-4" style="border-right: 5px solid var(--secondary-color);">
     <h3 style="color: var(--text-color);">👥 إدارة اللاعبين (مسح المكرر)</h3>
     <p class="text-secondary mb-2">يمكنك هنا مسح أي لاعب تم إضافته بالخطأ أو بشكل مكرر.</p>
     <div
@@ -335,9 +340,9 @@
                     <th style="text-align: center; padding: 10px;">الإجراء</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="player-management-body">
                 {% for player in player_leaderboard %}
-                <tr style="border-bottom: 1px solid var(--border-color);">
+                <tr style="border-bottom: 1px solid var(--border-color);" data-team-id="{{ player.team_id or '' }}">
                     <td style="padding: 10px;">
                         <span style="font-weight: bold;">{{ player.name }}</span>
                         {% if player.team_id %}
