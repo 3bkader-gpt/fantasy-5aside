@@ -244,13 +244,16 @@
                 <input type="text" name="short_code" value="{{ t.short_code }}" class="form-control"
                     style="width: 65px; font-size: 0.85rem;" maxlength="5">
                 <input type="color" name="color" value="{{ t.color }}"
-                    style="height: 36px; width: 44px; padding: 2px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px;">
+                    style="height: 36px; width: 44px; padding: 2px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px;"
+                    title="اختيار لون الفريق">
                 <button type="submit" class="btn btn-sm"
-                    style="background: var(--info-color, #3498db); color: white;">💾</button>
+                    style="background: var(--info-color, #3498db); color: white;"
+                    title="حفظ إعدادات الفريق">💾</button>
             </form>
             <!-- Delete Button -->
             <button class="btn btn-sm btn-danger delete-team-btn" data-team-id="{{ t.id }}"
-                data-team-name="{{ t.name }}" data-player-count="{{ t.player_count }}">🗑️</button>
+                data-team-name="{{ t.name }}" data-player-count="{{ t.player_count }}"
+                title="حذف الفريق من الدوري">🗑️</button>
         </div>
         {% endfor %}
     </div>

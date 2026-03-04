@@ -49,23 +49,28 @@
         </div>
         <ul>
             {% if league %}
-            <li><a href="/l/{{ league.slug }}"><span class="icon">📋</span><span class="text">الترتيب</span></a></li>
-            <li><a href="/l/{{ league.slug }}/matches"><span class="icon">📜</span><span
+            <li><a href="/l/{{ league.slug }}" title="جدول الترتيب"><span class="icon">📋</span><span
+                        class="text">الترتيب</span></a></li>
+            <li><a href="/l/{{ league.slug }}/matches" title="قائمة المباريات"><span class="icon">📜</span><span
                         class="text">المباريات</span></a></li>
-            <li><a href="/l/{{ league.slug }}/cup"><span class="icon">🏆</span><span class="text">الكأس</span></a></li>
-            <li><a href="/l/{{ league.slug }}/hall-of-fame"><span class="icon">🎖️</span><span
+            <li><a href="/l/{{ league.slug }}/cup" title="كأس الدوري"><span class="icon">🏆</span><span
+                        class="text">الكأس</span></a></li>
+            <li><a href="/l/{{ league.slug }}/hall-of-fame" title="قاعة الشرف"><span class="icon">🎖️</span><span
                         class="text">الشرف</span></a></li>
-            <li><a href="#" onclick="showRulesModal(event)"><span class="icon">📖</span><span class="text">كيف
+            <li><a href="#" onclick="showRulesModal(event)" title="شرح نظام النقاط"><span class="icon">📖</span><span
+                        class="text">كيف
                         تلعب؟</span></a></li>
             {% if is_admin %}
-            <li><a href="/l/{{ league.slug }}/admin" class="admin-link"><span class="icon">🛡️</span><span
-                        class="text">الإدارة</span></a></li>
+            <li><a href="/l/{{ league.slug }}/admin" class="admin-link" title="لوحة تحكم الأدمن"><span
+                        class="icon">🛡️</span><span class="text">الإدارة</span></a></li>
             {% endif %}
             {% else %}
-            <li><a href="/"><span class="icon">🏠</span><span class="text">الرئيسية</span></a></li>
+            <li><a href="/" title="الصفحة الرئيسية"><span class="icon">🏠</span><span class="text">الرئيسية</span></a>
+            </li>
             {% endif %}
             <li>
-                <button id="theme-toggle" class="icon-btn" aria-label="تبديل الوضع الليلي">🌙</button>
+                <button id="theme-toggle" class="icon-btn" aria-label="تبديل الوضع الليلي"
+                    title="تبديل الوضع الليلي">🌙</button>
             </li>
         </ul>
     </nav>
@@ -97,7 +102,7 @@
             <div class="modal-header flex-between mb-1" style="align-items: center;">
                 <h3 class="m-0" style="color: var(--primary-color);">📖 نظام حساب النقاط</h3>
                 <button class="icon-btn text-muted" onclick="closeRulesModal()"
-                    style="font-size: 1.5rem; line-height: 1; padding: 0;">&times;</button>
+                    style="font-size: 1.5rem; line-height: 1; padding: 0;" title="إغلاق">×</button>
             </div>
             <div class="rules-body">
                 <p class="mb-1 text-muted" style="font-size: 0.95rem; line-height: 1.5;">كيف تُحسب النقاط لكل لاعب بناءً
