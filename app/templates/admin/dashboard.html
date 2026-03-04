@@ -182,7 +182,7 @@
 </div>
 
 <!-- New Section: Add Player (Fixed Teams) -->
-<div class="card mb-4" style="border-right: 5px solid var(--success-color);">
+<div id="add-player-card" class="card mb-4" style="border-right: 5px solid var(--success-color);">
     <h3 style="color: var(--success-color);">➕ إضافة لاعب للدوري (الفرق الثابتة)</h3>
     <form action="/l/{{ league.slug }}/admin/player/add" method="POST">
         <div class="form-group mb-1">
@@ -243,10 +243,16 @@
         <div id="player-assign-panel"
             style="display: none; margin-top: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; background: rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 0.9rem; font-weight: bold; color: var(--primary-color);">اختر اللاعبين للانضمام
-                    لهذا
-                    الفريق</span>
-                <span style="font-size: 0.8rem; color: var(--text-muted, #888);">يُعرض فقط اللاعبون بدون فريق</span>
+                <div>
+                    <span style="font-size: 0.9rem; font-weight: bold; color: var(--primary-color);">اختر اللاعبين
+                        للانضمام
+                        لهذا الفريق</span>
+                    <div style="font-size: 0.8rem; color: var(--text-muted, #888);">يُعرض فقط اللاعبون بدون فريق</div>
+                </div>
+                <button type="button" id="add-new-player-from-team" class="btn btn-secondary"
+                    style="font-size: 0.8rem; padding: 4px 10px;">
+                    ➕ إضافة لاعب جديد
+                </button>
             </div>
             {% set unassigned = players | selectattr("team_id", "none") | list %}
             {% if unassigned %}

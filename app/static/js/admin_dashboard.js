@@ -376,6 +376,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Shortcut: add new player from inside team assignment panel
+    const addNewPlayerFromTeamBtn = document.getElementById('add-new-player-from-team');
+    const addPlayerCard = document.getElementById('add-player-card');
+    if (addNewPlayerFromTeamBtn && addPlayerCard) {
+        addNewPlayerFromTeamBtn.addEventListener('click', () => {
+            addPlayerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+
     // Delete Team
     document.querySelectorAll('.delete-team-btn').forEach(btn => {
         btn.addEventListener('click', async function () {
