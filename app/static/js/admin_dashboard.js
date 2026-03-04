@@ -308,3 +308,23 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+// ─── Team Creation: Player Assignment Helpers ──────────────────────────────
+
+function filterPlayerList(query) {
+    const items = document.querySelectorAll('.player-assign-item');
+    const normalized = query.trim().toLowerCase();
+    items.forEach(function (label) {
+        const name = label.querySelector('span').textContent.trim().toLowerCase();
+        label.style.display = name.includes(normalized) ? '' : 'none';
+    });
+}
+
+// Update selected count when checkboxes change
+document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'player_ids') {
+        const total = document.querySelectorAll('input[name="player_ids"]:checked').length;
+        const counter = document.getElementById('selected-count');
+        if (counter) counter.textContent = total;
+    }
+});

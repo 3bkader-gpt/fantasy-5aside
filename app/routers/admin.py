@@ -447,27 +447,44 @@ def add_player(
 # ─── Team Management ──────────────────────────────────────────────────────────
 
 @router.post("/team/add")
-def add_team(
+async def add_team(
+    request: Request,
     name: str = Form(...),
     short_code: str = Form(None),
     color: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
-    team_repo: ITeamRepository = Depends(get_team_repository)
+    team_repo: ITeamRepository = Depends(get_team_repository),
+    player_repo: IPlayerRepository = Depends(get_player_repository)
 ):
-    """Add a new team to the league."""
+    """Add a new team to the league, optionally assigning players to it."""
     name = name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="اسم الفريق مطلوب")
     existing = team_repo.get_by_name(league.id, name)
     if existing:
         raise HTTPException(status_code=400, detail="هذا الاسم مستخدم بالفعل لفريق آخر في نفس الدوري")
-    team_repo.create(
+    team = team_repo.create(
         league_id=league.id,
         name=name,
         short_code=short_code.strip() if short_code else None,
         color=color if color else None
     )
+
+    # Assign selected players to the new team
+    form_data = await request.form()
+    player_ids_raw = form_data.getlist("player_ids")
+    for pid_str in player_ids_raw:
+        try:
+            pid = int(pid_str)
+        except ValueError:
+            continue
+        player = player_repo.get_by_id(pid)
+        if player and player.league_id == league.id:
+            player.team_id = team.id
+            player_repo.save(player)
+
     return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
+
 
 
 @router.post("/team/{team_id}/update")
