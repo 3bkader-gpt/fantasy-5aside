@@ -108,16 +108,13 @@ class MatchService(IMatchService):
             else:
                 team_b_base.append(stat_dict)
 
-        # Phase 2: Calculate bonus points
-        bonuses = points.calculate_bonus_points(team_a_base, team_b_base)
-
-        # Phase 3: Apply bonuses, save stats, save updates
+        # Phase 2 + 3: No BPS bonus anymore – voting system is the only bonus.
         combined_stats = team_a_base + team_b_base
         for s in combined_stats:
             player = s['player']
             stat_data = s['stat_data']
-            bonus = bonuses.get(player.id, 0)
-            total_points = s['base_points'] + bonus
+            bonus = 0
+            total_points = s['base_points']
             
             db_stat = models.MatchStat(
                 match_id=db_match.id,
@@ -234,16 +231,13 @@ class MatchService(IMatchService):
             else:
                 team_b_base.append(stat_dict)
 
-        # Phase 2: Calculate bonus points
-        bonuses = points.calculate_bonus_points(team_a_base, team_b_base)
-
-        # Phase 3: Apply bonuses, save stats, save updates
+        # Phase 2 + 3: No BPS bonus anymore – voting system is the only bonus.
         combined_stats = team_a_base + team_b_base
         for s in combined_stats:
             player = s['player']
             stat_data = s['stat_data']
-            bonus = bonuses.get(player.id, 0)
-            total_points = s['base_points'] + bonus
+            bonus = 0
+            total_points = s['base_points']
 
             db_stat = models.MatchStat(
                 match_id=match.id,

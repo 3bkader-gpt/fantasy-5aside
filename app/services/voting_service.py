@@ -115,7 +115,7 @@ class VotingService(IVotingService):
         winner_id = round_results[0]["candidate_id"]
         winner = self.player_repo.get_by_id(winner_id)
         
-        # Award bonus points
+        # Award bonus points (voting replaces legacy BPS)
         bonus_map = {1: 3, 2: 2, 3: 1}
         bonus = bonus_map.get(match.voting_round, 0)
         
@@ -123,13 +123,11 @@ class VotingService(IVotingService):
             winner.total_points += bonus
             self.player_repo.save(winner)
             
-            # Update MatchStat if exists to reflect bonus? 
-            # Or just add to total points. Usually we want it in the match history too.
-            # Let's find the match stat for this player
+            # Reflect bonus in the match history
             for stat in match.stats:
                 if stat.player_id == winner_id:
-                    stat.points += bonus
-                    # No need to call repo.save for stat if match.stats are managed by session
+                    stat.points_earned += bonus
+                    stat.bonus_points = bonus
                     break
         
         if match.voting_round < 3:
