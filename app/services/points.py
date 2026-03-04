@@ -34,10 +34,19 @@ class AssistPoints(PointsStrategy):
 class WinPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
         if ctx.is_winner:
+            # فوز الفريق
             return 2
-        elif ctx.is_draw:
+        if ctx.is_draw:
+            # تعادل
             return 1
-        return 0
+        # خسارة
+        return -1
+
+
+class ParticipationPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        # مجرد الظهور في قائمة المباراة يمنح اللاعب +2
+        return 2
 
 
 class CleanSheetPoints(PointsStrategy):
@@ -73,6 +82,7 @@ class PointsCalculator:
     def __init__(self, strategies: Optional[List[PointsStrategy]] = None):
         # السماح بالإنشاء الافتراضي بدون تمرير استراتيجيات (متوافق مع الاختبارات)
         self.strategies = strategies or [
+            ParticipationPoints(),
             GoalPoints(),
             AssistPoints(),
             WinPoints(),
@@ -84,7 +94,7 @@ class PointsCalculator:
 
     def calculate_total(self, ctx: PointsContext) -> int:
         base_points = sum(strategy.calculate(ctx) for strategy in self.strategies)
-        return max(0, base_points)
+        return base_points
 
     def calculate_player_points(self, match_data: schemas.MatchCreate) -> int:
         """
