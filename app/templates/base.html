@@ -118,6 +118,10 @@
                         </thead>
                         <tbody>
                             <tr>
+                                <td>📋 مشاركة في المباراة (مجرد الظهور في التشكيلة)</td>
+                                <td style="color: var(--success-color); font-weight: bold;">+2</td>
+                            </tr>
+                            <tr>
                                 <td>⚽ هدف (لاعب)</td>
                                 <td style="color: var(--success-color); font-weight: bold;">+3</td>
                             </tr>
@@ -134,12 +138,16 @@
                                 <td style="color: var(--success-color); font-weight: bold;">+4</td>
                             </tr>
                             <tr>
-                                <td>🏆 فوز</td>
+                                <td>🏆 فوز الفريق</td>
                                 <td style="color: var(--success-color); font-weight: bold;">+2</td>
                             </tr>
                             <tr>
-                                <td>🤝 تعادل</td>
+                                <td>🤝 تعادل الفريق</td>
                                 <td>+1</td>
+                            </tr>
+                            <tr>
+                                <td>💔 خسارة الفريق</td>
+                                <td style="color: var(--danger-color); font-weight: bold;">-1</td>
                             </tr>
                             <tr class="highlight-gk">
                                 <td>🛡️ كلين شيت كامل (حارس يستقبل 0-2 أهداف)</td>
@@ -171,24 +179,13 @@
 
                 <div class="bps-rule card p-1 mb-1"
                     style="background: var(--surface-color); border-right: 4px solid var(--warning-color); padding-right: 15px;">
-                    <h4 class="m-0 mb-sm" style="color: var(--warning-color); font-size: 1.1rem;">🌟 ما هو نظام البونص
-                        (BPS) الجديد؟
-                    </h4>
+                    <h4 class="m-0 mb-sm" style="color: var(--warning-color); font-size: 1.1rem;">🌟 نقاط البونص من
+                        التصويت</h4>
                     <p class="m-0 text-sm" style="line-height: 1.5;">
-                        يعتمد النظام الجديد على <strong>تصويت اللاعبين</strong> بعد كل مباراة.
-                        يختار كل لاعب أفضل 3 لاعبين أداءً في المباراة (باستثناء نفسه).
-                        أفضل 3 لاعبين حصدوا أعلى عدد من الأصوات يحصلون تلقائياً على نقاط البونص:
-                        <br><br>
-                        <strong>🥇 المركز الأول: +3 نقاط</strong><br>
-                        <strong>🥈 المركز الثاني: +2 نقاط</strong><br>
-                        <strong>🥉 المركز الثالث: +1 نقطة</strong><br>
+                        بعد كل مباراة يقوم اللاعبون بالتصويت على أفضل لاعب في المباراة.
+                        اللاعب الفائز بالتصويت يحصل على نقاط بونص إضافية (مثلاً +3)، وتُضاف مباشرة إلى رصيده في
+                        جدول النقاط.
                     </p>
-                </div>
-
-                <div class="min-points-rule card p-1 mb-1"
-                    style="background: var(--surface-color); border-right: 4px solid var(--text-muted); padding-right: 15px;">
-                    <p class="m-0 text-sm" style="line-height: 1.5;">⚠️ النتيجة النهائية لأي لاعب <strong>لا يمكن أن تقل
-                            عن 0</strong>، حتى لو كانت الخصومات أكبر من نقاطه الموجبة.</p>
                 </div>
 
                 <div class="badges-info card p-1"
