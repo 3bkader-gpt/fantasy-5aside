@@ -64,7 +64,6 @@ class LeagueResponse(LeagueBase):
 # --- Player Schemas ---
 class PlayerBase(BaseModel):
     name: str
-    team: Optional[str] = None
     team_id: Optional[int] = None
     default_is_gk: bool = False
     total_points: int = 0
