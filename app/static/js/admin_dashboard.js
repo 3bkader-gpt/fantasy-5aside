@@ -2,6 +2,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const teamABody = document.getElementById('team-a-body');
     const teamBBody = document.getElementById('team-b-body');
     const template = document.getElementById('player-row-template');
+    const teamASelect = document.getElementById('team_a_select');
+    const teamBSelect = document.getElementById('team_b_select');
+    const teamANameInput = document.getElementById('team_a_name');
+    const teamBNameInput = document.getElementById('team_b_name');
 
     // Function to add a new row
     function addPlayerRow(targetBody, player = null) {
@@ -62,17 +66,85 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function getTeamById(id) {
+        if (!window.LEAGUE_TEAMS) return null;
+        return window.LEAGUE_TEAMS.find(t => String(t.id) === String(id)) || null;
+    }
+
+    function applyTeamNamesFromSelects() {
+        if (!teamANameInput || !teamBNameInput) return;
+
+        if (teamASelect) {
+            const teamA = getTeamById(teamASelect.value);
+            if (teamA) {
+                teamANameInput.value = teamA.name;
+            }
+        }
+        if (teamBSelect) {
+            const teamB = getTeamById(teamBSelect.value);
+            if (teamB) {
+                teamBNameInput.value = teamB.name;
+            }
+        }
+    }
+
+    function populateBoardForRegisteredTeams() {
+        if (!teamABody || !teamBBody) return;
+
+        teamABody.innerHTML = '';
+        teamBBody.innerHTML = '';
+
+        const teamAId = teamASelect ? parseInt(teamASelect.value) || null : null;
+        const teamBId = teamBSelect ? parseInt(teamBSelect.value) || null : null;
+        const players = window.LEAGUE_PLAYERS || [];
+
+        if (teamAId) {
+            players
+                .filter(p => p.team_id === teamAId)
+                .forEach(p => addPlayerRow(teamABody, p));
+        }
+        if (teamBId) {
+            players
+                .filter(p => p.team_id === teamBId)
+                .forEach(p => addPlayerRow(teamBBody, p));
+        }
+
+        // إذا مافيش لاعيبة في الفريق لسبب ما، نديك شوية صفوف فاضية تقدر تكتب فيهم
+        if (teamABody.querySelectorAll('.player-row').length === 0) {
+            for (let i = 0; i < 5; i++) addPlayerRow(teamABody);
+        }
+        if (teamBBody.querySelectorAll('.player-row').length === 0) {
+            for (let i = 0; i < 5; i++) addPlayerRow(teamBBody);
+        }
+    }
+
     if (teamABody && teamBBody) {
-        if (window.LEAGUE_PLAYERS && window.LEAGUE_PLAYERS.length > 0) {
-            window.LEAGUE_PLAYERS.forEach(player => {
-                const targetBody = player.team === 'B' ? teamBBody : teamABody;
-                addPlayerRow(targetBody, player);
+        const hasRegisteredTeams = Array.isArray(window.LEAGUE_TEAMS) && window.LEAGUE_TEAMS.length >= 2 && teamASelect && teamBSelect;
+
+        if (hasRegisteredTeams) {
+            applyTeamNamesFromSelects();
+            populateBoardForRegisteredTeams();
+
+            teamASelect.addEventListener('change', () => {
+                applyTeamNamesFromSelects();
+                populateBoardForRegisteredTeams();
+            });
+            teamBSelect.addEventListener('change', () => {
+                applyTeamNamesFromSelects();
+                populateBoardForRegisteredTeams();
             });
         } else {
-            // Add 5 initial rows for each team if no players
-            for (let i = 0; i < 5; i++) {
-                addPlayerRow(teamABody);
-                addPlayerRow(teamBBody);
+            if (window.LEAGUE_PLAYERS && window.LEAGUE_PLAYERS.length > 0) {
+                window.LEAGUE_PLAYERS.forEach(player => {
+                    const targetBody = player.team === 'B' ? teamBBody : teamABody;
+                    addPlayerRow(targetBody, player);
+                });
+            } else {
+                // Add 5 initial rows for each team if no players
+                for (let i = 0; i < 5; i++) {
+                    addPlayerRow(teamABody);
+                    addPlayerRow(teamBBody);
+                }
             }
         }
 
