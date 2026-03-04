@@ -230,6 +230,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // Lazy-show match form when user explicitly starts a new match
     if (startNewMatchBtn && matchFormCard) {
         startNewMatchBtn.addEventListener('click', () => {
+            // Require at least two registered teams
+            if (!hasRegisteredTeams) {
+                alert('⚠️ لا يمكنك تسجيل مباراة قبل تسجيل فريقين على الأقل في الدوري.\nاذهب إلى قسم "إدارة الفرق المسجلة" وأضف الفرق أولاً، ثم ارجع لتسجيل المباراة.');
+                const teamCard = document.getElementById('team-management-card');
+                if (teamCard) {
+                    teamCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                return;
+            }
+
             matchFormCard.style.display = 'block';
             // Optional: hide the intro card to reduce clutter
             const introCard = startNewMatchBtn.closest('.card');
