@@ -15,20 +15,16 @@
     <div class="card mb-2" id="match-{{ match.id }}">
 
         <!-- Scoreboard Header -->
-        <div class="scoreboard text-center"
-            style="background: #2c3e50; color: white; padding: 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+        <div class="scoreboard text-center">
             <!-- Top row: match number + date -->
-            <div class="scoreboard-meta"
-                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 0.8rem; color: rgba(255,255,255,0.6);">
+            <div class="scoreboard-meta">
                 <span>#{{ loop.index }}</span>
                 <span>{{ match.date.strftime('%Y-%m-%d %H:%M') if match.date else 'تاريخ غير معروف' }}</span>
             </div>
 
             <!-- Score row: Team A - Score - Team B -->
-            <div class="scoreboard-score"
-                style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
-                <span class="scoreboard-team"
-                    style="flex: 1; text-align: center; color: #4da8da; font-size: clamp(0.9rem, 3vw, 1.3rem); font-weight: 700;">
+            <div class="scoreboard-score">
+                <span class="scoreboard-team" style="color: var(--accent-color);">
                     {{ match.team_a.name if match.team_a else match.team_a_name }}
                     {% if match.team_a_id %}
                     <span class="badge"
@@ -37,14 +33,12 @@
                     </span>
                     {% endif %}
                 </span>
-                <span class="scoreboard-result"
-                    style="font-size: clamp(1.5rem, 5vw, 2.5rem); background: rgba(255,255,255,0.1); padding: 4px 16px; border-radius: var(--radius-md); white-space: nowrap;">
-                    <span style="color: #4da8da;">{{ match.team_a_score }}</span>
+                <span class="scoreboard-result">
+                    <span style="color: var(--accent-color);">{{ match.team_a_score }}</span>
                     <span style="color: rgba(255,255,255,0.5); font-size: 0.7em;">-</span>
-                    <span style="color: #f39c12;">{{ match.team_b_score }}</span>
+                    <span style="color: var(--warning-color);">{{ match.team_b_score }}</span>
                 </span>
-                <span class="scoreboard-team"
-                    style="flex: 1; text-align: center; color: #f39c12; font-size: clamp(0.9rem, 3vw, 1.3rem); font-weight: 700;">
+                <span class="scoreboard-team" style="color: var(--warning-color);">
                     {% if match.team_b_id %}
                     <span class="badge"
                         style="--t-color: {{ match.team_b.color if match.team_b else '#888' }}; background-color: var(--t-color); color: white; font-size: 0.65rem; padding: 2px 5px; vertical-align: middle;">
@@ -56,8 +50,7 @@
             </div>
 
             <!-- Bottom row: action buttons -->
-            <div class="scoreboard-actions"
-                style="display: flex; justify-content: center; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap;">
+            <div class="scoreboard-actions">
                 <button class="btn btn-outline btn-sm share-match-btn" data-target="#match-{{ match.id }}"
                     title="مشاركة المباراة"
                     style="font-size: 0.8rem; color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.4); padding: 4px 10px; min-height: auto; width: auto; margin: 0;">
@@ -71,11 +64,11 @@
                     {% if match.voting_round == 0 %}فتح التصويت 🗳️{% else %}إغلاق الجولة {{ match.voting_round }} 🏁{%
                     endif %}
                 </button>
-                <button class="edit-match-btn" data-match-id="{{ match.id }}" title="تعديل المباراة"
+                <button class="edit-match-btn" data-match-id="{{ match.id }}" title="تعديل المباراة" aria-label="تعديل المباراة"
                     style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #4da8da; min-height: auto; width: auto; margin: 0; padding: 4px;">
                     ✏️
                 </button>
-                <button class="delete-match-btn" data-match-id="{{ match.id }}" title="حذف المباراة"
+                <button class="delete-match-btn" data-match-id="{{ match.id }}" title="حذف المباراة" aria-label="حذف المباراة"
                     style="background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #ff6b6b; min-height: auto; width: auto; margin: 0; padding: 4px;">
                     🗑️
                 </button>

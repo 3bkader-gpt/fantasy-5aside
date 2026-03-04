@@ -2,8 +2,9 @@
 
 {% block content %}
 <div class="player-profile container-sm" style="max-width: 900px;">
-    <div class="card text-center mb-2" style="background: linear-gradient(135deg, #2c3e50, #3498db); color: white;">
-        <h1 class="mb-0" style="font-size: 2.5rem;">
+    <div class="card text-center mb-2"
+        style="background: linear-gradient(135deg, var(--nav-bg), var(--primary-color)); color: white;">
+        <h1 class="mb-0" style="font-size: 2.4rem;">
             {{ player.name }}
             {% if player.team_id %}
             <span class="badge"
@@ -22,7 +23,7 @@
 
         {% if form_history %}
         <div class="flex-center gap-2 mt-1" style="flex-wrap: wrap; align-items: center;">
-            <span style="font-size: 0.85rem; opacity: 0.8; margin-left: 0.5rem;">الفورمة (آخر 5 مباريات):</span>
+            <span style="font-size: 0.85rem; opacity: 0.8; margin-inline-start: 0.5rem;">الفورمة (آخر 5 مباريات):</span>
             {% for outcome in form_history %}
             <span class="form-badge {{ 'win' if outcome == 'W' else 'loss' if outcome == 'L' else 'draw' }}"
                 title="{{ 'فوز' if outcome == 'W' else 'خسارة' if outcome == 'L' else 'تعادل' }}">
@@ -87,9 +88,9 @@
         </div>
 
         <!-- All Time Stats -->
-        <div class="card text-center" style="border-bottom: 4px solid #9b59b6;">
+        <div class="card text-center" style="border-bottom: 4px solid var(--accent-color);">
             <h3 class="text-secondary mb-1" style="font-size: 1rem;">الإحصائيات التاريخية (All-Time)</h3>
-            <div style="font-size: 2.5rem; font-weight: bold; color: #9b59b6;" class="mb-1">{{ player.all_time_points
+            <div style="font-size: 2.5rem; font-weight: bold; color: var(--accent-color);" class="mb-1">{{ player.all_time_points
                 + player.total_points }}</div>
             <div class="text-secondary" style="font-size: 0.9rem;">النقاط التاريخية</div>
 
@@ -322,7 +323,8 @@
             📥 تحميل بطاقة اللاعب
         </button>
         {% if is_admin %}
-        <button id="delete-player-btn" class="btn btn-danger" style="font-size: 1.1rem; padding: 0.75rem 2rem;">
+        <button id="delete-player-btn" class="btn btn-danger" style="font-size: 1.1rem; padding: 0.75rem 2rem;"
+            title="حذف اللاعب نهائياً" aria-label="حذف اللاعب نهائياً">
             🗑️ مسح اللاعب نهائياً
         </button>
         {% endif %}
