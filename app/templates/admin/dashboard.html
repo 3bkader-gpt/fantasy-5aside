@@ -137,9 +137,13 @@
         النتيجة</button>
 </div>
 
-<!-- New Section: League Settings -->
+<!-- New Section: League Settings (Core + legacy labels) -->
 <div class="card mb-4" style="border-right: 5px solid var(--primary-color);">
-    <h3 style="color: var(--text-color);">⚙️ إعدادات الدوري</h3>
+    <h3 style="color: var(--text-color);">⚙️ إعدادات الدوري (أساسيات)</h3>
+    <p class="text-secondary mb-1" style="font-size: 0.85rem;">
+        استخدم هذه الإعدادات لتعديل اسم الدوري، الرابط وكلمة السر. حقول أسماء الفريقين A/B موجودة فقط للتوافق مع
+        الدوريات القديمة، ويمكن تجاهلها إذا كنت تعتمد على نظام الفرق المسجلة في الأسفل.
+    </p>
     <form action="/l/{{ league.slug }}/admin/settings/update" method="POST">
         <div class="form-group mb-1">
             <label>اسم الدوري الجديد (اختياري)</label>
@@ -155,11 +159,11 @@
                 placeholder="أدخل كلمة سر جديدة إذا أردت تغييرها">
         </div>
         <div class="form-group mb-1">
-            <label>اسم الفريق A (يظهر في لوحة الماتشات)</label>
+            <label>اسم الفريق A (Legacy)</label>
             <input type="text" name="team_a_label" class="form-control" value="{{ league.team_a_label or 'فريق أ' }}">
         </div>
         <div class="form-group mb-1">
-            <label>اسم الفريق B (يظهر في لوحة الماتشات)</label>
+            <label>اسم الفريق B (Legacy)</label>
             <input type="text" name="team_b_label" class="form-control" value="{{ league.team_b_label or 'فريق ب' }}">
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">حفظ التعديلات
@@ -197,8 +201,8 @@
 </div>
 
 <!-- New Section: Team Management -->
-<div class="card mb-4" style="border-right: 5px solid #8e44ad;">
-    <h3 style="color: #8e44ad;">🏅 إدارة الفرق المسجلة</h3>
+<div class="card mb-4" style="border-right: 5px solid var(--primary-color);">
+    <h3 style="color: var(--primary-color);">🏅 إدارة الفرق المسجلة</h3>
 
     <!-- Add Team Form -->
     <form action="/l/{{ league.slug }}/admin/team/add" method="POST" style="margin-bottom: 1rem;">
@@ -217,19 +221,20 @@
                     style="height: 42px; padding: 2px 4px; cursor: pointer;">
             </div>
             <button type="button" id="toggle-player-assign" class="btn"
-                style="background: var(--border-color); color: var(--text-color); height: 42px; white-space: nowrap; font-size: 0.85rem;"
+                style="background: var(--hover-bg); color: var(--text-color); height: 42px; white-space: nowrap; font-size: 0.85rem;"
                 onclick="document.getElementById('player-assign-panel').style.display = document.getElementById('player-assign-panel').style.display === 'none' ? 'block' : 'none'">
                 👥 تعيين لاعبين
             </button>
             <button type="submit" class="btn"
-                style="background: #8e44ad; color: white; height: 42px; white-space: nowrap;">+ إضافة فريق</button>
+                style="background: var(--primary-color); color: white; height: 42px; white-space: nowrap;">+ إضافة فريق</button>
         </div>
 
         <!-- Collapsible player assignment panel -->
         <div id="player-assign-panel"
             style="display: none; margin-top: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; background: rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 0.9rem; font-weight: bold; color: #8e44ad;">اختر اللاعبين للانضمام لهذا
+                <span style="font-size: 0.9rem; font-weight: bold; color: var(--primary-color);">اختر اللاعبين للانضمام
+                    لهذا
                     الفريق</span>
                 <span style="font-size: 0.8rem; color: var(--text-muted, #888);">يُعرض فقط اللاعبون بدون فريق</span>
             </div>
