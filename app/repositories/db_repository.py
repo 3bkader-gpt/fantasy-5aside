@@ -138,7 +138,14 @@ class MatchRepository(IMatchRepository):
     def __init__(self, db: Session): self.db = db
     def get_by_id(self, match_id: int) -> Optional[models.Match]: return self.db.query(models.Match).filter(models.Match.id == match_id).first()
     def get_all_for_league(self, league_id: int) -> List[models.Match]:
-        return self.db.query(models.Match).filter(models.Match.league_id == league_id).options(joinedload(models.Match.stats).joinedload(models.MatchStat.player)).order_by(models.Match.date.desc()).all()
+        # Oldest matches first so Match #1 remains the first ever match
+        return (
+            self.db.query(models.Match)
+            .filter(models.Match.league_id == league_id)
+            .options(joinedload(models.Match.stats).joinedload(models.MatchStat.player))
+            .order_by(models.Match.date.asc())
+            .all()
+        )
     def save(self, match: models.Match) -> models.Match:
         self.db.add(match)
         self.db.commit()
