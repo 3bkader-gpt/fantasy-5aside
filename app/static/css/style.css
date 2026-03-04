@@ -503,6 +503,16 @@ select {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
+/* Ensure select dropdown options stay readable in dark mode */
+.dark-mode select {
+    color: var(--text-primary);
+}
+
+.dark-mode select option {
+    background-color: #ffffff;
+    color: #000000;
+}
+
 /* Keep number inputs a reasonable size if they are intended to be inline, but wrap them flexably */
 .inline-input-group {
     display: flex;
