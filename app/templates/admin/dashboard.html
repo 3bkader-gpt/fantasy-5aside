@@ -44,12 +44,41 @@
             league.current_season_matches + 1 }} من 4</span>
     </div>
 
+    <!-- Team Selectors (shown only when registered teams exist) -->
+    {% if teams|length >= 2 %}
+    <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 160px;">
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--primary-color);">🔵 الفريق أ</label>
+            <select id="team_a_select" class="form-control" style="border-bottom: 3px solid var(--primary-color);">
+                {% for t in teams %}
+                <option value="{{ t.id }}"
+                    style="--opt-color: {{ t.color or 'transparent' }}; background-color: var(--opt-color);">{{ t.name
+                    }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="font-size: 1.5rem; align-self: flex-end; padding-bottom: 6px;">⚔️</div>
+        <div style="flex: 1; min-width: 160px;">
+            <label style="font-size: 0.85rem; font-weight: bold; color: var(--warning-color);">🟡 الفريق ب</label>
+            <select id="team_b_select" class="form-control" style="border-bottom: 3px solid var(--warning-color);">
+                {% for t in teams %}
+                <option value="{{ t.id }}" {% if loop.index==2 %}selected{% endif %}
+                    style="--opt-color: {{ t.color or 'transparent' }}; background-color: var(--opt-color);">
+                    {{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Tactical Board -->
     <div class="tactical-board" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
 
         <!-- Team A -->
         <div class="team-container team-a-container">
-            <input type="text" id="team_a_name" value="{{ league.team_a_label or 'فريق أ' }}" class="form-control text-center mb-1"
+            <input type="text" id="team_a_name" value="{{ league.team_a_label or 'فريق أ' }}"
+                class="form-control text-center mb-1"
                 style="font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid var(--primary-color);">
             <button id="add-player-a-btn" class="btn btn-primary mb-1" style="width: 100%;">+ إضافة لاعب للفريق</button>
             <div class="table-responsive" style="margin-bottom: 0;">
@@ -75,7 +104,8 @@
 
         <!-- Team B -->
         <div class="team-container team-b-container">
-            <input type="text" id="team_b_name" value="{{ league.team_b_label or 'فريق ب' }}" class="form-control text-center mb-1"
+            <input type="text" id="team_b_name" value="{{ league.team_b_label or 'فريق ب' }}"
+                class="form-control text-center mb-1"
                 style="font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid var(--warning-color);">
             <button id="add-player-b-btn" class="btn mb-1"
                 style="width: 100%; background: var(--warning-color); color: white;">+ إضافة لاعب للفريق</button>
@@ -126,13 +156,11 @@
         </div>
         <div class="form-group mb-1">
             <label>اسم الفريق A (يظهر في لوحة الماتشات)</label>
-            <input type="text" name="team_a_label" class="form-control"
-                value="{{ league.team_a_label or 'فريق أ' }}">
+            <input type="text" name="team_a_label" class="form-control" value="{{ league.team_a_label or 'فريق أ' }}">
         </div>
         <div class="form-group mb-1">
             <label>اسم الفريق B (يظهر في لوحة الماتشات)</label>
-            <input type="text" name="team_b_label" class="form-control"
-                value="{{ league.team_b_label or 'فريق ب' }}">
+            <input type="text" name="team_b_label" class="form-control" value="{{ league.team_b_label or 'فريق ب' }}">
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">حفظ التعديلات
             الشاملة</button>
@@ -147,10 +175,18 @@
             <input type="text" name="name" placeholder="اسم اللاعب" required class="form-control">
         </div>
         <div class="form-group mb-1" style="display: flex; gap: 10px;">
-            <select name="team" class="form-control" required style="flex: 1;">
-                <option value="A">{{ league.team_a_label or 'فريق أ' }}</option>
-                <option value="B">{{ league.team_b_label or 'فريق ب' }}</option>
+            {% if teams %}
+            <select name="team_id" class="form-control" style="flex: 1;">
+                <option value="">-- بدون فريق --</option>
+                {% for t in teams %}
+                <option value="{{ t.id }}">{{ t.name }}{% if t.short_code %} ({{ t.short_code }}){% endif %}</option>
+                {% endfor %}
             </select>
+            {% else %}
+            <select name="team_id" class="form-control" style="flex: 1;" disabled>
+                <option value="">-- لا توجد فرق مسجلة --</option>
+            </select>
+            {% endif %}
             <select name="default_is_gk" class="form-control" required style="flex: 1;">
                 <option value="false">لاعب (Outfield)</option>
                 <option value="true">حارس مرمى (GK)</option>
@@ -158,6 +194,70 @@
         </div>
         <button type="submit" class="btn btn-success" style="width: 100%;">حفظ اللاعب</button>
     </form>
+</div>
+
+<!-- New Section: Team Management -->
+<div class="card mb-4" style="border-right: 5px solid #8e44ad;">
+    <h3 style="color: #8e44ad;">🏅 إدارة الفرق المسجلة</h3>
+
+    <!-- Add Team Form -->
+    <form action="/l/{{ league.slug }}/admin/team/add" method="POST" style="margin-bottom: 1rem;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+            <div class="form-group" style="flex: 2; min-width: 120px;">
+                <label style="font-size: 0.85rem; margin-bottom: 4px;">اسم الفريق</label>
+                <input type="text" name="name" class="form-control" placeholder="مثال: ريال مدريد" required>
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 80px;">
+                <label style="font-size: 0.85rem; margin-bottom: 4px;">رمز قصير</label>
+                <input type="text" name="short_code" class="form-control" placeholder="مثال: RMA" maxlength="5">
+            </div>
+            <div class="form-group" style="min-width: 60px;">
+                <label style="font-size: 0.85rem; margin-bottom: 4px;">اللون</label>
+                <input type="color" name="color" class="form-control" value="#3498db"
+                    style="height: 42px; padding: 2px 4px; cursor: pointer;">
+            </div>
+            <button type="submit" class="btn"
+                style="background: #8e44ad; color: white; height: 42px; white-space: nowrap;">+ إضافة فريق</button>
+        </div>
+    </form>
+
+    <!-- Teams List -->
+    {% if teams %}
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for t in teams %}
+        <div
+            style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); border-right-width: 5px; border-right-style: solid; --team-color: {{ t.color or '#888' }}; border-right-color: var(--team-color);">
+            <!-- Color Badge -->
+            <div
+                style="--badge-color: {{ t.color or '#888' }}; width: 36px; height: 36px; border-radius: 50%; background-color: var(--badge-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8rem; flex-shrink: 0;">
+                {{ t.short_code or t.name[:2] }}</div>
+            <!-- Info -->
+            <div style="flex: 1;">
+                <div style="font-weight: bold;">{{ t.name }}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted, #888);">{{ t.player_count }} لاعب</div>
+            </div>
+            <!-- Edit Form -->
+            <form action="/l/{{ league.slug }}/admin/team/{{ t.id }}/update" method="POST"
+                style="display: flex; gap: 6px; align-items: center;">
+                <input type="text" name="name" value="{{ t.name }}" class="form-control"
+                    style="width: 110px; font-size: 0.85rem;">
+                <input type="text" name="short_code" value="{{ t.short_code }}" class="form-control"
+                    style="width: 65px; font-size: 0.85rem;" maxlength="5">
+                <input type="color" name="color" value="{{ t.color }}"
+                    style="height: 36px; width: 44px; padding: 2px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px;">
+                <button type="submit" class="btn btn-sm"
+                    style="background: var(--info-color, #3498db); color: white;">💾</button>
+            </form>
+            <!-- Delete Button -->
+            <button class="btn btn-sm btn-danger delete-team-btn" data-team-id="{{ t.id }}"
+                data-team-name="{{ t.name }}" data-player-count="{{ t.player_count }}">🗑️</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted" style="font-size: 0.9rem;">لم يتم تسجيل أي فريق بعد. أضف فريقاً من الفورم أعلاه لتفعيل نظام
+        الفرق الرسمية.</p>
+    {% endif %}
 </div>
 
 <!-- New Section: Player Management -->
@@ -175,20 +275,52 @@
                 </tr>
             </thead>
             <tbody>
-                {% for player in players %}
+                {% for player in player_leaderboard %}
                 <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 10px;">{{ player.name }}</td>
+                    <td style="padding: 10px;">
+                        <span style="font-weight: bold;">{{ player.name }}</span>
+                        {% if player.team_id %}
+                        <span class="badge"
+                            style="--team-color: {{ player.team.color if player.team else '#888' }}; background-color: var(--team-color); color: white; margin-inline-start: 5px; font-size: 0.7rem;">
+                            {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
+                        </span>
+                        {% endif %}
+                    </td>
                     <td style="padding: 10px;">{{ player.total_points }}</td>
                     <td style="padding: 10px; text-align: center;">
-                        <button class="btn btn-sm edit-player-btn" data-player-id="{{ player.id }}"
-                            data-player-name="{{ player.name }}"
-                            style="background: var(--info-color, #3498db); color: white; margin-inline-end: 5px;">
-                            تعديل الاسم ✏️
-                        </button>
-                        <button class="btn btn-danger btn-sm delete-player-btn" data-player-id="{{ player.id }}"
-                            data-player-name="{{ player.name }}">
-                            مسح نهائياً
-                        </button>
+                        <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-sm edit-player-btn" data-player-id="{{ player.id }}"
+                                data-player-name="{{ player.name }}"
+                                style="background: var(--info-color, #3498db); color: white;">
+                                ✏️
+                            </button>
+
+                            {% if teams %}
+                            <!-- Transfer Dropdown -->
+                            <form action="/l/{{ league.slug }}/admin/player/{{ player.id }}/transfer" method="POST"
+                                style="display: flex; gap: 2px;">
+                                <select name="to_team_id" class="form-control"
+                                    style="font-size: 0.75rem; height: 28px; width: 90px; padding: 2px 5px;">
+                                    <option value="">-- نقل --</option>
+                                    {% for t in teams %}
+                                    {% if t.id != player.team_id %}
+                                    <option value="{{ t.id }}">{{ t.name }}</option>
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% if player.team_id %}
+                                    <option value="0">-- بدون فريق --</option>
+                                    {% endif %}
+                                </select>
+                                <button type="submit" class="btn btn-sm"
+                                    style="background: #e67e22; color: white; padding: 2px 8px;">🔄</button>
+                            </form>
+                            {% endif %}
+
+                            <button class="btn btn-danger btn-sm delete-player-btn" data-player-id="{{ player.id }}"
+                                data-player-name="{{ player.name }}">
+                                🗑️
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -245,10 +377,8 @@
     </tr>
 </template>
 
-<div id="league-data"
-    data-slug="{{ league.slug }}"
-    data-players-json="{{ players | tojson | forceescape }}"
-    data-team-a-label="{{ league.team_a_label or 'فريق أ' }}"
+<div id="league-data" data-slug="{{ league.slug }}" data-players-json="{{ players | tojson | forceescape }}"
+    data-teams-json="{{ teams | tojson | forceescape }}" data-team-a-label="{{ league.team_a_label or 'فريق أ' }}"
     data-team-b-label="{{ league.team_b_label or 'فريق ب' }}">
 </div>
 
@@ -257,6 +387,7 @@
         const leagueData = document.getElementById('league-data').dataset;
         window.LEAGUE_SLUG = leagueData.slug;
         window.LEAGUE_PLAYERS = JSON.parse(leagueData.playersJson);
+        window.LEAGUE_TEAMS = JSON.parse(leagueData.teamsJson || '[]');
         window.TEAM_A_LABEL = leagueData.teamALabel || 'فريق أ';
         window.TEAM_B_LABEL = leagueData.teamBLabel || 'فريق ب';
     })();

@@ -1,7 +1,38 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..database import Base
+
+
+class Team(Base):
+    __tablename__ = "teams"
+
+    id = Column(Integer, primary_key=True, index=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    short_code = Column(String(10), nullable=True)   # e.g. "HR", "IT"
+    color = Column(String(20), nullable=True)         # hex e.g. "#3498db"
+
+    league = relationship("League", back_populates="teams")
+    players = relationship("Player", back_populates="team", foreign_keys="Player.team_id")
+
+
+class Transfer(Base):
+    __tablename__ = "transfers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
+    from_team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
+    to_team_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
+    reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    league = relationship("League", back_populates="transfers")
+    player = relationship("Player")
+    from_team = relationship("Team", foreign_keys=[from_team_id])
+    to_team = relationship("Team", foreign_keys=[to_team_id])
+
 
 class League(Base):
     __tablename__ = "leagues"
@@ -25,6 +56,8 @@ class League(Base):
     votes = relationship("Vote", back_populates="league", cascade="all, delete")
     cup_matchups = relationship("CupMatchup", back_populates="league", cascade="all, delete")
     hall_of_fame_records = relationship("HallOfFame", back_populates="league", cascade="all, delete")
+    teams = relationship("Team", back_populates="league", cascade="all, delete")
+    transfers = relationship("Transfer", back_populates="league", cascade="all, delete")
 
 
 class Player(Base):
@@ -35,7 +68,7 @@ class Player(Base):
     name = Column(String, index=True)
     
     # Fixed Teams Features
-    team = Column(String(50), nullable=True)
+    team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     default_is_gk = Column(Boolean, default=False)
     
     total_points = Column(Integer, default=0)
@@ -69,6 +102,7 @@ class Player(Base):
     last_season_matches = Column(Integer, default=0)
 
     league = relationship("League", back_populates="players")
+    team = relationship("Team", back_populates="players")
     match_stats = relationship("MatchStat", back_populates="player")
 
 
@@ -80,6 +114,8 @@ class Match(Base):
     date = Column(DateTime(timezone=True), server_default=func.now())
     team_a_name = Column(String, default="Team A")
     team_b_name = Column(String, default="Team B")
+    team_a_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
+    team_b_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     team_a_score = Column(Integer, default=0)
     team_b_score = Column(Integer, default=0)
     
@@ -87,6 +123,8 @@ class Match(Base):
     voting_round = Column(Integer, default=0)
 
     league = relationship("League", back_populates="matches")
+    team_a = relationship("Team", foreign_keys=[team_a_id])
+    team_b = relationship("Team", foreign_keys=[team_b_id])
     stats = relationship("MatchStat", back_populates="match", cascade="all, delete")
     votes = relationship("Vote", back_populates="match", cascade="all, delete")
 

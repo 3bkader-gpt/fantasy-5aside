@@ -9,9 +9,11 @@ from ..core import security
 from ..dependencies import (
     get_league_service, get_cup_service, get_match_service,
     get_league_repository, get_player_repository, get_match_repository,
+    get_team_repository, get_transfer_repository,
     get_current_admin_league,
     ILeagueService, ICupService, IMatchService,
     ILeagueRepository, IPlayerRepository, IMatchRepository,
+    ITeamRepository, ITransferRepository,
     IAnalyticsService
 )
 from ..services.achievements import achievement_service
@@ -35,19 +37,28 @@ def admin_dashboard(
     slug: str, 
     request: Request, 
     league: models.League = Depends(get_current_admin_league),
-    player_repo: IPlayerRepository = Depends(get_player_repository)
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    team_repo: ITeamRepository = Depends(get_team_repository)
 ):
     if league.slug != slug:
         return _canonical_admin_redirect(request, slug, league.slug)
         
     players_raw = player_repo.get_all_for_league(league.id)
-    # Serialize players to dicts for the 'tojson' filter in the template
     players = [schemas.PlayerResponse.model_validate(p).model_dump() for p in players_raw]
+    teams_raw = team_repo.get_all_for_league(league.id)
+    teams = [
+        {
+            "id": t.id, "name": t.name, "short_code": t.short_code or "",
+            "color": t.color or "#cccccc",
+            "player_count": len([p for p in players_raw if p.team_id == t.id])
+        }
+        for t in teams_raw
+    ]
     
     return templates.TemplateResponse(
         request=request,
         name="admin/dashboard.html", 
-        context={"league": league, "players": players, "is_admin": True}
+        context={"league": league, "players": players, "teams": teams, "is_admin": True}
     )
 
 @router.post("/match")
@@ -409,24 +420,131 @@ def update_player_name(
 @router.post("/player/add")
 def add_player(
     name: str = Form(...),
-    team: str = Form(...),
+    team_id: int = Form(None),
     default_is_gk: bool = Form(False),
     league: models.League = Depends(get_current_admin_league),
-    player_repo: IPlayerRepository = Depends(get_player_repository)
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    team_repo: ITeamRepository = Depends(get_team_repository)
 ):
     """Add a new player to a fixed team or update existing player."""
     player = player_repo.get_by_name(league.id, name)
     if player:
-        player.team = team
+        player.team_id = team_id if team_id else player.team_id
         player.default_is_gk = default_is_gk
         player_repo.save(player)
     else:
         new_player = models.Player(
             league_id=league.id,
             name=name,
-            team=team,
+            team_id=team_id,
             default_is_gk=default_is_gk
         )
         player_repo.save(new_player)
     
     return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
+
+
+# ─── Team Management ──────────────────────────────────────────────────────────
+
+@router.post("/team/add")
+def add_team(
+    name: str = Form(...),
+    short_code: str = Form(None),
+    color: str = Form(None),
+    league: models.League = Depends(get_current_admin_league),
+    team_repo: ITeamRepository = Depends(get_team_repository)
+):
+    """Add a new team to the league."""
+    name = name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="اسم الفريق مطلوب")
+    existing = team_repo.get_by_name(league.id, name)
+    if existing:
+        raise HTTPException(status_code=400, detail="هذا الاسم مستخدم بالفعل لفريق آخر في نفس الدوري")
+    team_repo.create(
+        league_id=league.id,
+        name=name,
+        short_code=short_code.strip() if short_code else None,
+        color=color if color else None
+    )
+    return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
+
+
+@router.post("/team/{team_id}/update")
+def update_team(
+    team_id: int,
+    name: str = Form(None),
+    short_code: str = Form(None),
+    color: str = Form(None),
+    league: models.League = Depends(get_current_admin_league),
+    team_repo: ITeamRepository = Depends(get_team_repository)
+):
+    """Update a team's name, short code, or color."""
+    team = team_repo.get_by_id(team_id)
+    if not team or team.league_id != league.id:
+        raise HTTPException(status_code=404, detail="الفريق غير موجود")
+    if name:
+        name = name.strip()
+        conflict = team_repo.get_by_name(league.id, name)
+        if conflict and conflict.id != team_id:
+            raise HTTPException(status_code=400, detail="هذا الاسم مستخدم بالفعل لفريق آخر")
+        team.name = name
+    if short_code is not None:
+        team.short_code = short_code.strip() or None
+    if color is not None:
+        team.color = color or None
+    team_repo.save(team)
+    return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
+
+
+@router.delete("/team/{team_id}")
+def delete_team(
+    team_id: int,
+    payload: dict,
+    league: models.League = Depends(get_current_admin_league),
+    team_repo: ITeamRepository = Depends(get_team_repository)
+):
+    """Delete a team (guarded – rejected if team has players or matches)."""
+    team = team_repo.get_by_id(team_id)
+    if not team or team.league_id != league.id:
+        raise HTTPException(status_code=404, detail="الفريق غير موجود")
+    team_repo.delete(team_id)   # guard is inside TeamRepository.delete
+    return {"success": True, "message": "تم حذف الفريق بنجاح"}
+
+
+# ─── Transfer ─────────────────────────────────────────────────────────────────
+
+@router.post("/player/{player_id}/transfer")
+def transfer_player(
+    player_id: int,
+    data: schemas.TransferCreate,
+    league: models.League = Depends(get_current_admin_league),
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    team_repo: ITeamRepository = Depends(get_team_repository),
+    transfer_repo: ITransferRepository = Depends(get_transfer_repository)
+):
+    """Admin-only: move a player to another team within the same league."""
+    player = player_repo.get_by_id(player_id)
+    if not player or player.league_id != league.id:
+        raise HTTPException(status_code=404, detail="اللاعب غير موجود")
+
+    to_team = team_repo.get_by_id(data.to_team_id)
+    if not to_team or to_team.league_id != league.id:
+        raise HTTPException(status_code=400, detail="الفريق المستهدف غير موجود في هذا الدوري")
+
+    if player.team_id == data.to_team_id:
+        raise HTTPException(status_code=400, detail="اللاعب منتسب بالفعل لهذا الفريق")
+
+    transfer = models.Transfer(
+        league_id=league.id,
+        player_id=player.id,
+        from_team_id=player.team_id,
+        to_team_id=data.to_team_id,
+        reason=data.reason
+    )
+    transfer_repo.save(transfer)
+
+    player.team_id = data.to_team_id
+    player_repo.save(player)
+
+    return {"success": True, "message": f"تم انتقال اللاعب إلى {to_team.name}"}

@@ -10,7 +10,8 @@ from ..dependencies import (
     get_hof_repository, get_cup_repository, get_analytics_service,
     check_admin_status,
     ILeagueRepository, IPlayerRepository, IMatchRepository,
-    IHallOfFameRepository, ICupRepository, IAnalyticsService
+    IHallOfFameRepository, ICupRepository, IAnalyticsService,
+    ITransferRepository, get_transfer_repository
 )
 from ..services.achievements import achievement_service
 
@@ -174,6 +175,7 @@ def read_player(
     request: Request, 
     league_repo: ILeagueRepository = Depends(get_league_repository),
     player_repo: IPlayerRepository = Depends(get_player_repository),
+    transfer_repo: ITransferRepository = Depends(get_transfer_repository),
     analytics_service: IAnalyticsService = Depends(get_analytics_service)
 ):
     league = league_repo.get_by_slug(slug)
@@ -200,6 +202,9 @@ def read_player(
     form_history = form_data.get("form_history", []) if form_data else []
         
     is_admin = check_admin_status(slug, request)
+    
+    # Fetch transfers
+    transfers = transfer_repo.get_all_for_player(player_id)
         
     # Badges are already calculated in the analytics service
     earned_badges = analytics.get("badges", [])
@@ -212,6 +217,7 @@ def read_player(
             "player": player,
             "badges": earned_badges,
             "history": history,
+            "transfers": transfers,
             "chart_labels": chart_labels,
             "chart_data": chart_data,
             "point_colors": point_colors,

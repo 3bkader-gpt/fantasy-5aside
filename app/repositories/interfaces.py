@@ -88,3 +88,23 @@ class IVotingRepository(ABC):
     def get_votes_by_ip(self, match_id: int, ip: str, round_number: int) -> List[models.Vote]: pass
     @abstractmethod
     def get_vote_by_fingerprint(self, match_id: int, fingerprint: str, round_number: int) -> Optional[models.Vote]: pass
+
+class ITeamRepository(ABC):
+    @abstractmethod
+    def get_all_for_league(self, league_id: int) -> List[models.Team]: pass
+    @abstractmethod
+    def get_by_id(self, team_id: int) -> Optional[models.Team]: pass
+    @abstractmethod
+    def get_by_name(self, league_id: int, name: str) -> Optional[models.Team]: pass
+    @abstractmethod
+    def create(self, league_id: int, name: str, short_code: Optional[str], color: Optional[str]) -> models.Team: pass
+    @abstractmethod
+    def save(self, team: models.Team) -> models.Team: pass
+    @abstractmethod
+    def delete(self, team_id: int) -> bool: pass
+
+class ITransferRepository(ABC):
+    @abstractmethod
+    def get_all_for_player(self, player_id: int) -> List[models.Transfer]: pass
+    @abstractmethod
+    def save(self, transfer: models.Transfer) -> models.Transfer: pass

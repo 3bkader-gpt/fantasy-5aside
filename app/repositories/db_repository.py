@@ -7,7 +7,8 @@ from ..schemas import schemas
 from ..core import security
 from .interfaces import (
     ILeagueRepository, IPlayerRepository, IMatchRepository, 
-    ICupRepository, IHallOfFameRepository, IVotingRepository
+    ICupRepository, IHallOfFameRepository, IVotingRepository,
+    ITeamRepository, ITransferRepository
 )
 
 class VotingRepository(IVotingRepository):
@@ -92,7 +93,8 @@ class LeagueRepository(ILeagueRepository):
 
 class PlayerRepository(IPlayerRepository):
     def __init__(self, db: Session): self.db = db
-    def get_by_id(self, player_id: int) -> Optional[models.Player]: return self.db.query(models.Player).filter(models.Player.id == player_id).first()
+    def get_by_id(self, player_id: int) -> Optional[models.Player]: 
+        return self.db.query(models.Player).options(joinedload(models.Player.team)).filter(models.Player.id == player_id).first()
     def get_by_name(self, league_id: int, name: str) -> Optional[models.Player]:
         return self.db.query(models.Player).filter(models.Player.name == name, models.Player.league_id == league_id).first()
     def get_all_for_league(self, league_id: int) -> List[models.Player]:
@@ -123,7 +125,8 @@ class PlayerRepository(IPlayerRepository):
         return self.db.query(models.Player).filter(
             models.Player.league_id == league_id
         ).options(
-            joinedload(models.Player.match_stats).joinedload(models.MatchStat.match)
+            joinedload(models.Player.match_stats).joinedload(models.MatchStat.match),
+            joinedload(models.Player.team)   # required – prevents N+1 when showing team badges
         ).order_by(
             models.Player.total_points.desc(), 
             models.Player.total_goals.desc()
@@ -142,7 +145,11 @@ class MatchRepository(IMatchRepository):
         return (
             self.db.query(models.Match)
             .filter(models.Match.league_id == league_id)
-            .options(joinedload(models.Match.stats).joinedload(models.MatchStat.player))
+            .options(
+                joinedload(models.Match.stats).joinedload(models.MatchStat.player),
+                joinedload(models.Match.team_a),
+                joinedload(models.Match.team_b)
+            )
             .order_by(models.Match.date.asc())
             .all()
         )
@@ -197,3 +204,69 @@ class HallOfFameRepository(IHallOfFameRepository):
         if record:
             self.db.delete(record)
             self.db.commit()
+
+
+class TeamRepository(ITeamRepository):
+    def __init__(self, db: Session): self.db = db
+
+    def get_all_for_league(self, league_id: int) -> List[models.Team]:
+        return self.db.query(models.Team).filter(models.Team.league_id == league_id).order_by(models.Team.name).all()
+
+    def get_by_id(self, team_id: int) -> Optional[models.Team]:
+        return self.db.query(models.Team).filter(models.Team.id == team_id).first()
+
+    def get_by_name(self, league_id: int, name: str) -> Optional[models.Team]:
+        return self.db.query(models.Team).filter(
+            models.Team.league_id == league_id,
+            func.lower(models.Team.name) == name.lower()
+        ).first()
+
+    def create(self, league_id: int, name: str, short_code: Optional[str] = None, color: Optional[str] = None) -> models.Team:
+        team = models.Team(league_id=league_id, name=name.strip(), short_code=short_code, color=color)
+        self.db.add(team)
+        self.db.commit()
+        self.db.refresh(team)
+        return team
+
+    def save(self, team: models.Team) -> models.Team:
+        self.db.add(team)
+        self.db.commit()
+        self.db.refresh(team)
+        return team
+
+    def delete(self, team_id: int) -> bool:
+        team = self.get_by_id(team_id)
+        if not team:
+            return False
+        # Guard: reject if team has players or is used in any match
+        has_players = self.db.query(models.Player).filter(models.Player.team_id == team_id).count() > 0
+        has_matches = self.db.query(models.Match).filter(
+            (models.Match.team_a_id == team_id) | (models.Match.team_b_id == team_id)
+        ).count() > 0
+        if has_players or has_matches:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=400,
+                detail="لا يمكن حذف الفريق لأن هناك لاعبين أو مباريات مرتبطة به"
+            )
+        self.db.delete(team)
+        self.db.commit()
+        return True
+
+
+class TransferRepository(ITransferRepository):
+    def __init__(self, db: Session): self.db = db
+
+    def get_all_for_player(self, player_id: int) -> List[models.Transfer]:
+        return self.db.query(models.Transfer).filter(
+            models.Transfer.player_id == player_id
+        ).options(
+            joinedload(models.Transfer.from_team),
+            joinedload(models.Transfer.to_team)
+        ).order_by(models.Transfer.created_at.desc()).all()
+
+    def save(self, transfer: models.Transfer) -> models.Transfer:
+        self.db.add(transfer)
+        self.db.commit()
+        self.db.refresh(transfer)
+        return transfer

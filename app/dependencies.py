@@ -7,11 +7,13 @@ from .models import models
 
 from .repositories.interfaces import (
     ILeagueRepository, IPlayerRepository, IMatchRepository, 
-    ICupRepository, IHallOfFameRepository, IVotingRepository
+    ICupRepository, IHallOfFameRepository, IVotingRepository,
+    ITeamRepository, ITransferRepository
 )
 from .repositories.db_repository import (
     LeagueRepository, PlayerRepository, MatchRepository, 
-    CupRepository, HallOfFameRepository, VotingRepository
+    CupRepository, HallOfFameRepository, VotingRepository,
+    TeamRepository, TransferRepository
 )
 
 from .services.interfaces import (
@@ -43,6 +45,12 @@ def get_hof_repository(db: Session = Depends(get_db)) -> IHallOfFameRepository:
 def get_voting_repository(db: Session = Depends(get_db)) -> IVotingRepository:
     return VotingRepository(db)
 
+def get_team_repository(db: Session = Depends(get_db)) -> ITeamRepository:
+    return TeamRepository(db)
+
+def get_transfer_repository(db: Session = Depends(get_db)) -> ITransferRepository:
+    return TransferRepository(db)
+
 # --- Services ---
 def get_league_service(
     league_repo: ILeagueRepository = Depends(get_league_repository),
@@ -70,9 +78,10 @@ def get_match_service(
     league_repo: ILeagueRepository = Depends(get_league_repository),
     match_repo: IMatchRepository = Depends(get_match_repository),
     player_repo: IPlayerRepository = Depends(get_player_repository),
-    cup_service: ICupService = Depends(get_cup_service)
+    cup_service: ICupService = Depends(get_cup_service),
+    team_repo: ITeamRepository = Depends(get_team_repository)
 ) -> IMatchService:
-    return MatchService(league_repo, match_repo, player_repo, cup_service)
+    return MatchService(league_repo, match_repo, player_repo, cup_service, team_repo)
 
 def get_analytics_service(
     player_repo: IPlayerRepository = Depends(get_player_repository),

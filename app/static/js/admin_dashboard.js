@@ -113,6 +113,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 stats: stats
             };
 
+            // Attach team IDs when the league uses registered teams
+            if (window.LEAGUE_TEAMS && window.LEAGUE_TEAMS.length >= 2) {
+                const teamASelect = document.getElementById('team_a_select');
+                const teamBSelect = document.getElementById('team_b_select');
+                if (teamASelect && teamBSelect) {
+                    payload.team_a_id = parseInt(teamASelect.value) || null;
+                    payload.team_b_id = parseInt(teamBSelect.value) || null;
+                }
+            }
+
             try {
                 const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/match`, {
                     method: 'POST',
@@ -258,6 +268,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } catch (error) {
                 console.error('Error updating player name:', error);
+                alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
+            }
+        });
+    });
+
+    // Delete Team
+    document.querySelectorAll('.delete-team-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const teamId = this.getAttribute('data-team-id');
+            const teamName = this.getAttribute('data-team-name');
+            const playerCount = parseInt(this.getAttribute('data-player-count') || '0');
+
+            if (playerCount > 0) {
+                alert(`❌ لا يمكن حذف فريق "${teamName}" لأن هناك ${playerCount} لاعب مرتبط به.\nيجب نقل اللاعبين لفريق آخر أولاً.`);
+                return;
+            }
+
+            if (!confirm(`⚠️ هل أنت متأكد من حذف فريق "${teamName}" نهائياً؟`)) return;
+
+            try {
+                const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/team/${teamId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ تم حذف الفريق بنجاح.');
+                    location.reload();
+                } else {
+                    alert('❌ خطأ: ' + (result.detail || 'تعذر حذف الفريق.'));
+                }
+            } catch (error) {
+                console.error('Error deleting team:', error);
                 alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
             }
         });

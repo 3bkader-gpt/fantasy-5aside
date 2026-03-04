@@ -2,6 +2,44 @@ from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
+# --- Team Schemas ---
+class TeamBase(BaseModel):
+    name: str
+    short_code: Optional[str] = None
+    color: Optional[str] = None
+
+class TeamCreate(TeamBase):
+    pass
+
+class TeamUpdate(BaseModel):
+    name: Optional[str] = None
+    short_code: Optional[str] = None
+    color: Optional[str] = None
+
+class TeamResponse(TeamBase):
+    id: int
+    league_id: int
+    player_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+# --- Transfer Schemas ---
+class TransferCreate(BaseModel):
+    to_team_id: int
+    reason: Optional[str] = None
+
+class TransferResponse(BaseModel):
+    id: int
+    player_id: int
+    from_team_id: Optional[int] = None
+    to_team_id: int
+    reason: Optional[str] = None
+    created_at: datetime
+    from_team_name: Optional[str] = None
+    to_team_name: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
 # --- League Schemas ---
 class LeagueBase(BaseModel):
     name: str
@@ -27,6 +65,7 @@ class LeagueResponse(LeagueBase):
 class PlayerBase(BaseModel):
     name: str
     team: Optional[str] = None
+    team_id: Optional[int] = None
     default_is_gk: bool = False
     total_points: int = 0
     total_goals: int = 0
@@ -42,6 +81,7 @@ class PlayerResponse(PlayerBase):
     id: int
     league_id: int
     form: Optional[str] = None
+    team_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -79,6 +119,8 @@ class MatchBase(BaseModel):
 class MatchCreate(MatchBase):
     league_id: Optional[int] = None
     stats: List[MatchStatCreate] = []
+    team_a_id: Optional[int] = None
+    team_b_id: Optional[int] = None
 
     # حقول مساعدة لاختبارات احتساب النقاط (تُستخدم في tests/test_points.py)
     score: int = 0

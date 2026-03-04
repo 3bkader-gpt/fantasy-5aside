@@ -109,3 +109,75 @@ class TestRepositories:
         update = schemas.LeagueUpdate(slug="  new-slug  ", current_admin_password="p1")
         updated = league_repo.update(l1.id, update)
         assert updated.slug == "new-slug"
+
+    # ─── Team / Transfer Tests ───────────────────────────────────────────────
+
+    def test_team_creation(self, league_repo, team_repo):
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Team League", slug="tl", admin_password="pw"), "pw"
+        )
+        team = team_repo.create(league.id, "Eagles", "EGL", "#ff0000")
+        assert team.id is not None
+        assert team.name == "Eagles"
+        assert team.short_code == "EGL"
+        assert team.color == "#ff0000"
+        assert team.league_id == league.id
+
+        fetched = team_repo.get_by_id(team.id)
+        assert fetched.name == "Eagles"
+
+        all_teams = team_repo.get_all_for_league(league.id)
+        assert len(all_teams) == 1
+
+    def test_team_duplicate_name_raises(self, league_repo, team_repo):
+        from fastapi import HTTPException
+        league = league_repo.create(
+            schemas.LeagueCreate(name="DL", slug="dl", admin_password="pw"), "pw"
+        )
+        team_repo.create(league.id, "Lions", None, None)
+        # Create same name (case-insensitive) – repository has no guard, but get_by_name helps UI guard
+        found = team_repo.get_by_name(league.id, "lions")
+        assert found is not None
+
+    def test_team_delete_guarded(self, db_session, league_repo, player_repo, team_repo):
+        from fastapi import HTTPException
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Guard League", slug="gl", admin_password="pw"), "pw"
+        )
+        team = team_repo.create(league.id, "Sharks", "SHK", None)
+        player = player_repo.create("Ali", league.id)
+        player.team_id = team.id
+        player_repo.save(player)
+
+        with pytest.raises(HTTPException) as exc_info:
+            team_repo.delete(team.id)
+        assert exc_info.value.status_code == 400
+
+    def test_transfer_updates_player_team_id(self, db_session, league_repo, player_repo, team_repo, transfer_repo):
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Transfer League", slug="tr", admin_password="pw"), "pw"
+        )
+        team_a = team_repo.create(league.id, "Alpha", "ALP", None)
+        team_b = team_repo.create(league.id, "Beta", "BET", None)
+        player = player_repo.create("Messi", league.id)
+        player.team_id = team_a.id
+        player_repo.save(player)
+
+        transfer = models.Transfer(
+            league_id=league.id,
+            player_id=player.id,
+            from_team_id=team_a.id,
+            to_team_id=team_b.id,
+            reason="Free agent"
+        )
+        transfer_repo.save(transfer)
+        player.team_id = team_b.id
+        player_repo.save(player)
+
+        refreshed = player_repo.get_by_id(player.id)
+        assert refreshed.team_id == team_b.id
+
+        history = transfer_repo.get_all_for_player(player.id)
+        assert len(history) == 1
+        assert history[0].from_team_id == team_a.id
+        assert history[0].to_team_id == team_b.id

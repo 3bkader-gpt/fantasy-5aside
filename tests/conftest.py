@@ -14,6 +14,8 @@ from app.repositories.db_repository import (
     LeagueRepository,
     MatchRepository,
     PlayerRepository,
+    TeamRepository,
+    TransferRepository,
 )
 from app.services.analytics_service import AnalyticsService
 from app.services.cup_service import CupService
@@ -137,8 +139,8 @@ def cup_service(player_repo, cup_repo, match_repo):
     return CupService(player_repo, cup_repo, match_repo)
 
 @pytest.fixture
-def match_service(league_repo, match_repo, player_repo, cup_service):
-    return MatchService(league_repo, match_repo, player_repo, cup_service)
+def match_service(league_repo, match_repo, player_repo, cup_service, team_repo):
+    return MatchService(league_repo, match_repo, player_repo, cup_service, team_repo)
 
 @pytest.fixture
 def league_service(league_repo, player_repo, hof_repo, cup_repo):
@@ -147,3 +149,11 @@ def league_service(league_repo, player_repo, hof_repo, cup_repo):
 @pytest.fixture
 def analytics_service(player_repo, match_repo):
     return AnalyticsService(player_repo, match_repo)
+
+@pytest.fixture
+def team_repo(db_session):
+    return TeamRepository(db_session)
+
+@pytest.fixture
+def transfer_repo(db_session):
+    return TransferRepository(db_session)

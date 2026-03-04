@@ -130,6 +130,12 @@
                         <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-start;">
                             <a href="/l/{{ league.slug }}/player/{{ player.id }}" style="font-weight: bold;">{{
                                 player.name }}</a>
+                            {% if player.team_id %}
+                            <span class="badge"
+                                style="--badge-color: {{ player.team.color if player.team else '#888' }}; background-color: var(--badge-color); color: white; font-size: 0.7rem; padding: 2px 6px;">
+                                {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
+                            </span>
+                            {% endif %}
                             {% if player.total_points > 0 and loop.index == 1 %}<span class="crown">👑</span>{% endif %}
                             <div class="player-badges-mini" style="display: flex; gap: 2px;">
                                 {% for badge in player.badges %}
@@ -187,7 +193,7 @@
             ctx.font = '14px Arial';
             ctx.fillText('fp_probe', 2, 2);
             components.push(canvas.toDataURL().slice(-50));
-        } catch(e) {}
+        } catch (e) { }
         const raw = components.join('|');
         const encoded = new TextEncoder().encode(raw);
         const hashBuf = await crypto.subtle.digest('SHA-256', encoded);

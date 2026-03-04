@@ -3,8 +3,22 @@
 {% block content %}
 <div class="player-profile container-sm" style="max-width: 900px;">
     <div class="card text-center mb-2" style="background: linear-gradient(135deg, #2c3e50, #3498db); color: white;">
-        <h1 class="mb-0" style="font-size: 2.5rem;">{{ player.name }}</h1>
-        <p style="font-size: 1.2rem; opacity: 0.9;" class="mb-0 mt-1">ملف إحصائيات اللاعب</p>
+        <h1 class="mb-0" style="font-size: 2.5rem;">
+            {{ player.name }}
+            {% if player.team_id %}
+            <span class="badge"
+                style="--team-color: {{ player.team.color if player.team else '#888' }}; background-color: var(--team-color); color: white; font-size: 1rem; padding: 4px 12px; vertical-align: middle; margin-inline-start: 10px;">
+                {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
+            </span>
+            {% endif %}
+        </h1>
+        <p style="font-size: 1.2rem; opacity: 0.9;" class="mb-0 mt-1">
+            {% if player.team_id %}
+            لاعب فريق {{ player.team.name }}
+            {% else %}
+            لاعب حر (بدون فريق)
+            {% endif %}
+        </p>
 
         {% if form_history %}
         <div class="flex-center gap-2 mt-1" style="flex-wrap: wrap; align-items: center;">
@@ -225,6 +239,39 @@
     </style>
     {% endif %}
 
+    {% if transfers %}
+    <h2 class="mb-2" style="color: var(--text-color);">📑 مسيرة اللاعب والعمليات</h2>
+    <div class="card mb-3" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.05);">
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for t in transfers %}
+            <li
+                style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem;">{{ t.created_at.strftime('%Y-%m-%d')
+                        }}</span>
+                    <div style="margin-top: 5px;">
+                        {% if t.from_team %}
+                        <span style="font-weight: bold;">{{ t.from_team.name }}</span>
+                        {% else %}
+                        <span style="color: var(--text-secondary);">بداية المسيرة</span>
+                        {% endif %}
+                        <span style="margin: 0 10px;">➡️</span>
+                        {% if t.to_team %}
+                        <span style="font-weight: bold; color: var(--success-color);">{{ t.to_team.name }}</span>
+                        {% else %}
+                        <span style="color: var(--negative-color);">رحيل / لاعب حر</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if t.reason %}
+                <div style="font-style: italic; font-size: 0.85rem; opacity: 0.7;">"{{ t.reason }}"</div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <h2 class="mb-2" style="color: var(--text-color);">📜 سجل المباريات الخاص باللاعب</h2>
     <div class="table-responsive">
         <table>
@@ -311,7 +358,13 @@
                     box-shadow: 0 5px 20px rgba(255,215,0,0.3);
                 ">⚽</div>
                 <div style="font-size: 2rem; font-weight: 800;">{{ player.name }}</div>
-                <div style="font-size: 0.9rem; opacity: 0.7; margin-top: 0.25rem;">{{ league.name }}</div>
+                <div style="font-size: 0.9rem; opacity: 0.7; margin-top: 0.25rem;">
+                    {% if player.team_id %}
+                    {{ player.team.name }} | {{ league.name }}
+                    {% else %}
+                    لاعب حر | {{ league.name }}
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Rating Circle -->

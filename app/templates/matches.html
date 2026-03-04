@@ -28,8 +28,15 @@
             <div class="scoreboard-score"
                 style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
                 <span class="scoreboard-team"
-                    style="flex: 1; text-align: center; color: #4da8da; font-size: clamp(0.9rem, 3vw, 1.3rem); font-weight: 700;">{{
-                    match.team_a_name }}</span>
+                    style="flex: 1; text-align: center; color: #4da8da; font-size: clamp(0.9rem, 3vw, 1.3rem); font-weight: 700;">
+                    {{ match.team_a.name if match.team_a else match.team_a_name }}
+                    {% if match.team_a_id %}
+                    <span class="badge"
+                        style="--t-color: {{ match.team_a.color if match.team_a else '#888' }}; background-color: var(--t-color); color: white; font-size: 0.65rem; padding: 2px 5px; vertical-align: middle;">
+                        {{ (match.team_a.short_code or match.team_a.name[:2]) if match.team_a else '??' }}
+                    </span>
+                    {% endif %}
+                </span>
                 <span class="scoreboard-result"
                     style="font-size: clamp(1.5rem, 5vw, 2.5rem); background: rgba(255,255,255,0.1); padding: 4px 16px; border-radius: var(--radius-md); white-space: nowrap;">
                     <span style="color: #4da8da;">{{ match.team_a_score }}</span>
@@ -37,8 +44,15 @@
                     <span style="color: #f39c12;">{{ match.team_b_score }}</span>
                 </span>
                 <span class="scoreboard-team"
-                    style="flex: 1; text-align: center; color: #f39c12; font-size: clamp(0.9rem, 3vw, 1.3rem); font-weight: 700;">{{
-                    match.team_b_name }}</span>
+                    style="flex: 1; text-align: center; color: #f39c12; font-size: clamp(0.9rem, 3vw, 1.3rem); font-weight: 700;">
+                    {% if match.team_b_id %}
+                    <span class="badge"
+                        style="--t-color: {{ match.team_b.color if match.team_b else '#888' }}; background-color: var(--t-color); color: white; font-size: 0.65rem; padding: 2px 5px; vertical-align: middle;">
+                        {{ (match.team_b.short_code or match.team_b.name[:2]) if match.team_b else '??' }}
+                    </span>
+                    {% endif %}
+                    {{ match.team_b.name if match.team_b else match.team_b_name }}
+                </span>
             </div>
 
             <!-- Bottom row: action buttons -->
@@ -75,7 +89,7 @@
             <!-- Team A Stats -->
             <div style="flex: 1; min-width: 300px;">
                 <h4 class="mb-1" style="color: #4da8da; border-bottom: 2px solid #4da8da; padding-bottom: 5px;">
-                    تشكيلة {{ match.team_a_name }}</h4>
+                    تشكيلة {{ match.team_a.name if match.team_a else match.team_a_name }}</h4>
                 <div class="table-responsive">
                     <table style="width: 100%; font-size: 0.9rem;">
                         <thead style="background: rgba(52, 152, 219, 0.2);">
@@ -120,7 +134,7 @@
             <!-- Team B Stats -->
             <div style="flex: 1; min-width: 300px;">
                 <h4 class="mb-1" style="color: #f39c12; border-bottom: 2px solid #f39c12; padding-bottom: 5px;">
-                    تشكيلة {{ match.team_b_name }}</h4>
+                    تشكيلة {{ match.team_b.name if match.team_b else match.team_b_name }}</h4>
                 <div class="table-responsive">
                     <table style="width: 100%; font-size: 0.9rem;">
                         <thead style="background: rgba(230, 126, 34, 0.2);">

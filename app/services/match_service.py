@@ -4,14 +4,22 @@ from ..schemas import schemas
 from ..services import points
 from ..core.security import verify_password
 from .interfaces import IMatchService, ICupService
-from ..repositories.interfaces import ILeagueRepository, IMatchRepository, IPlayerRepository
+from ..repositories.interfaces import ILeagueRepository, IMatchRepository, IPlayerRepository, ITeamRepository
 
 class MatchService(IMatchService):
-    def __init__(self, league_repo: ILeagueRepository, match_repo: IMatchRepository, player_repo: IPlayerRepository, cup_service: ICupService):
+    def __init__(
+        self,
+        league_repo: ILeagueRepository,
+        match_repo: IMatchRepository,
+        player_repo: IPlayerRepository,
+        cup_service: ICupService,
+        team_repo: ITeamRepository = None,
+    ):
         self.league_repo = league_repo
         self.match_repo = match_repo
         self.player_repo = player_repo
         self.cup_service = cup_service
+        self.team_repo = team_repo
 
     def _snapshot_ranks(self, league_id: int):
         players = self.player_repo.get_leaderboard(league_id)
@@ -40,6 +48,34 @@ class MatchService(IMatchService):
         if not league:
             raise HTTPException(status_code=404, detail="League not found")
 
+        team_a_obj = None
+        team_b_obj = None
+
+        # --- New Teams System ---
+        if self.team_repo:
+            registered_teams = self.team_repo.get_all_for_league(league_id)
+            if registered_teams:
+                # League has adopted the team system – require at least 2 teams and valid IDs
+                if len(registered_teams) < 2:
+                    raise HTTPException(
+                        status_code=422,
+                        detail="يجب تسجيل فريقين على الأقل قبل إنشاء مباراة"
+                    )
+                if not match_data.team_a_id or not match_data.team_b_id:
+                    raise HTTPException(
+                        status_code=422,
+                        detail="يجب اختيار الفريق أ والفريق ب من قائمة الفرق المسجلة"
+                    )
+                team_a_obj = self.team_repo.get_by_id(match_data.team_a_id)
+                team_b_obj = self.team_repo.get_by_id(match_data.team_b_id)
+                if not team_a_obj or team_a_obj.league_id != league_id:
+                    raise HTTPException(status_code=400, detail="الفريق أ غير موجود في هذا الدوري")
+                if not team_b_obj or team_b_obj.league_id != league_id:
+                    raise HTTPException(status_code=400, detail="الفريق ب غير موجود في هذا الدوري")
+
+        team_a_name = team_a_obj.name if team_a_obj else match_data.team_a_name
+        team_b_name = team_b_obj.name if team_b_obj else match_data.team_b_name
+
         team_a_score = sum(s.goals for s in match_data.stats if s.team == 'A')
         team_b_score = sum(s.goals for s in match_data.stats if s.team == 'B')
 
@@ -47,8 +83,10 @@ class MatchService(IMatchService):
 
         db_match = models.Match(
             league_id=league_id,
-            team_a_name=match_data.team_a_name,
-            team_b_name=match_data.team_b_name,
+            team_a_name=team_a_name,
+            team_b_name=team_b_name,
+            team_a_id=match_data.team_a_id,
+            team_b_id=match_data.team_b_id,
             team_a_score=team_a_score,
             team_b_score=team_b_score
         )
