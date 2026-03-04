@@ -35,7 +35,17 @@
         كاملة للملفات (JSON).</p>
 </div>
 
-<div class="card match-form-container">
+<!-- Simple entry point for creating a new match -->
+<div class="card mb-2">
+    <h3 style="margin-top:0; color: var(--heading-color);">➕ إضافة مباراة جديدة</h3>
+    <p class="text-secondary" style="font-size: 0.9rem; margin-bottom: 0.75rem;">
+        اختر الفريقين من الفرق المسجلة ثم أدخل الإحصائيات لكل لاعب واحفظ النتيجة. لن تحتاج لكتابة أسماء اللاعبين
+        من الصفر كل مرة.
+    </p>
+    <button id="start-new-match-btn" class="btn btn-primary" style="width: 100%;">بدء تسجيل مباراة جديدة ⚽</button>
+</div>
+
+<div id="match-form-card" class="card match-form-container" style="display: none;">
 
     <!-- Season Progress Banner -->
     <div class="alert alert-info text-center"

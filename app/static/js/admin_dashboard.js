@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const teamBSelect = document.getElementById('team_b_select');
     const teamANameInput = document.getElementById('team_a_name');
     const teamBNameInput = document.getElementById('team_b_name');
+    const startNewMatchBtn = document.getElementById('start-new-match-btn');
+    const matchFormCard = document.getElementById('match-form-card');
 
     // Function to add a new row
     function addPlayerRow(targetBody, player = null) {
@@ -118,8 +120,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    let hasRegisteredTeams = false;
+
     if (teamABody && teamBBody) {
-        const hasRegisteredTeams = Array.isArray(window.LEAGUE_TEAMS) && window.LEAGUE_TEAMS.length >= 2 && teamASelect && teamBSelect;
+        hasRegisteredTeams = Array.isArray(window.LEAGUE_TEAMS) && window.LEAGUE_TEAMS.length >= 2 && teamASelect && teamBSelect;
 
         if (hasRegisteredTeams) {
             applyTeamNamesFromSelects();
@@ -220,6 +224,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error:', error);
                 alert('❌ تعذر الاتصال بالخادم.');
             }
+        });
+    }
+
+    // Lazy-show match form when user explicitly starts a new match
+    if (startNewMatchBtn && matchFormCard) {
+        startNewMatchBtn.addEventListener('click', () => {
+            matchFormCard.style.display = 'block';
+            // Optional: hide the intro card to reduce clutter
+            const introCard = startNewMatchBtn.closest('.card');
+            if (introCard) introCard.style.display = 'none';
+
+            if (hasRegisteredTeams) {
+                applyTeamNamesFromSelects();
+                populateBoardForRegisteredTeams();
+            }
+
+            matchFormCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     }
 
