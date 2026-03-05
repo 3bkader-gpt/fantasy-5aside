@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -88,11 +88,11 @@ class PlayerResponse(PlayerBase):
 class MatchStatBase(BaseModel):
     player_name: str
     team: str
-    goals: int = 0
-    assists: int = 0
-    saves: int = 0
-    goals_conceded: int = 0
-    own_goals: int = 0
+    goals: int = Field(default=0, ge=0)
+    assists: int = Field(default=0, ge=0)
+    saves: int = Field(default=0, ge=0)
+    goals_conceded: int = Field(default=0, ge=0)
+    own_goals: int = Field(default=0, ge=0)
     is_gk: bool = False
     clean_sheet: bool = False
     defensive_contribution: bool = False

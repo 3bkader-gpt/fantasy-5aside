@@ -218,6 +218,7 @@ class CupService(ICupService):
             m for m in all_matchups
             if (getattr(m, "bracket_type", "outfield") or "outfield") == bracket_type
         ]
+        bracket_matchups.sort(key=lambda m: m.id, reverse=True)
 
         still_active = [m for m in bracket_matchups if m.is_active]
         if still_active:

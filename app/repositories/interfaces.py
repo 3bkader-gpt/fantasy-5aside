@@ -37,7 +37,7 @@ class IPlayerRepository(ABC):
     @abstractmethod
     def get_leaderboard(self, league_id: int) -> List[models.Player]: pass
     @abstractmethod
-    def save(self, player: models.Player) -> models.Player: pass
+    def save(self, player: models.Player, commit: bool = True) -> models.Player: pass
 
 class IMatchRepository(ABC):
     @abstractmethod

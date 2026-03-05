@@ -187,6 +187,7 @@ class HallOfFame(Base):
     month_year = Column(String)  # e.g., "March 2026"
     player_id = Column(Integer, ForeignKey("players.id"))
     points_scored = Column(Integer)
+    season_matches_count = Column(Integer, nullable=True)  # matches count when season ended (for undo)
 
     league = relationship("League", back_populates="hall_of_fame_records")
     player = relationship("Player")

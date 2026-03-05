@@ -11,7 +11,7 @@ class LeagueService(ILeagueService):
         self.hof_repo = hof_repo
         self.cup_repo = cup_repo
 
-    def end_current_season(self, league_id: int, month_name: str) -> None:
+    def end_current_season(self, league_id: int, month_name: str, season_matches_count: int | None = None) -> None:
         players = self.player_repo.get_leaderboard(league_id)
         if players:
             top_player = players[0]
@@ -20,7 +20,8 @@ class LeagueService(ILeagueService):
                     league_id=league_id,
                     month_year=month_name,
                     player_id=top_player.id,
-                    points_scored=top_player.total_points
+                    points_scored=top_player.total_points,
+                    season_matches_count=season_matches_count,
                 )
                 self.hof_repo.save(hof)
 
@@ -71,7 +72,7 @@ class LeagueService(ILeagueService):
 
         league = self.league_repo.get_by_id(league_id)
         if league:
-            league.current_season_matches = 4
+            league.current_season_matches = getattr(latest_hof, "season_matches_count", None) or 4
             if league.season_number > 1:
                 league.season_number -= 1
             self.league_repo.save(league)

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from ..schemas import schemas
-from ..dependencies import get_voting_service, get_current_admin_league
+from ..dependencies import get_voting_service, get_current_admin_league, get_match_repository
+from ..repositories.interfaces import IMatchRepository
 from ..services.interfaces import IVotingService
 from ..models.models import League
 
@@ -54,11 +55,15 @@ def open_voting(
     slug: str,
     match_id: int,
     voting_service: IVotingService = Depends(get_voting_service),
-    league: League = Depends(get_current_admin_league)
+    league: League = Depends(get_current_admin_league),
+    match_repo: IMatchRepository = Depends(get_match_repository),
 ):
     """
     Manually open voting for a match (starts round 1).
     """
+    match = match_repo.get_by_id(match_id)
+    if not match or match.league_id != league.id:
+        raise HTTPException(status_code=404, detail="Match not found")
     return voting_service.open_voting(match_id)
 
 @router.post("/{slug}/close/{match_id}")
@@ -66,9 +71,13 @@ def close_round(
     slug: str,
     match_id: int,
     voting_service: IVotingService = Depends(get_voting_service),
-    league: League = Depends(get_current_admin_league)
+    league: League = Depends(get_current_admin_league),
+    match_repo: IMatchRepository = Depends(get_match_repository),
 ):
     """
     Close the current voting round and award points.
     """
+    match = match_repo.get_by_id(match_id)
+    if not match or match.league_id != league.id:
+        raise HTTPException(status_code=404, detail="Match not found")
     return voting_service.close_round(match_id)

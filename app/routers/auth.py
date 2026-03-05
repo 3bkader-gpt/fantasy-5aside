@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, Request, Form, Response
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -44,6 +45,7 @@ def login_submit(
         value=f"Bearer {token}",
         httponly=True,
         samesite="lax",
+        secure=os.environ.get("ENV") == "production",
         max_age=security.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
     return redirect

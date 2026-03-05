@@ -1,3 +1,4 @@
+import re
 from fastapi import HTTPException
 from ..models import models
 from ..schemas import schemas
@@ -30,7 +31,6 @@ class MatchService(IMatchService):
     @staticmethod
     def normalize_name(name: str) -> str:
         if not name: return ""
-        import re
         # 1. Remove tashkeel
         name = re.sub(r'[\u064B-\u0652]', '', name)
         # 2. Unify Alef
@@ -147,8 +147,13 @@ class MatchService(IMatchService):
             else:
                 team_b_base.append(stat_dict)
 
+        combined_for_check = team_a_base + team_b_base
+        player_ids = [s["id"] for s in combined_for_check]
+        if len(player_ids) != len(set(player_ids)):
+            raise HTTPException(status_code=400, detail="لاعب مكرر في التشكيلة")
+        combined_stats = combined_for_check
+
         # Phase 2 + 3: No BPS bonus anymore – voting system is the only bonus.
-        combined_stats = team_a_base + team_b_base
         for s in combined_stats:
             player = s['player']
             stat_data = s['stat_data']
@@ -182,7 +187,7 @@ class MatchService(IMatchService):
             player.total_matches += 1
             if stat_data.clean_sheet:
                 player.total_clean_sheets += 1
-            self.player_repo.save(player)
+            self.player_repo.save(player, commit=False)
 
         self.match_repo.db.commit()
         self.cup_service.auto_resolve_cups(league_id, db_match.id)
@@ -244,6 +249,8 @@ class MatchService(IMatchService):
                 is_winner = True
                 
             is_draw = team_a_score == team_b_score
+            if stat_data.is_gk and stat_data.goals_conceded <= 6:
+                stat_data.clean_sheet = True
             base_points = points.calculate_player_points(
                 goals=stat_data.goals,
                 assists=stat_data.assists,
@@ -254,6 +261,7 @@ class MatchService(IMatchService):
                 saves=stat_data.saves,
                 goals_conceded=stat_data.goals_conceded,
                 own_goals=stat_data.own_goals,
+                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
             )
 
             stat_dict = {
@@ -271,8 +279,13 @@ class MatchService(IMatchService):
             else:
                 team_b_base.append(stat_dict)
 
+        combined_for_check = team_a_base + team_b_base
+        player_ids = [s["id"] for s in combined_for_check]
+        if len(player_ids) != len(set(player_ids)):
+            raise HTTPException(status_code=400, detail="لاعب مكرر في التشكيلة")
+        combined_stats = combined_for_check
+
         # Phase 2 + 3: No BPS bonus anymore – voting system is the only bonus.
-        combined_stats = team_a_base + team_b_base
         for s in combined_stats:
             player = s['player']
             stat_data = s['stat_data']
@@ -291,6 +304,7 @@ class MatchService(IMatchService):
                 is_winner=s['is_winner'],
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
+                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
                 points_earned=total_points,
                 bonus_points=bonus
             )
@@ -305,7 +319,7 @@ class MatchService(IMatchService):
             player.total_matches += 1
             if stat_data.clean_sheet:
                 player.total_clean_sheets += 1
-            self.player_repo.save(player)
+            self.player_repo.save(player, commit=False)
 
         self.match_repo.db.commit()
         self.cup_service.auto_resolve_cups(league_id, match.id)

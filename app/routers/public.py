@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, Path
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+
+SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
 
 from ..models import models
 from ..schemas import schemas
@@ -81,8 +83,8 @@ def create_league(
 
 @router.get("/l/{slug}")
 def read_leaderboard(
-    slug: str, 
-    request: Request, 
+    request: Request,
+    slug: str = Path(..., pattern=SLUG_PATTERN), 
     league_repo: ILeagueRepository = Depends(get_league_repository),
     player_repo: IPlayerRepository = Depends(get_player_repository),
     hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
@@ -128,8 +130,8 @@ def read_leaderboard(
 
 @router.get("/l/{slug}/matches")
 def read_matches(
-    slug: str, 
-    request: Request, 
+    request: Request,
+    slug: str = Path(..., pattern=SLUG_PATTERN),
     league_repo: ILeagueRepository = Depends(get_league_repository),
     match_repo: IMatchRepository = Depends(get_match_repository)
 ):
@@ -149,8 +151,8 @@ def read_matches(
 
 @router.get("/l/{slug}/cup")
 def read_cup(
-    slug: str, 
-    request: Request, 
+    request: Request,
+    slug: str = Path(..., pattern=SLUG_PATTERN),
     league_repo: ILeagueRepository = Depends(get_league_repository),
     cup_repo: ICupRepository = Depends(get_cup_repository)
 ):
@@ -170,9 +172,9 @@ def read_cup(
 
 @router.get("/l/{slug}/player/{player_id}")
 def read_player(
-    slug: str, 
-    player_id: int, 
-    request: Request, 
+    request: Request,
+    slug: str = Path(..., pattern=SLUG_PATTERN),
+    player_id: int = Path(...), 
     league_repo: ILeagueRepository = Depends(get_league_repository),
     player_repo: IPlayerRepository = Depends(get_player_repository),
     transfer_repo: ITransferRepository = Depends(get_transfer_repository),
@@ -231,8 +233,8 @@ def read_player(
 
 @router.get("/l/{slug}/hall-of-fame")
 def read_hof(
-    slug: str, 
-    request: Request, 
+    request: Request,
+    slug: str = Path(..., pattern=SLUG_PATTERN),
     league_repo: ILeagueRepository = Depends(get_league_repository),
     hof_repo: IHallOfFameRepository = Depends(get_hof_repository)
 ):

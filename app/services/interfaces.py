@@ -5,7 +5,7 @@ from ..models import models
 
 class ILeagueService(ABC):
     @abstractmethod
-    def end_current_season(self, league_id: int, month_name: str) -> None:
+    def end_current_season(self, league_id: int, month_name: str, season_matches_count: int | None = None) -> None:
         pass
     
     @abstractmethod

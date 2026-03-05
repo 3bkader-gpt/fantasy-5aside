@@ -125,6 +125,10 @@ class PlayerRepository(IPlayerRepository):
     def delete(self, player_id: int) -> bool:
         player = self.get_by_id(player_id)
         if not player: return False
+        self.db.query(models.Vote).filter(
+            (models.Vote.voter_id == player_id) | (models.Vote.candidate_id == player_id)
+        ).delete(synchronize_session=False)
+        self.db.query(models.HallOfFame).filter(models.HallOfFame.player_id == player_id).delete(synchronize_session=False)
         self.db.query(models.MatchStat).filter(models.MatchStat.player_id == player_id).delete(synchronize_session=False)
         self.db.query(models.CupMatchup).filter((models.CupMatchup.player1_id == player_id) | (models.CupMatchup.player2_id == player_id)).delete(synchronize_session=False)
         self.db.delete(player)
@@ -140,10 +144,13 @@ class PlayerRepository(IPlayerRepository):
             models.Player.total_points.desc(), 
             models.Player.total_goals.desc()
         ).all()
-    def save(self, player: models.Player) -> models.Player:
+    def save(self, player: models.Player, commit: bool = True) -> models.Player:
         self.db.add(player)
-        self.db.commit()
-        self.db.refresh(player)
+        if commit:
+            self.db.commit()
+            self.db.refresh(player)
+        else:
+            self.db.flush()
         return player
 
 class MatchRepository(IMatchRepository):
@@ -202,7 +209,7 @@ class HallOfFameRepository(IHallOfFameRepository):
     def get_latest_for_league(self, league_id: int) -> Optional[models.HallOfFame]:
         return self.db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league_id).order_by(models.HallOfFame.id.desc()).first()
     def get_all_for_league(self, league_id: int) -> List[models.HallOfFame]:
-        return self.db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league_id).options(joinedload(models.HallOfFame.league)).order_by(models.HallOfFame.id.desc()).all()
+        return self.db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league_id).options(joinedload(models.HallOfFame.player)).order_by(models.HallOfFame.id.desc()).all()
     def save(self, hof_record: models.HallOfFame) -> models.HallOfFame:
         self.db.add(hof_record)
         self.db.commit()

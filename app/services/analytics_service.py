@@ -124,8 +124,9 @@ class AnalyticsService(IAnalyticsService):
         # Sort history properly by match date (desc for UI)
         history_desc = sorted(history, key=lambda s: s.match.date, reverse=True)
 
-        # Dynamic Badges Calculation using Strategy Pattern
-        badges = default_badge_calculator.calculate_badges(player, history_desc, total_matches, win_rate)
+        # Badges: use single source of truth (achievements) aligned with "كيف تلعب؟"
+        from .achievements import achievement_service
+        badges = achievement_service.get_earned_badges(player, history_desc)
 
         # Get chart data using the already fetched history
         form_and_chart = self.get_player_form_and_chart_data(player_id, league_id, history=history)

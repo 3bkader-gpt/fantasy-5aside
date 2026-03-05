@@ -18,6 +18,8 @@ logger = logging.getLogger("uvicorn.error")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if os.environ.get("ENV") == "production" and not os.environ.get("SECRET_KEY"):
+        raise ValueError("SECRET_KEY must be set in production (ENV=production)")
     # Create tables if not already created (though seed.py does this too)
     # Ensuring directory exists for SQLite
     if engine.url.drivername == "sqlite":
@@ -73,7 +75,8 @@ async def lifespan(app: FastAPI):
             # Voting anti-cheat columns (IP + fingerprint)
             ("votes", "ip_address", "VARCHAR(64) DEFAULT NULL"),
             ("votes", "device_fingerprint", "VARCHAR(255) DEFAULT NULL"),
-            ("cup_matchups", "league_id", "INDEX")
+            ("cup_matchups", "league_id", "INDEX"),
+            ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL")
         ]
         
         for table, col_name, col_type in migrations:

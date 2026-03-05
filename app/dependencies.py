@@ -130,4 +130,4 @@ def check_admin_status(
     if not payload:
         return False
         
-    return payload.get("sub") == slug
+    return (payload.get("sub") or "").strip().lower() == slug.strip().lower()

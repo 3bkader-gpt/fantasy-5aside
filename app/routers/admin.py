@@ -111,13 +111,18 @@ def generate_cup(
 
 @router.post("/season/end")
 def end_season(
-    month_name: str = Form(...), 
+    month_name: str = Form(...),
     league: models.League = Depends(get_current_admin_league),
-    league_service: ILeagueService = Depends(get_league_service)
+    league_service: ILeagueService = Depends(get_league_service),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
 ):
-        
     try:
-        league_service.end_current_season(league.id, month_name)
+        league_service.end_current_season(league.id, month_name, season_matches_count=league.current_season_matches)
+        updated = league_repo.get_by_id(league.id)
+        if updated:
+            updated.current_season_matches = 0
+            updated.season_number += 1
+            league_repo.save(updated)
         return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -235,8 +240,10 @@ def get_match_details(
                 "assists": stat.assists,
                 "saves": stat.saves,
                 "goals_conceded": stat.goals_conceded,
+                "own_goals": getattr(stat, "own_goals", 0),
                 "is_gk": stat.is_gk,
                 "clean_sheet": stat.clean_sheet,
+                "defensive_contribution": getattr(stat, "defensive_contribution", False),
                 "mvp": stat.mvp,
                 "is_captain": stat.is_captain,
             }
@@ -398,11 +405,12 @@ def delete_player(
     league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository)
 ):
-        
+    player = player_repo.get_by_id(player_id)
+    if not player or player.league_id != league.id:
+        raise HTTPException(status_code=404, detail="Player not found")
     success = player_repo.delete(player_id)
     if not success:
         raise HTTPException(status_code=404, detail="Player not found")
-        
     return {"success": True, "message": "تم حذف اللاعب بنجاح"}
 
 @router.put("/player/{player_id}")
@@ -413,14 +421,15 @@ def update_player_name(
     player_repo: IPlayerRepository = Depends(get_player_repository)
 ):
     """Update a player's name."""
+    player = player_repo.get_by_id(player_id)
+    if not player or player.league_id != league.id:
+        raise HTTPException(status_code=404, detail="Player not found")
     new_name = data.get("name")
     if not new_name:
         raise HTTPException(status_code=400, detail="Name is required")
-        
     player = player_repo.update_name(player_id, new_name)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
-        
     return {"success": True, "player": {"id": player.id, "name": player.name}}
 
 @router.post("/player/add")
@@ -578,14 +587,16 @@ def reset_voting_round(
     slug: str,
     league: models.League = Depends(get_current_admin_league),
     voting_service: IVotingService = Depends(get_voting_service),
+    match_repo: IMatchRepository = Depends(get_match_repository),
 ):
     """
     Admin-only: delete all votes for the currently active round of a match,
     keeping the round open so that التصويت يمكن أن يُعاد من البداية.
     """
     if league.slug != slug:
-        # get_current_admin_league already validated auth; slug mismatch shouldn't happen
         raise HTTPException(status_code=400, detail="Slug mismatch for league")
-
+    match = match_repo.get_by_id(match_id)
+    if not match or match.league_id != league.id:
+        raise HTTPException(status_code=404, detail="Match not found")
     result = voting_service.reset_current_round_votes(match_id)
     return result

@@ -1,18 +1,19 @@
 import os
+import hmac
 from datetime import datetime, timedelta, timezone
 import jwt
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "super-secret-default-key-for-fantasy-5aside")
+SECRET_KEY = os.environ.get("SECRET_KEY") or "super-secret-default-key-for-fantasy-5aside"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         if not hashed_password.startswith("$pbkdf2"):
-            return plain_password == hashed_password
+            return hmac.compare_digest(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
         return pwd_context.verify(plain_password, hashed_password)
     except Exception:
         return False
