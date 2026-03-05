@@ -207,7 +207,7 @@ class MatchService(IMatchService):
             player.total_goals = max(0, player.total_goals - stat.goals)
             player.total_assists = max(0, player.total_assists - stat.assists)
             player.total_saves = max(0, player.total_saves - stat.saves)
-            player.total_own_goals = max(0, getattr(player, "total_own_goals", 0) - stat.own_goals)
+            player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
             player.total_matches = max(0, player.total_matches - 1)
             if stat.clean_sheet:
                 player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
@@ -231,7 +231,7 @@ class MatchService(IMatchService):
         team_b_base = []
 
         for stat_data in update_data.stats:
-            player_name = stat_data.player_name.strip()
+            player_name = self.normalize_name(stat_data.player_name)
             player = self.player_repo.get_by_name(league_id, player_name)
             
             if not player:
@@ -254,7 +254,6 @@ class MatchService(IMatchService):
                 saves=stat_data.saves,
                 goals_conceded=stat_data.goals_conceded,
                 own_goals=stat_data.own_goals,
-                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
             )
 
             stat_dict = {
@@ -292,7 +291,6 @@ class MatchService(IMatchService):
                 is_winner=s['is_winner'],
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
-                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
                 points_earned=total_points,
                 bonus_points=bonus
             )
@@ -328,7 +326,7 @@ class MatchService(IMatchService):
             player.total_goals = max(0, player.total_goals - stat.goals)
             player.total_assists = max(0, player.total_assists - stat.assists)
             player.total_saves = max(0, player.total_saves - stat.saves)
-            player.total_own_goals = max(0, getattr(player, "total_own_goals", 0) - stat.own_goals)
+            player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
             player.total_matches = max(0, player.total_matches - 1)
             if stat.clean_sheet:
                 player.total_clean_sheets = max(0, player.total_clean_sheets - 1)

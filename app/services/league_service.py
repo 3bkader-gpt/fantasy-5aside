@@ -31,6 +31,7 @@ class LeagueService(ILeagueService):
             player.last_season_assists = player.total_assists
             player.last_season_saves = player.total_saves
             player.last_season_clean_sheets = player.total_clean_sheets
+            player.last_season_own_goals = player.total_own_goals
             player.last_season_matches = player.total_matches
 
             # Add to all-time
@@ -39,6 +40,7 @@ class LeagueService(ILeagueService):
             player.all_time_assists += player.total_assists
             player.all_time_saves += player.total_saves
             player.all_time_clean_sheets += player.total_clean_sheets
+            player.all_time_own_goals += player.total_own_goals
             player.all_time_matches += player.total_matches
 
             # Reset totals
@@ -47,6 +49,7 @@ class LeagueService(ILeagueService):
             player.total_assists = 0
             player.total_saves = 0
             player.total_clean_sheets = 0
+            player.total_own_goals = 0
             player.total_matches = 0
             player.is_active_in_cup = False
             self.player_repo.save(player)
@@ -81,6 +84,7 @@ class LeagueService(ILeagueService):
             player.total_assists = player.last_season_assists
             player.total_saves = player.last_season_saves
             player.total_clean_sheets = player.last_season_clean_sheets
+            player.total_own_goals = player.last_season_own_goals
             player.total_matches = player.last_season_matches
 
             # Subtract from all-time (correcting the previous addition)
@@ -89,6 +93,7 @@ class LeagueService(ILeagueService):
             player.all_time_assists = max(0, player.all_time_assists - player.last_season_assists)
             player.all_time_saves = max(0, player.all_time_saves - player.last_season_saves)
             player.all_time_clean_sheets = max(0, player.all_time_clean_sheets - player.last_season_clean_sheets)
+            player.all_time_own_goals = max(0, player.all_time_own_goals - player.last_season_own_goals)
             player.all_time_matches = max(0, player.all_time_matches - player.last_season_matches)
 
             # Clear snapshot
@@ -97,6 +102,7 @@ class LeagueService(ILeagueService):
             player.last_season_assists = 0
             player.last_season_saves = 0
             player.last_season_clean_sheets = 0
+            player.last_season_own_goals = 0
             player.last_season_matches = 0
 
             self.player_repo.save(player)

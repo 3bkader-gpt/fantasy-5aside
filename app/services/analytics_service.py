@@ -177,22 +177,15 @@ class AnalyticsService(IAnalyticsService):
                 point_colors.append("#6c757d") # Gray
 
         # Form history (Last 5 matches, outcome)
-        # Outcome: Win, Draw, Loss. 
-        # Note: MatchStat.is_winner is already available. 
-        # But for 'Draw', we might need to check if points are equal or logic specific to the app.
-        # Assuming if not is_winner, and if it's a draw system, we'd know.
-        # In this app, matches are usually win/loss teams.
-        # Let's check models to see if there's a score.
-        
+        # Outcome: Win, Draw, Loss (determined by match score)
         recent_history = sorted(history, key=lambda s: s.match.date, reverse=True)[:5]
         form_history = []
         for stat in recent_history:
             if stat.is_winner:
                 form_history.append('W')
+            elif stat.match.team_a_score == stat.match.team_b_score:
+                form_history.append('D')
             else:
-                # Basic check for Draw if points earned is low or logic dictates
-                # For now, following user prompt for W/D/L
-                # If the app doesn't have draws, just W/L
                 form_history.append('L')
 
         return {

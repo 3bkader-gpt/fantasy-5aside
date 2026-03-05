@@ -17,8 +17,6 @@ from ..dependencies import (
     IAnalyticsService, IVotingService,
 )
 from ..services.achievements import achievement_service
-import json as _dbg_json
-import time as _dbg_time
 
 router = APIRouter(prefix="/l/{slug}/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -196,7 +194,6 @@ def delete_league_entirely(
 @router.delete("/match/{match_id}")
 def delete_match(
     match_id: int, 
-    payload: dict,
     league: models.League = Depends(get_current_admin_league),
     match_service: IMatchService = Depends(get_match_service),
     league_repo: ILeagueRepository = Depends(get_league_repository)
@@ -390,7 +387,7 @@ def export_league_backup(
         error_msg = f"Error exporting backup: {str(e)}\n{traceback.format_exc()}"
         print(error_msg)
         return Response(
-            content=json.dumps({"error": str(e), "traceback": traceback.format_exc()}, indent=4),
+            content=json.dumps({"error": "Failed to export league backup"}, indent=4),
             media_type="application/json",
             status_code=500
         )
@@ -398,7 +395,6 @@ def export_league_backup(
 @router.delete("/player/{player_id}")
 def delete_player(
     player_id: int,
-    payload: dict,
     league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository)
 ):
@@ -527,7 +523,6 @@ def update_team(
 @router.delete("/team/{team_id}")
 def delete_team(
     team_id: int,
-    payload: dict,
     league: models.League = Depends(get_current_admin_league),
     team_repo: ITeamRepository = Depends(get_team_repository)
 ):
@@ -588,20 +583,6 @@ def reset_voting_round(
     Admin-only: delete all votes for the currently active round of a match,
     keeping the round open so that التصويت يمكن أن يُعاد من البداية.
     """
-    # Debug log for reset behaviour
-    try:
-        payload = {
-            "sessionId": "08dd7e",
-            "timestamp": int(_dbg_time.time() * 1000),
-            "location": "admin.reset_voting_round",
-            "message": "reset_voting_round called",
-            "data": {"slug": slug, "league_slug": league.slug, "match_id": match_id},
-        }
-        with open("debug-08dd7e.log", "a", encoding="utf-8") as f:
-            f.write(_dbg_json.dumps(payload, ensure_ascii=False) + "\n")
-    except Exception:
-        pass
-
     if league.slug != slug:
         # get_current_admin_league already validated auth; slug mismatch shouldn't happen
         raise HTTPException(status_code=400, detail="Slug mismatch for league")

@@ -7,13 +7,17 @@ class ILeagueService(ABC):
     @abstractmethod
     def end_current_season(self, league_id: int, month_name: str) -> None:
         pass
-        
+    
     @abstractmethod
-    def update_settings(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[str]:
+    def undo_end_season(self, league_id: int) -> None:
         pass
         
     @abstractmethod
-    def delete_league(self, league_id: int, admin_password: str) -> bool:
+    def update_settings(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[models.League]:
+        pass
+        
+    @abstractmethod
+    def delete_league(self, league_id: int) -> bool:
         pass
 
 class ICupService(ABC):
