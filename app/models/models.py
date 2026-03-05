@@ -148,6 +148,7 @@ class MatchStat(Base):
     is_winner = Column(Boolean, default=False)
     is_gk = Column(Boolean, default=False)
     clean_sheet = Column(Boolean, default=False)
+    defensive_contribution = Column(Boolean, default=False)
     mvp = Column(Boolean, default=False)
     is_captain = Column(Boolean, default=False)
     

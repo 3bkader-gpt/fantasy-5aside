@@ -99,6 +99,7 @@
                                 <th>⚽</th>
                                 <th>👟</th>
                                 <th>✋</th>
+                                <th>🛡️ DF</th>
                                 <th>النقاط</th>
                             </tr>
                         </thead>
@@ -114,10 +115,14 @@
                                     {% if stat.is_captain %}<span title="Captain (Legacy)">©️</span>{% endif %}
                                     {% if stat.mvp %}<span title="MVP (Legacy)">⭐</span>{% endif %}
                                     {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
+                                    {% if getattr(stat, 'defensive_contribution', False) %}
+                                        <span title="مساهمة دفاعية يختارها الحارس">🛡️+</span>
+                                    {% endif %}
                                 </td>
                                 <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
+                                <td>{% if getattr(stat, 'defensive_contribution', False) %}✅{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
                                 <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
                                 </td>
@@ -144,6 +149,7 @@
                                 <th>⚽</th>
                                 <th>👟</th>
                                 <th>✋</th>
+                                <th>🛡️ DF</th>
                                 <th>النقاط</th>
                             </tr>
                         </thead>
@@ -159,10 +165,14 @@
                                     {% if stat.is_captain %}<span title="Captain (Legacy)">©️</span>{% endif %}
                                     {% if stat.mvp %}<span title="MVP (Legacy)">⭐</span>{% endif %}
                                     {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
+                                    {% if getattr(stat, 'defensive_contribution', False) %}
+                                        <span title="مساهمة دفاعية يختارها الحارس">🛡️+</span>
+                                    {% endif %}
                                 </td>
                                 <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
+                                <td>{% if getattr(stat, 'defensive_contribution', False) %}✅{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
                                 <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
                                 </td>
@@ -214,6 +224,7 @@
                                     <th>🧤 حارس؟</th>
                                     <th>✋ تصديات</th>
                                     <th>🛡️ CS</th>
+                                    <th>🛡️ DF</th>
                                     <th>⭐ MVP</th>
                                     <th>©️ كابتن</th>
                                     <th>حذف/تبديل</th>
@@ -241,6 +252,7 @@
                                     <th>🧤 حارس؟</th>
                                     <th>✋ تصديات</th>
                                     <th>🛡️ CS</th>
+                                    <th>🛡️ DF</th>
                                     <th>⭐ MVP</th>
                                     <th>©️ كابتن</th>
                                     <th>حذف/تبديل</th>
@@ -272,6 +284,8 @@
         <td data-label="تصديات"><input type="number" class="saves-input form-control" value="0" min="0" disabled
                 style="min-width: 40px; padding: 5px; opacity: 0.5;"></td>
         <td data-label="CS"><input type="checkbox" class="clean-sheet-check" disabled style="opacity: 0.5;"></td>
+        <td data-label="مساهمة دفاعية"><input type="checkbox" class="defensive-contrib-check"
+                title="🛡️ مساهمة دفاعية (مدافع يختاره الحارس)"></td>
         <td data-label="الإجراء">
             <button class="swap-row-btn" title="تبديل الفريق"
                 style="background-color: var(--primary-color); color: white; border: none; padding: 3px 6px; border-radius: var(--radius-sm); cursor: pointer;">🔄</button>
@@ -297,7 +311,8 @@
                 "saves": {{ stat.saves or 0 }},
                 "goals_conceded": {{ stat.goals_conceded or 0 }},
                 "is_gk": {{ 'true' if stat.is_gk else 'false' }},
-                "clean_sheet": {{ 'true' if stat.clean_sheet else 'false' }}
+                "clean_sheet": {{ 'true' if stat.clean_sheet else 'false' }},
+                "defensive_contribution": {{ 'true' if getattr(stat, 'defensive_contribution', False) else 'false' }}
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ]

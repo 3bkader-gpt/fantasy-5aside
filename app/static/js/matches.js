@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const isGK = this.checked;
             const savesInput = row.querySelector('.saves-input');
             const cleanSheetCheck = row.querySelector('.clean-sheet-check');
+            const defContribCheck = row.querySelector('.defensive-contrib-check');
 
             if (isGK) {
                 savesInput.disabled = false;
@@ -112,6 +113,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 savesInput.style.opacity = '1';
                 cleanSheetCheck.style.opacity = '1';
                 savesInput.required = true;
+                // الحارس نفسه لا يمكن اعتباره مساهمة دفاعية
+                if (defContribCheck) {
+                    defContribCheck.checked = false;
+                }
             } else {
                 savesInput.disabled = true;
                 cleanSheetCheck.disabled = true;
@@ -187,6 +192,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     row.querySelector('.saves-input').disabled = true;
                     row.querySelector('.clean-sheet-check').disabled = true;
                 }
+
+                const defContribCheck = row.querySelector('.defensive-contrib-check');
+                if (defContribCheck) {
+                    defContribCheck.checked = !!stat.defensive_contribution;
+                    // لا تسمح بتفعيلها على الحارس نفسه
+                    if (stat.is_gk) {
+                        defContribCheck.checked = false;
+                    }
+                }
             });
 
             document.getElementById('edit_admin_password').value = '';
@@ -245,6 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!playerName) return;
 
                     const isGk = row.querySelector('.is-gk-check').checked;
+                    const defContribCheck = row.querySelector('.defensive-contrib-check');
                     let goalsConceded = 0;
 
                     if (isGk) {
@@ -259,7 +274,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         saves: parseInt(row.querySelector('.saves-input').value) || 0,
                         goals_conceded: goalsConceded,
                         is_gk: isGk,
-                        clean_sheet: row.querySelector('.clean-sheet-check').checked
+                        clean_sheet: row.querySelector('.clean-sheet-check').checked,
+                        defensive_contribution: defContribCheck ? defContribCheck.checked : false
                     };
                     stats.push(statData);
                 });

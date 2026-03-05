@@ -128,7 +128,8 @@ class MatchService(IMatchService):
                 clean_sheet=stat_data.clean_sheet,
                 saves=stat_data.saves,
                 goals_conceded=stat_data.goals_conceded,
-                own_goals=stat_data.own_goals
+                own_goals=stat_data.own_goals,
+                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
             )
 
             stat_dict = {
@@ -166,6 +167,7 @@ class MatchService(IMatchService):
                 is_winner=s['is_winner'],
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
+                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
                 points_earned=total_points,
                 bonus_points=bonus
             )
@@ -251,7 +253,8 @@ class MatchService(IMatchService):
                 clean_sheet=stat_data.clean_sheet,
                 saves=stat_data.saves,
                 goals_conceded=stat_data.goals_conceded,
-                own_goals=stat_data.own_goals
+                own_goals=stat_data.own_goals,
+                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
             )
 
             stat_dict = {
@@ -289,6 +292,7 @@ class MatchService(IMatchService):
                 is_winner=s['is_winner'],
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
+                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
                 points_earned=total_points,
                 bonus_points=bonus
             )

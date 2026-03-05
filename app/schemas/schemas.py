@@ -95,6 +95,7 @@ class MatchStatBase(BaseModel):
     own_goals: int = 0
     is_gk: bool = False
     clean_sheet: bool = False
+    defensive_contribution: bool = False
 
 class MatchStatCreate(MatchStatBase):
     pass
@@ -132,6 +133,7 @@ class MatchCreate(MatchBase):
     goals_conceded: int = 0
     own_goals: int = 0
     clean_sheet: bool = False
+    defensive_contribution: bool = False
 
 class MatchEditRequest(MatchBase):
     stats: List[MatchStatCreate] = []

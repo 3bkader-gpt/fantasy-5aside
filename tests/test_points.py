@@ -112,3 +112,19 @@ class TestPointsCalculation:
         # Expected: 2 (appearance) + 2 (win) + 3 (goal) - 1 (own goal) = 6
         points = self.calculator.calculate_player_points(match_data)
         assert points == 6
+
+    def test_defensive_contribution_bonus(self):
+        match_data = MatchCreate(
+            score=1,  # Win
+            goals=0,
+            assists=0,
+            is_mvp=False,
+            is_captain=False,
+            is_goalkeeper=False,
+            saves=0,
+            goals_conceded=0,
+            defensive_contribution=True,
+        )
+        # Expected: 2 (appearance) + 2 (win) + 2 (defensive contribution) = 6
+        points = self.calculator.calculate_player_points(match_data)
+        assert points == 6

@@ -14,6 +14,7 @@ class PointsContext:
     saves: int
     goals_conceded: int
     own_goals: int
+    defensive_contribution: bool = False
 
 class PointsStrategy(ABC):
     """Abstract base class for points calculation strategies"""
@@ -78,6 +79,14 @@ class OwnGoalPenalty(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
         return -ctx.own_goals
 
+
+class DefensiveContributionPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        # مدافع يختاره الحارس: +2، لا تنطبق على الحارس نفسه
+        if ctx.defensive_contribution and not ctx.is_gk:
+            return 2
+        return 0
+
 class PointsCalculator:
     def __init__(self, strategies: Optional[List[PointsStrategy]] = None):
         # السماح بالإنشاء الافتراضي بدون تمرير استراتيجيات (متوافق مع الاختبارات)
@@ -90,6 +99,7 @@ class PointsCalculator:
             SavePoints(),
             GoalsConcededPenalty(),
             OwnGoalPenalty(),
+            DefensiveContributionPoints(),
         ]
 
     def calculate_total(self, ctx: PointsContext) -> int:
@@ -119,6 +129,7 @@ class PointsCalculator:
             saves=match_data.saves,
             goals_conceded=match_data.goals_conceded,
             own_goals=getattr(match_data, "own_goals", 0),
+            defensive_contribution=getattr(match_data, "defensive_contribution", False),
         )
         return self.calculate_total(ctx)
 
@@ -135,6 +146,7 @@ def calculate_player_points(
     saves: int,
     goals_conceded: int,
     own_goals: int = 0,
+    defensive_contribution: bool = False,
 ) -> int:
     """
     تابعة مساعدة للاستخدام في الخدمات الحالية.
@@ -149,6 +161,7 @@ def calculate_player_points(
         saves=saves,
         goals_conceded=goals_conceded,
         own_goals=own_goals,
+        defensive_contribution=defensive_contribution,
     )
     return default_calculator.calculate_total(ctx)
 
