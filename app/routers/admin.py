@@ -38,7 +38,8 @@ def admin_dashboard(
     request: Request, 
     league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository),
-    team_repo: ITeamRepository = Depends(get_team_repository)
+    team_repo: ITeamRepository = Depends(get_team_repository),
+    match_repo: IMatchRepository = Depends(get_match_repository),
 ):
     if league.slug != slug:
         return _canonical_admin_redirect(request, slug, league.slug)
@@ -54,11 +55,18 @@ def admin_dashboard(
         }
         for t in teams_raw
     ]
-    
+    active_voting_match = match_repo.get_active_voting_match(league.id)
+
     return templates.TemplateResponse(
         request=request,
         name="admin/dashboard.html", 
-        context={"league": league, "players": players, "teams": teams, "is_admin": True}
+        context={
+            "league": league,
+            "players": players,
+            "teams": teams,
+            "is_admin": True,
+            "active_voting_match": active_voting_match,
+        }
     )
 
 @router.post("/match")

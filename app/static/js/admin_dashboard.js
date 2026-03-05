@@ -468,3 +468,72 @@ document.addEventListener('change', function (e) {
         if (counter) counter.textContent = total;
     }
 });
+
+// ─── Live Voting Stats for Admin ─────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', function () {
+    const card = document.getElementById('live-voting-card');
+    if (!card) return;
+
+    const matchId = card.getAttribute('data-match-id');
+    const bodyEl = document.getElementById('live-voting-body');
+    if (!matchId || !bodyEl) return;
+
+    async function refreshLiveVoting() {
+        try {
+            const resp = await fetch(`/api/voting/match/${matchId}/live`);
+            if (!resp.ok) {
+                return;
+            }
+            const data = await resp.json();
+
+            if (!data.is_open) {
+                bodyEl.innerHTML = '<p class="text-muted" style="font-size:0.85rem;">لا يوجد تصويت مفتوح حالياً لهذه المباراة.</p>';
+                return;
+            }
+
+            if (!data.candidates || data.candidates.length === 0) {
+                bodyEl.innerHTML = '<p class="text-muted" style="font-size:0.85rem;">لم يتم تسجيل أي صوت حتى الآن.</p>';
+                return;
+            }
+
+            let rowsHtml = '';
+            data.candidates.forEach((c, index) => {
+                rowsHtml += `
+                    <tr>
+                        <td style="padding:6px 8px;">#${index + 1}</td>
+                        <td style="padding:6px 8px; font-weight:bold;">${c.name}</td>
+                        <td style="padding:6px 8px; text-align:center;">${c.votes}</td>
+                        <td style="padding:6px 8px; text-align:center;">${c.percent.toFixed(1)}%</td>
+                    </tr>
+                `;
+            });
+
+            bodyEl.innerHTML = `
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <thead>
+                        <tr style="border-bottom:1px solid var(--border-color);">
+                            <th style="text-align:right; padding:6px 8px;">#</th>
+                            <th style="text-align:right; padding:6px 8px;">اللاعب</th>
+                            <th style="text-align:center; padding:6px 8px;">الأصوات</th>
+                            <th style="text-align:center; padding:6px 8px;">النسبة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+                <p class="text-secondary" style="margin-top:8px; font-size:0.8rem;">
+                    إجمالي الأصوات في هذه الجولة: <strong>${data.total_votes}</strong>
+                </p>
+            `;
+        } catch (err) {
+            console.error('Error fetching live voting stats', err);
+        }
+    }
+
+    // أول تحميل
+    refreshLiveVoting();
+    // تحديث دوري كل 5 ثواني
+    setInterval(refreshLiveVoting, 5000);
+});

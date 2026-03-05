@@ -95,6 +95,46 @@ class VotingService(IVotingService):
         )
         return self.voting_repo.save_vote(vote)
 
+    def get_live_stats(self, match_id: int) -> schemas.LiveVotingStatsResponse:
+        """
+        Return live aggregated voting stats for the current round of a match.
+        Does not reveal who voted for whom, only counts and percentages.
+        """
+        match = self.match_repo.get_by_id(match_id)
+        if not match or match.voting_round == 0:
+            return schemas.LiveVotingStatsResponse(
+                is_open=False,
+                round_number=0,
+                total_votes=0,
+                candidates=[],
+            )
+
+        round_number = match.voting_round
+        results = self.voting_repo.get_round_results(match_id, round_number)
+        total_votes = sum(r["count"] for r in results) if results else 0
+
+        candidates: List[schemas.LiveVotingCandidate] = []
+        for row in results:
+            player = self.player_repo.get_by_id(row["candidate_id"])
+            name = player.name if player else "مجهول"
+            votes = row["count"]
+            percent = (votes / total_votes * 100.0) if total_votes > 0 else 0.0
+            candidates.append(
+                schemas.LiveVotingCandidate(
+                    player_id=row["candidate_id"],
+                    name=name,
+                    votes=votes,
+                    percent=round(percent, 2),
+                )
+            )
+
+        return schemas.LiveVotingStatsResponse(
+            is_open=True,
+            round_number=round_number,
+            total_votes=total_votes,
+            candidates=candidates,
+        )
+
     def close_round(self, match_id: int) -> dict:
         match = self.match_repo.get_by_id(match_id)
         if not match or match.voting_round == 0:

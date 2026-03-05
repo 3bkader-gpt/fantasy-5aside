@@ -25,6 +25,18 @@ def get_voting_status(
     """
     return voting_service.get_voting_status(match_id, voter_id)
 
+
+@router.get("/match/{match_id}/live", response_model=schemas.LiveVotingStatsResponse)
+def get_live_voting_stats(
+    match_id: int,
+    voting_service: IVotingService = Depends(get_voting_service),
+):
+    """
+    Get live aggregated voting statistics (counts + percentages) for the
+    currently active round of a match. Does not expose individual voter data.
+    """
+    return voting_service.get_live_stats(match_id)
+
 @router.post("/vote", response_model=schemas.VoteResponse)
 def submit_vote(
     vote_in: schemas.VoteCreate,

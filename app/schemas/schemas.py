@@ -185,3 +185,17 @@ class VotingStatusResponse(BaseModel):
     current_round: int  # 0=Not Started, 1, 2, 3, 4=Closed
     has_voted: bool
     excluded_player_ids: List[int] = []
+
+
+class LiveVotingCandidate(BaseModel):
+    player_id: int
+    name: str
+    votes: int
+    percent: float
+
+
+class LiveVotingStatsResponse(BaseModel):
+    is_open: bool
+    round_number: int
+    total_votes: int
+    candidates: List[LiveVotingCandidate] = []

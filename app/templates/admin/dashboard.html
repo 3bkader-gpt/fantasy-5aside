@@ -4,6 +4,18 @@
 {% if is_admin %}
 <h1>📝 تسجيل نتيجة مباراة (اللوحة التكتيكية)</h1>
 
+{% if active_voting_match %}
+<div class="card mb-2" id="live-voting-card" data-match-id="{{ active_voting_match.id }}">
+    <h3 style="margin-top:0; color: var(--heading-color);">📊 التصويت الحالي (الجولة {{ active_voting_match.voting_round }})</h3>
+    <p class="text-secondary" style="font-size: 0.85rem;">
+        يتم تحديث هذه الإحصائيات تلقائياً كل عدة ثواني أثناء فتح التصويت. الأرقام تجميعية فقط ولا تكشف من صوّت لمَن.
+    </p>
+    <div id="live-voting-body">
+        <p class="text-muted" style="font-size: 0.85rem;">⏳ جاري تحميل بيانات التصويت...</p>
+    </div>
+</div>
+{% endif %}
+
 <div class="card mb-2" style="border-right: 5px solid var(--warning-color);">
     <h3 style="color: var(--warning-color);">🏆 إدارة الكأس</h3>
     <form action="/l/{{ league.slug }}/admin/cup/generate" method="POST">
