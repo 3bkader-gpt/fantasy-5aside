@@ -60,6 +60,7 @@
                 <button class="btn btn-outline btn-sm voting-btn" data-match-id="{{ match.id }}"
                     data-round="{{ match.voting_round }}"
                     data-is-open="{{ 'true' if match.voting_round > 0 else 'false' }}"
+                    data-match-number="{{ loop.index }}"
                     style="font-size: 0.8rem; color: #fff; border: none; padding: 4px 10px; min-height: auto; width: auto; margin: 0;">
                     {% if match.voting_round == 0 %}فتح التصويت 🗳️{% else %}إغلاق الجولة {{ match.voting_round }} 🏁{%
                     endif %}

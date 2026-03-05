@@ -318,11 +318,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const matchId = this.getAttribute('data-match-id');
             const round = parseInt(this.getAttribute('data-round'));
             const leagueSlug = window.LEAGUE_SLUG;
+            const matchNumber = this.getAttribute('data-match-number') || matchId;
 
             let action = round === 0 ? "فتح التصويت" : `إغلاق الجولة ${round}`;
             let endpoint = round === 0 ? `/api/voting/${leagueSlug}/open/${matchId}` : `/api/voting/${leagueSlug}/close/${matchId}`;
 
-            const password = await showPromptModal(action, `أدخل كلمة مرور الآدمن لـ ${action} للمباراة رقم #${matchId}:`);
+            const password = await showPromptModal(action, `أدخل كلمة مرور الآدمن لـ ${action} للمباراة رقم #${matchNumber}:`);
             if (!password) return;
 
             try {
