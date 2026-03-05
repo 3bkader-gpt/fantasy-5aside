@@ -115,14 +115,14 @@
                                     {% if stat.is_captain %}<span title="Captain (Legacy)">©️</span>{% endif %}
                                     {% if stat.mvp %}<span title="MVP (Legacy)">⭐</span>{% endif %}
                                     {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
-                                    {% if getattr(stat, 'defensive_contribution', False) %}
+                                    {% if stat.defensive_contribution|default(false) %}
                                         <span title="مساهمة دفاعية يختارها الحارس">🛡️+</span>
                                     {% endif %}
                                 </td>
                                 <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
-                                <td>{% if getattr(stat, 'defensive_contribution', False) %}✅{% else %}-{% endif %}</td>
+                                <td>{% if stat.defensive_contribution|default(false) %}✅{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
                                 <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
                                 </td>
@@ -165,14 +165,14 @@
                                     {% if stat.is_captain %}<span title="Captain (Legacy)">©️</span>{% endif %}
                                     {% if stat.mvp %}<span title="MVP (Legacy)">⭐</span>{% endif %}
                                     {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
-                                    {% if getattr(stat, 'defensive_contribution', False) %}
+                                    {% if stat.defensive_contribution|default(false) %}
                                         <span title="مساهمة دفاعية يختارها الحارس">🛡️+</span>
                                     {% endif %}
                                 </td>
                                 <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
-                                <td>{% if getattr(stat, 'defensive_contribution', False) %}✅{% else %}-{% endif %}</td>
+                                <td>{% if stat.defensive_contribution|default(false) %}✅{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
                                 <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
                                 </td>
@@ -312,7 +312,7 @@
                 "goals_conceded": {{ stat.goals_conceded or 0 }},
                 "is_gk": {{ 'true' if stat.is_gk else 'false' }},
                 "clean_sheet": {{ 'true' if stat.clean_sheet else 'false' }},
-                "defensive_contribution": {{ 'true' if getattr(stat, 'defensive_contribution', False) else 'false' }}
+                "defensive_contribution": {{ 'true' if stat.defensive_contribution|default(false) else 'false' }}
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ]
