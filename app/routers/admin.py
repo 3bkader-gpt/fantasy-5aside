@@ -17,6 +17,8 @@ from ..dependencies import (
     IAnalyticsService, IVotingService,
 )
 from ..services.achievements import achievement_service
+import json as _dbg_json
+import time as _dbg_time
 
 router = APIRouter(prefix="/l/{slug}/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -586,6 +588,20 @@ def reset_voting_round(
     Admin-only: delete all votes for the currently active round of a match,
     keeping the round open so that التصويت يمكن أن يُعاد من البداية.
     """
+    # Debug log for reset behaviour
+    try:
+        payload = {
+            "sessionId": "08dd7e",
+            "timestamp": int(_dbg_time.time() * 1000),
+            "location": "admin.reset_voting_round",
+            "message": "reset_voting_round called",
+            "data": {"slug": slug, "league_slug": league.slug, "match_id": match_id},
+        }
+        with open("debug-08dd7e.log", "a", encoding="utf-8") as f:
+            f.write(_dbg_json.dumps(payload, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
     if league.slug != slug:
         # get_current_admin_league already validated auth; slug mismatch shouldn't happen
         raise HTTPException(status_code=400, detail="Slug mismatch for league")

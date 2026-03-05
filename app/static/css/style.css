@@ -1567,3 +1567,153 @@ button.btn-danger {
     color: var(--primary-color);
     font-weight: bold;
 }
+
+/* =========================================
+   ADMIN DASHBOARD — TABBED LAYOUT
+   ========================================= */
+
+/* Header */
+.admin-header {
+    margin-bottom: 1.25rem;
+}
+
+.admin-header h1 {
+    margin: 0 0 0.25rem 0;
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-header .admin-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Quick Stats Bar */
+.admin-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 1.25rem;
+}
+
+@media (max-width: 480px) {
+    .admin-stats-bar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+}
+
+.admin-stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.admin-stat-card .stat-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--heading-color);
+}
+
+.admin-stat-card .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* Tabs Navigation */
+.admin-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    margin-bottom: 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg-color);
+    padding-top: 8px;
+    scrollbar-width: none;
+}
+
+.admin-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-tabs .tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    padding: 8px 18px;
+    margin-top: 0;
+}
+
+@media (max-width: 480px) {
+    .admin-tabs .tab-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Tab Panels */
+.admin-tab-panel {
+    display: none;
+    animation: adminFadeIn 0.25s ease;
+}
+
+.admin-tab-panel.active {
+    display: block;
+}
+
+@keyframes adminFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Border-right utility classes (replacing inline styles) */
+.border-right-primary {
+    border-right: 5px solid var(--primary-color);
+}
+
+.border-right-success {
+    border-right: 5px solid var(--success-color);
+}
+
+.border-right-warning {
+    border-right: 5px solid var(--warning-color);
+}
+
+.border-right-danger {
+    border-right: 5px solid var(--danger-color);
+}
+
+.border-right-info {
+    border-right: 5px solid var(--info-color, #3498db);
+}
+
+.border-right-secondary {
+    border-right: 5px solid var(--secondary-color, var(--text-secondary));
+}
+
+/* Danger Zone card */
+.admin-danger-zone {
+    border: 2px solid var(--danger-color);
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.dark-mode .admin-danger-zone {
+    background: rgba(231, 76, 60, 0.1);
+}

@@ -1,3 +1,35 @@
+// ─── Admin Tab Switching ─────────────────────────────────────────────────────
+(function () {
+    const tabBtns = document.querySelectorAll('.admin-tabs .tab-btn');
+    const tabPanels = document.querySelectorAll('.admin-tab-panel');
+    if (!tabBtns.length) return;
+
+    function activateTab(tabName) {
+        tabBtns.forEach(function (b) {
+            b.classList.toggle('active', b.dataset.tab === tabName);
+        });
+        tabPanels.forEach(function (p) {
+            p.classList.toggle('active', p.dataset.tab === tabName);
+        });
+        localStorage.setItem('adminActiveTab', tabName);
+    }
+
+    tabBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            activateTab(btn.dataset.tab);
+        });
+    });
+
+    // Restore last active tab (if saved) or default to first
+    var saved = localStorage.getItem('adminActiveTab');
+    if (saved && document.querySelector('.admin-tab-panel[data-tab="' + saved + '"]')) {
+        activateTab(saved);
+    }
+
+    // Expose for cross-tab navigation (e.g. "manage team players" jumps to players tab)
+    window.adminActivateTab = activateTab;
+})();
+
 document.addEventListener('DOMContentLoaded', function () {
     const teamABody = document.getElementById('team-a-body');
     const teamBBody = document.getElementById('team-b-body');
@@ -381,7 +413,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const addPlayerCard = document.getElementById('add-player-card');
     if (addNewPlayerFromTeamBtn && addPlayerCard) {
         addNewPlayerFromTeamBtn.addEventListener('click', () => {
-            addPlayerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Switch to players tab first
+            if (window.adminActivateTab) window.adminActivateTab('players');
+            setTimeout(() => {
+                addPlayerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
         });
     }
 
@@ -406,10 +442,14 @@ document.addEventListener('DOMContentLoaded', function () {
     manageTeamButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const teamId = btn.getAttribute('data-team-id') || '';
-            if (playerManagementCard) {
-                playerManagementCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-            filterPlayersByTeam(teamId);
+            // Switch to players tab first
+            if (window.adminActivateTab) window.adminActivateTab('players');
+            setTimeout(() => {
+                if (playerManagementCard) {
+                    playerManagementCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                filterPlayersByTeam(teamId);
+            }, 50);
         });
     });
 
