@@ -181,8 +181,7 @@ class VoteResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class VotingStatusResponse(BaseModel):
-    match_id: int
-    voting_round: int  # 0=Not Started, 1, 2, 3, 4=Closed
+    is_open: bool
+    current_round: int  # 0=Not Started, 1, 2, 3, 4=Closed
     has_voted: bool
-    round_winner: Optional[int] = None # player_id
-    excluded_ids: List[int] = []
+    excluded_player_ids: List[int] = []

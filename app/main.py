@@ -69,6 +69,9 @@ async def lifespan(app: FastAPI):
             ("match_stats", "player_id", "INDEX"),
             ("match_stats", "match_id", "INDEX"),
             ("votes", "match_id", "INDEX"),
+            # Voting anti-cheat columns (IP + fingerprint)
+            ("votes", "ip_address", "VARCHAR(64) DEFAULT NULL"),
+            ("votes", "device_fingerprint", "VARCHAR(255) DEFAULT NULL"),
             ("cup_matchups", "league_id", "INDEX")
         ]
         
@@ -128,7 +131,18 @@ async def custom_404_handler(request: Request, __):
     return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
 
 @app.exception_handler(500)
-async def custom_500_handler(request: Request, __):
+async def custom_500_handler(request: Request, exc: Exception):
+    # Log full traceback for debugging
+    logger.exception("Unhandled server error", exc_info=exc)
+
+    # For API routes, return JSON so frontend can read error detail
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
+        )
+
+    # For normal pages, show HTML error template
     return templates.TemplateResponse("errors/500.html", {"request": request}, status_code=500)
 
 # CORS

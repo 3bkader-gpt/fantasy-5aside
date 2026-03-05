@@ -1,9 +1,10 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from ..models import models
 from ..schemas import schemas
 from ..repositories.interfaces import IVotingRepository, IMatchRepository, IPlayerRepository
 from .interfaces import IVotingService
 from sqlalchemy import text
+
 
 class VotingService(IVotingService):
     def __init__(
@@ -20,7 +21,7 @@ class VotingService(IVotingService):
         match = self.match_repo.get_by_id(match_id)
         if not match:
             return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[])
-        
+
         if match.voting_round == 0:
             return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[])
         
@@ -40,7 +41,6 @@ class VotingService(IVotingService):
             r2_results = self.voting_repo.get_round_results(match_id, 2)
             if r2_results:
                 excluded_ids.append(r2_results[0]["candidate_id"])
-                
         return schemas.VotingStatusResponse(
             is_open=True,
             current_round=match.voting_round,

@@ -207,25 +207,6 @@
     function openVotingModal(matchId) {
         // نتأكد إن عندنا matchId صالح حتى لو الـ dataset راجعة undefined
         const effectiveMatchId = matchId ?? window.currentMatchId;
-
-        // #region agent log
-        fetch('http://127.0.0.1:7848/ingest/4581d7c0-7df2-4751-88bb-2e7108eec3c6', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Debug-Session-Id': '08dd7e'
-            },
-            body: JSON.stringify({
-                sessionId: '08dd7e',
-                runId: 'pre-fix',
-                hypothesisId: 'H1',
-                location: 'leaderboard.html:openVotingModal',
-                message: 'openVotingModal invoked',
-                data: { rawMatchId: matchId, effectiveMatchId, currentMatchId, currentRound },
-                timestamp: Date.now()
-            })
-        }).catch(() => { });
-        // #endregion agent log
         if (!effectiveMatchId) {
             console.error('openVotingModal called without a valid matchId', {
                 matchId,
@@ -245,25 +226,6 @@
             const key = _voteStorageKey();
             const existingVote = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : null;
 
-            // #region agent log
-            fetch('http://127.0.0.1:7848/ingest/4581d7c0-7df2-4751-88bb-2e7108eec3c6', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Debug-Session-Id': '08dd7e'
-                },
-                body: JSON.stringify({
-                    sessionId: '08dd7e',
-                    runId: 'pre-fix',
-                    hypothesisId: 'H2',
-                    location: 'leaderboard.html:openVotingModal',
-                    message: 'Checked localStorage for existing vote',
-                    data: { key, hasExistingVote: !!existingVote },
-                    timestamp: Date.now()
-                })
-            }).catch(() => { });
-            // #endregion agent log
-
             if (existingVote) {
                 // لو في تصويت مخزَّن في localStorage، نعرض رسالة بس
                 // وما نمنعش فتح المودال، الاعتماد الأساسي على فحص الـ Backend (IP + fingerprint)
@@ -275,56 +237,23 @@
             }
         } catch (e) {
             console.error('localStorage voting check failed:', e);
-
-            // #region agent log
-            fetch('http://127.0.0.1:7848/ingest/4581d7c0-7df2-4751-88bb-2e7108eec3c6', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Debug-Session-Id': '08dd7e'
-                },
-                body: JSON.stringify({
-                    sessionId: '08dd7e',
-                    runId: 'pre-fix',
-                    hypothesisId: 'H3',
-                    location: 'leaderboard.html:openVotingModal',
-                    message: 'localStorage threw error',
-                    data: { error: String(e) },
-                    timestamp: Date.now()
-                })
-            }).catch(() => { });
-            // #endregion agent log
             // لو في مشكلة في localStorage، نسمح بالتصويت بدل ما نوقف الـ UI بالكامل
         }
         const modal = document.getElementById('voting-modal');
         if (modal) {
+            // أظهر المودال وفعّل الـ overlay (opacity + pointer-events) عن طريق الكلاس active
             modal.style.display = 'flex';
+            modal.classList.add('active');
             resetVotingSteps();
-
-            // #region agent log
-            fetch('http://127.0.0.1:7848/ingest/4581d7c0-7df2-4751-88bb-2e7108eec3c6', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Debug-Session-Id': '08dd7e'
-                },
-                body: JSON.stringify({
-                    sessionId: '08dd7e',
-                    runId: 'pre-fix',
-                    hypothesisId: 'H4',
-                    location: 'leaderboard.html:openVotingModal',
-                    message: 'Voting modal shown',
-                    data: { currentMatchId, currentRound },
-                    timestamp: Date.now()
-                })
-            }).catch(() => { });
-            // #endregion agent log
         }
     }
 
     function closeVotingModal() {
         const modal = document.getElementById('voting-modal');
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+        }
     }
 
     function selectVoter(id, name) {
@@ -416,48 +345,9 @@
     document.addEventListener('DOMContentLoaded', function () {
         const bannerButton = document.querySelector('#voting-banner button[data-match-id]');
 
-        // #region agent log
-        fetch('http://127.0.0.1:7848/ingest/4581d7c0-7df2-4751-88bb-2e7108eec3c6', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Debug-Session-Id': '08dd7e'
-            },
-            body: JSON.stringify({
-                sessionId: '08dd7e',
-                runId: 'pre-fix',
-                hypothesisId: 'H5',
-                location: 'leaderboard.html:DOMContentLoaded',
-                message: 'DOMContentLoaded on leaderboard, found banner button?',
-                data: { hasBannerButton: !!bannerButton, currentMatchId, currentRound },
-                timestamp: Date.now()
-            })
-        }).catch(() => { });
-        // #endregion agent log
-
         if (bannerButton) {
             bannerButton.addEventListener('click', function (e) {
                 e.preventDefault();
-
-                // #region agent log
-                fetch('http://127.0.0.1:7848/ingest/4581d7c0-7df2-4751-88bb-2e7108eec3c6', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Debug-Session-Id': '08dd7e'
-                    },
-                    body: JSON.stringify({
-                        sessionId: '08dd7e',
-                        runId: 'pre-fix',
-                        hypothesisId: 'H6',
-                        location: 'leaderboard.html:bannerButtonHandler',
-                        message: 'Banner button click handler invoked',
-                        data: { datasetMatchId: bannerButton.dataset.matchId, currentMatchId, currentRound },
-                        timestamp: Date.now()
-                    })
-                }).catch(() => { });
-                // #endregion agent log
-
                 const id = bannerButton.dataset.matchId || window.currentMatchId;
                 openVotingModal(id);
             });
