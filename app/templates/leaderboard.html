@@ -205,7 +205,23 @@
     }
 
     function openVotingModal(matchId) {
-        currentMatchId = parseInt(matchId);
+        // نتأكد إن عندنا matchId صالح حتى لو الـ dataset راجعة undefined
+        const effectiveMatchId = matchId ?? window.currentMatchId;
+        if (!effectiveMatchId) {
+            console.error('openVotingModal called without a valid matchId', {
+                matchId,
+                currentMatchId: window.currentMatchId,
+                currentRound
+            });
+            if (typeof showToast !== 'undefined') {
+                showToast('في مشكلة في تحديد رقم الماتش للتصويت. رجاءً حدّث الصفحة وحاول تاني.', 'error');
+            } else {
+                alert('في مشكلة في تحديد رقم الماتش للتصويت. رجاءً حدّث الصفحة وحاول تاني.');
+            }
+            return;
+        }
+
+        currentMatchId = parseInt(effectiveMatchId);
         try {
             if (typeof localStorage !== 'undefined' && localStorage.getItem(_voteStorageKey())) {
                 if (typeof showToast !== 'undefined') {
@@ -315,5 +331,17 @@
             btn.innerHTML = 'إرسال التصويت 🚀';
         }
     }
+
+    // ربط زر التصويت في البانر بشكل إضافي احتياطي
+    document.addEventListener('DOMContentLoaded', function () {
+        const bannerButton = document.querySelector('#voting-banner button[data-match-id]');
+        if (bannerButton) {
+            bannerButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                const id = bannerButton.dataset.matchId || window.currentMatchId;
+                openVotingModal(id);
+            });
+        }
+    });
 </script>
 {% endblock %}
