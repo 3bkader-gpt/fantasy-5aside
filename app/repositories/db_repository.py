@@ -43,6 +43,15 @@ class VotingRepository(IVotingRepository):
             models.Vote.device_fingerprint == fingerprint,
             models.Vote.round_number == round_number
         ).first()
+    def delete_votes_for_round(self, match_id: int, round_number: int) -> int:
+        q = self.db.query(models.Vote).filter(
+            models.Vote.match_id == match_id,
+            models.Vote.round_number == round_number,
+        )
+        count = q.count()
+        q.delete(synchronize_session=False)
+        self.db.commit()
+        return count
 
 class LeagueRepository(ILeagueRepository):
     def __init__(self, db: Session): self.db = db

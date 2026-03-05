@@ -187,3 +187,21 @@ class VotingService(IVotingService):
         match.voting_round = 1
         self.match_repo.save(match)
         return {"status": "opened", "round": 1}
+
+    def reset_current_round_votes(self, match_id: int) -> dict:
+        """
+        Admin-only helper: delete all votes for the currently active round
+        of a match, keeping the round open so players can vote من جديد.
+        """
+        from fastapi import HTTPException
+
+        match = self.match_repo.get_by_id(match_id)
+        if not match or match.voting_round == 0:
+            raise HTTPException(status_code=400, detail="لا يوجد تصويت مفتوح لهذه المباراة حالياً")
+
+        deleted = self.voting_repo.delete_votes_for_round(match_id, match.voting_round)
+        return {
+            "status": "ok",
+            "round": match.voting_round,
+            "deleted_votes": deleted,
+        }

@@ -536,4 +536,31 @@ document.addEventListener('DOMContentLoaded', function () {
     refreshLiveVoting();
     // تحديث دوري كل 5 ثواني
     setInterval(refreshLiveVoting, 5000);
+
+    // زر إعادة ضبط تصويت الجولة الحالية
+    const resetBtn = document.getElementById('reset-voting-round-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', async function () {
+            if (!confirm('⚠️ هل أنت متأكد من مسح كل أصوات هذه الجولة وإعادة التصويت من البداية؟')) {
+                return;
+            }
+            try {
+                const resp = await fetch(`/l/${window.LEAGUE_SLUG}/admin/voting/${matchId}/reset`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                });
+                const data = await resp.json();
+                if (!resp.ok) {
+                    alert(data.detail || 'حدث خطأ أثناء إعادة ضبط التصويت.');
+                    return;
+                }
+                alert(`✅ تم مسح ${data.deleted_votes || 0} صوت من هذه الجولة. يمكن للّاعبين إعادة التصويت الآن.`);
+                refreshLiveVoting();
+            } catch (err) {
+                console.error('Error resetting voting round', err);
+                alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
+            }
+        });
+    }
 });

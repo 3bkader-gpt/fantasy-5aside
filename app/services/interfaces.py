@@ -56,3 +56,7 @@ class IVotingService(ABC):
     def close_round(self, match_id: int) -> dict: pass # Returns results/status
     @abstractmethod
     def open_voting(self, match_id: int) -> dict: pass
+    @abstractmethod
+    def get_live_stats(self, match_id: int) -> schemas.LiveVotingStatsResponse: pass
+    @abstractmethod
+    def reset_current_round_votes(self, match_id: int) -> dict: pass

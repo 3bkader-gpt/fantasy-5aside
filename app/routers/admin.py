@@ -9,12 +9,12 @@ from ..core import security
 from ..dependencies import (
     get_league_service, get_cup_service, get_match_service,
     get_league_repository, get_player_repository, get_match_repository,
-    get_team_repository, get_transfer_repository,
+    get_team_repository, get_transfer_repository, get_voting_service,
     get_current_admin_league,
     ILeagueService, ICupService, IMatchService,
     ILeagueRepository, IPlayerRepository, IMatchRepository,
     ITeamRepository, ITransferRepository,
-    IAnalyticsService
+    IAnalyticsService, IVotingService,
 )
 from ..services.achievements import achievement_service
 
@@ -573,3 +573,22 @@ def transfer_player(
     player_repo.save(player)
 
     return {"success": True, "message": f"تم انتقال اللاعب إلى {to_team.name}"}
+
+
+@router.post("/voting/{match_id}/reset")
+def reset_voting_round(
+    match_id: int,
+    slug: str,
+    league: models.League = Depends(get_current_admin_league),
+    voting_service: IVotingService = Depends(get_voting_service),
+):
+    """
+    Admin-only: delete all votes for the currently active round of a match,
+    keeping the round open so that التصويت يمكن أن يُعاد من البداية.
+    """
+    if league.slug != slug:
+        # get_current_admin_league already validated auth; slug mismatch shouldn't happen
+        raise HTTPException(status_code=400, detail="Slug mismatch for league")
+
+    result = voting_service.reset_current_round_votes(match_id)
+    return result
