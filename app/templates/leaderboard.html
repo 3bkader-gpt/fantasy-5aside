@@ -205,14 +205,19 @@
     }
 
     function openVotingModal(matchId) {
-        currentMatchId = matchId;
-        if (localStorage.getItem(_voteStorageKey())) {
-            if (typeof showToast !== 'undefined') {
-                showToast('يا غشاش يا حرامي يا وسخ! 🤡 انت صوّت قبل كده من الجهاز ده!', 'error');
-            } else {
-                alert('يا غشاش يا حرامي يا وسخ! 🤡 انت صوّت قبل كده من الجهاز ده!');
+        currentMatchId = parseInt(matchId);
+        try {
+            if (typeof localStorage !== 'undefined' && localStorage.getItem(_voteStorageKey())) {
+                if (typeof showToast !== 'undefined') {
+                    showToast('يا غشاش يا حرامي يا وسخ! 🤡 انت صوّت قبل كده من الجهاز ده!', 'error');
+                } else {
+                    alert('يا غشاش يا حرامي يا وسخ! 🤡 انت صوّت قبل كده من الجهاز ده!');
+                }
+                return;
             }
-            return;
+        } catch (e) {
+            console.error('localStorage voting check failed:', e);
+            // لو في مشكلة في localStorage، نسمح بالتصويت بدل ما نوقف الـ UI بالكامل
         }
         const modal = document.getElementById('voting-modal');
         if (modal) {
