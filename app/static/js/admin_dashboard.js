@@ -269,8 +269,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Lazy-show match form when user explicitly starts a new match
     if (startNewMatchBtn && matchFormCard) {
         startNewMatchBtn.addEventListener('click', () => {
-            // Require at least two registered teams
-            if (!hasRegisteredTeams) {
+            // Require at least two registered teams only when فعلاً مافيش غير أقل من فريقين
+            const teams = Array.isArray(window.LEAGUE_TEAMS) ? window.LEAGUE_TEAMS : [];
+            if (teams.length < 2) {
                 alert('⚠️ لا يمكنك تسجيل مباراة قبل تسجيل فريقين على الأقل في الدوري.\nاذهب إلى قسم "إدارة الفرق المسجلة" وأضف الفرق أولاً، ثم ارجع لتسجيل المباراة.');
                 const teamCard = document.getElementById('team-management-card');
                 if (teamCard) {
