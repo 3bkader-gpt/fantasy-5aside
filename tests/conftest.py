@@ -30,8 +30,6 @@ def _get_test_db_url() -> str:
     """
     # Force testing mode for the duration of pytest
     settings.testing = True
-    from app.core.rate_limit import limiter
-    limiter.enabled = False
     url = settings.effective_database_url
 
     # CRITICAL SAFEGUARD: Never run tests on Supabase
@@ -47,6 +45,13 @@ def _get_test_db_url() -> str:
             f"Expected a PostgreSQL or SQLite URL for tests, got: {url!r}"
         )
     return url
+
+
+@pytest.fixture(scope="session", autouse=True)
+def disable_rate_limiter_for_tests() -> None:
+    """Disable SlowAPI limiter globally during tests to avoid flakiness."""
+    from app.core.rate_limit import limiter
+    limiter.enabled = False
 
 
 @pytest.fixture(scope="session", name="engine")

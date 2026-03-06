@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.delete-match-btn').forEach(btn => {
         btn.addEventListener('click', async function () {
             const matchId = this.getAttribute('data-match-id');
-            const password = await showPromptModal("حذف مباراة", "أدخل كلمة مرور الآدمن لحذف المباراة رقم #" + matchId + " :");
-            if (!password) return;
+            const ok = window.confirm(`⚠️ هل أنت متأكد من حذف المباراة رقم #${matchId} نهائياً؟`);
+            if (!ok) return;
 
             try {
                 const leagueSlug = window.LEAGUE_SLUG;
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         'Content-Type': 'application/json',
                         ...getCsrfHeader()
                     },
-                    body: JSON.stringify({ admin_password: password })
+                    body: JSON.stringify({})
                 });
 
                 const result = await response.json();
@@ -239,12 +239,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveEditBtn = document.getElementById('save-edit-match-btn');
     if (saveEditBtn) {
         saveEditBtn.addEventListener('click', async function () {
-            const adminPassword = document.getElementById('edit_admin_password').value;
-            if (!adminPassword) {
-                alert("يرجى إدخال كلمة سر الإدارة");
-                return;
-            }
-
             const teamAName = document.getElementById('edit_team_a_name').value.trim() || 'فريق أ';
             const teamBName = document.getElementById('edit_team_b_name').value.trim() || 'فريق ب';
 
@@ -302,8 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 team_b_name: teamBName,
                 team_a_score: 0,
                 team_b_score: 0,
-                stats: stats,
-                admin_password: adminPassword
+                stats: stats
             };
 
             const leagueSlug = window.LEAGUE_SLUG;
@@ -347,15 +340,15 @@ document.addEventListener('DOMContentLoaded', function () {
             let action = round === 0 ? "فتح التصويت" : `إغلاق الجولة ${round}`;
             let endpoint = round === 0 ? `/api/voting/${leagueSlug}/open/${matchId}` : `/api/voting/${leagueSlug}/close/${matchId}`;
 
-            const password = await showPromptModal(action, `أدخل كلمة مرور الآدمن لـ ${action} للمباراة رقم #${matchNumber}:`);
-            if (!password) return;
+            const ok = window.confirm(`هل أنت متأكد من ${action} للمباراة رقم #${matchNumber}؟`);
+            if (!ok) return;
 
             try {
                 this.disabled = true;
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
-                    body: JSON.stringify({ admin_password: password })
+                    body: JSON.stringify({})
                 });
 
                 const result = await response.json();

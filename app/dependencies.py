@@ -1,6 +1,6 @@
 from fastapi import Depends, Request, HTTPException
 from sqlalchemy.orm import Session
-from .database import get_db
+from .database import get_db, SessionLocal
 from .services.audit_log import log_audit
 
 from .core import security
@@ -92,6 +92,27 @@ def get_analytics_service(
     return AnalyticsService(player_repo, match_repo)
 
 # --- Security ---
+def _get_token_payload(request: Request) -> dict | None:
+    """Low-level helper: extract and verify JWT payload from cookie without raising."""
+    authorization: str = request.cookies.get("access_token")
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.split(" ")[1]
+    payload = security.verify_token(token)
+    return payload or None
+
+
+def _is_jti_revoked_raw(jti: str) -> bool:
+    """Check revocation using a short-lived DB session (for non-Depends helpers)."""
+    if not jti:
+        return True
+    db = SessionLocal()
+    try:
+        return is_revoked(db, jti)
+    finally:
+        db.close()
+
+
 def get_current_admin_league(
     slug: str,
     request: Request,
@@ -102,16 +123,11 @@ def get_current_admin_league(
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
 
-    authorization: str = request.cookies.get("access_token")
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="غير مصرح لك بالدخول، يرجى تسجيل الدخول")
-
-    token = authorization.split(" ")[1]
-    payload = security.verify_token(token)
+    payload = _get_token_payload(request)
     if not payload:
         raise HTTPException(
             status_code=401,
-            detail="الجلسة انتهت أو غير صالحة، يرجى تسجيل الدخول مجدداً"
+            detail="غير مصرح لك بالدخول، يرجى تسجيل الدخول"
         )
     if is_revoked(db, payload.get("jti") or ""):
         raise HTTPException(status_code=401, detail="تم تسجيل الخروج من هذه الجلسة، يرجى تسجيل الدخول مجدداً")
@@ -133,13 +149,9 @@ def check_admin_status(
     slug: str,
     request: Request
 ) -> bool:
-    authorization: str = request.cookies.get("access_token")
-    if not authorization or not authorization.startswith("Bearer "):
-        return False
-        
-    token = authorization.split(" ")[1]
-    payload = security.verify_token(token)
+    payload = _get_token_payload(request)
     if not payload:
         return False
-        
+    if _is_jti_revoked_raw(payload.get("jti") or ""):
+        return False
     return (payload.get("sub") or "").strip().lower() == slug.strip().lower()
