@@ -208,9 +208,13 @@
                         <span class="match-timeline-player">
                             {{ stat.player.name }}
                             {% if stat.team == 'A' %}
-                            <span class="match-timeline-team-tag team-a-tag">فريق A</span>
+                            <span class="match-timeline-team-tag team-a-tag">
+                                {{ match.team_a.name if match.team_a else match.team_a_name }}
+                            </span>
                             {% elif stat.team == 'B' %}
-                            <span class="match-timeline-team-tag team-b-tag">فريق B</span>
+                            <span class="match-timeline-team-tag team-b-tag">
+                                {{ match.team_b.name if match.team_b else match.team_b_name }}
+                            </span>
                             {% endif %}
                         </span>
                         <span class="match-timeline-events">
