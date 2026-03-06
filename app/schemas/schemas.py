@@ -203,3 +203,82 @@ class LiveVotingStatsResponse(BaseModel):
     round_number: int
     total_votes: int
     candidates: List[LiveVotingCandidate] = []
+
+
+# --- Backup Import Schemas ---
+
+class BackupPlayerPayload(BaseModel):
+    name: str
+    total_points: int = 0
+    goals: int = 0
+    assists: int = 0
+    saves: int = 0
+    clean_sheets: int = 0
+    total_own_goals: int = 0
+    total_matches: int = 0
+    all_time_points: int = 0
+    all_time_goals: int = 0
+    all_time_assists: int = 0
+    all_time_saves: int = 0
+    all_time_clean_sheets: int = 0
+    all_time_own_goals: int = 0
+    all_time_matches: int = 0
+    team_name: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class BackupMatchStatPayload(BaseModel):
+    player_name: str
+    team: str = "A"
+    goals: int = 0
+    assists: int = 0
+    saves: int = 0
+    conceded: int = 0
+    clean_sheet: bool = False
+    is_gk: bool = False
+    mvp: bool = False
+    is_captain: bool = False
+    points: int = 0
+    bps: int = 0
+    own_goals: int = 0
+    defensive_contribution: bool = False
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class BackupMatchPayload(BaseModel):
+    date: str
+    team_a_name: str
+    team_b_name: str
+    team_a_score: int = 0
+    team_b_score: int = 0
+    stats: List[BackupMatchStatPayload] = []
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class BackupImportPayload(BaseModel):
+    league: dict
+    players: List[BackupPlayerPayload] = []
+    matches: List[BackupMatchPayload] = []
+
+    model_config = ConfigDict(extra="ignore")
+
+
+# --- Web Push Schemas ---
+
+class PushSubscriptionRequest(BaseModel):
+    league_slug: str
+    endpoint: str
+    p256dh: str
+    auth: str
+    player_id: Optional[int] = None
+
+
+class PushUnsubscribeRequest(BaseModel):
+    endpoint: str
+
+
+class PushPublicKeyResponse(BaseModel):
+    public_key: str

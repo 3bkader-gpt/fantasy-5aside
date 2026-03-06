@@ -64,6 +64,24 @@
                     {% endfor %}
                 </div>
             </div>
+            <!-- Live Results Section -->
+            <div id="voting-live-results" class="mt-2" style="margin-top: 1.25rem; text-align: right; display: none;">
+                <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">📊 النتائج الحالية</h3>
+                <div id="voting-live-meta" class="text-secondary" style="font-size: 0.85rem; margin-bottom: 0.5rem;"></div>
+                <div class="table-responsive" style="margin-bottom: 0; box-shadow: none;">
+                    <table style="min-width: 0; font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>اللاعب</th>
+                                <th>الأصوات</th>
+                                <th>النسبة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="voting-live-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <div class="modal-actions mt-2">
                 <button class="btn btn-secondary" onclick="closeVotingModal()">إغلاق</button>
                 <button class="btn btn-primary" id="submit-vote-btn" style="display: none;" onclick="submitVote()">إرسال
@@ -87,6 +105,13 @@
         <button class="tab-btn" data-sort="saves">الحراس</button>
     </div>
 
+    <!-- Scope Filters -->
+    <div class="tabs-container flex-center gap-2 mb-1" id="scope-tabs" style="flex-wrap: wrap;">
+        <button class="tab-btn active" data-scope="current">الموسم الحالي</button>
+        <button class="tab-btn" data-scope="all_time">كل الوقت</button>
+        <button class="tab-btn" data-scope="last5">آخر 5 مباريات</button>
+    </div>
+
     <div class="table-responsive">
         <table>
             <thead>
@@ -102,11 +127,30 @@
                     <th>شباك نظيفة</th>
                 </tr>
             </thead>
-            <tbody id="leaderboard-body">
+            <tbody id="leaderboard-body" data-active-scope="current">
                 {% for player in players %}
-                <tr data-points="{{ player.total_points }}" data-goals="{{ player.total_goals }}"
-                    data-assists="{{ player.total_assists }}" data-saves="{{ player.total_saves }}"
-                    data-clean-sheets="{{ player.total_clean_sheets }}" data-matches="{{ player.total_matches }}">
+                <tr
+                    data-points-current="{{ player.scope_points_current }}"
+                    data-goals-current="{{ player.scope_goals_current }}"
+                    data-assists-current="{{ player.scope_assists_current }}"
+                    data-saves-current="{{ player.scope_saves_current }}"
+                    data-clean-sheets-current="{{ player.scope_clean_sheets_current }}"
+                    data-matches-current="{{ player.scope_matches_current }}"
+
+                    data-points-all_time="{{ player.scope_points_all_time }}"
+                    data-goals-all_time="{{ player.scope_goals_all_time }}"
+                    data-assists-all_time="{{ player.scope_assists_all_time }}"
+                    data-saves-all_time="{{ player.scope_saves_all_time }}"
+                    data-clean-sheets-all_time="{{ player.scope_clean_sheets_all_time }}"
+                    data-matches-all_time="{{ player.scope_matches_all_time }}"
+
+                    data-points-last5="{{ player.scope_points_last5 }}"
+                    data-goals-last5="{{ player.scope_goals_last5 }}"
+                    data-assists-last5="{{ player.scope_assists_last5 }}"
+                    data-saves-last5="{{ player.scope_saves_last5 }}"
+                    data-clean-sheets-last5="{{ player.scope_clean_sheets_last5 }}"
+                    data-matches-last5="{{ player.scope_matches_last5 }}"
+                >
                     <td data-label="المركز" class="rank-col">
                         <span class="trend-indicator" style="margin-inline-end: 0.5rem;">
                             {% if player.total_points > 0 %}
@@ -147,12 +191,12 @@
                         </div>
                     </td>
                     <td data-label="الفورمة">{{ player.form }}</td>
-                    <td data-label="الماتشات">{{ player.total_matches }}</td>
-                    <td data-label="النقاط"><strong>{{ player.total_points }}</strong></td>
-                    <td data-label="الأهداف">{{ player.total_goals }}</td>
-                    <td data-label="الأسيست">{{ player.total_assists }}</td>
-                    <td data-label="التصديات">{{ player.total_saves }}</td>
-                    <td data-label="شباك نظيفة">{{ player.total_clean_sheets }}</td>
+                    <td data-label="الماتشات" class="matches-cell">{{ player.total_matches }}</td>
+                    <td data-label="النقاط" class="points-cell"><strong>{{ player.total_points }}</strong></td>
+                    <td data-label="الأهداف" class="goals-cell">{{ player.total_goals }}</td>
+                    <td data-label="الأسيست" class="assists-cell">{{ player.total_assists }}</td>
+                    <td data-label="التصديات" class="saves-cell">{{ player.total_saves }}</td>
+                    <td data-label="شباك نظيفة" class="cs-cell">{{ player.total_clean_sheets }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -177,6 +221,7 @@
 
     let currentVoterId = null;
     let currentCandidateId = null;
+    let livePollingInterval = null;
 
     async function generateFingerprint() {
         const components = [
@@ -203,6 +248,84 @@
 
     function _voteStorageKey() {
         return `voted_${currentMatchId}_${currentRound}`;
+    }
+
+    function startLivePolling() {
+        if (!window.currentMatchId) return;
+        const liveSection = document.getElementById('voting-live-results');
+        const liveBody = document.getElementById('voting-live-body');
+        const liveMeta = document.getElementById('voting-live-meta');
+        if (!liveSection || !liveBody || !liveMeta) return;
+
+        liveSection.style.display = 'block';
+
+        const fetchLive = async () => {
+            try {
+                const res = await fetch(`/api/voting/match/${window.currentMatchId}/live`);
+                if (!res.ok) {
+                    if (res.status === 404) {
+                        liveSection.style.display = 'none';
+                    }
+                    return;
+                }
+                const data = await res.json();
+                const totalVotes = data.total_votes || 0;
+                const isClosed = !data.is_open;
+                const rows = Array.isArray(data.candidates) ? data.candidates : [];
+
+                if (totalVotes === 0) {
+                    liveMeta.textContent = 'لا توجد أصوات حتى الآن. كن أول من يصوّت!';
+                    liveBody.innerHTML = '';
+                } else {
+                    liveMeta.textContent = `إجمالي الأصوات: ${totalVotes}`;
+                    liveBody.innerHTML = '';
+                    const maxVotes = rows.reduce((max, row) => Math.max(max, row.votes || 0), 0);
+                    rows.forEach((row) => {
+                        const percent = typeof row.percent === 'number'
+                            ? row.percent.toFixed(1)
+                            : (totalVotes > 0 ? ((row.votes / totalVotes) * 100).toFixed(1) : '0.0');
+                        const tr = document.createElement('tr');
+                        if (maxVotes > 0 && row.votes === maxVotes) {
+                            tr.classList.add('highlight-row');
+                        }
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = row.name;
+                        const votesCell = document.createElement('td');
+                        votesCell.textContent = String(row.votes);
+                        const percentCell = document.createElement('td');
+                        percentCell.textContent = `${percent}%`;
+                        tr.appendChild(nameCell);
+                        tr.appendChild(votesCell);
+                        tr.appendChild(percentCell);
+                        liveBody.appendChild(tr);
+                    });
+                }
+
+                if (isClosed) {
+                    if (livePollingInterval) {
+                        clearInterval(livePollingInterval);
+                        livePollingInterval = null;
+                    }
+                    liveMeta.textContent += ' · تم إغلاق التصويت لهذه المباراة.';
+                }
+            } catch (e) {
+                console.error('Error fetching live voting results', e);
+            }
+        };
+
+        // Fetch immediately then poll every 5s
+        fetchLive();
+        if (livePollingInterval) {
+            clearInterval(livePollingInterval);
+        }
+        livePollingInterval = setInterval(fetchLive, 5000);
+    }
+
+    function stopLivePolling() {
+        if (livePollingInterval) {
+            clearInterval(livePollingInterval);
+            livePollingInterval = null;
+        }
     }
 
     function openVotingModal(matchId) {
@@ -246,6 +369,7 @@
             modal.style.display = 'flex';
             modal.classList.add('active');
             resetVotingSteps();
+            startLivePolling();
         }
     }
 
@@ -255,6 +379,7 @@
             modal.style.display = 'none';
             modal.classList.remove('active');
         }
+        stopLivePolling();
     }
 
     function selectVoter(id, name) {
@@ -323,7 +448,8 @@
                 } else {
                     alert('تم تسجيل تصويتك بنجاح!');
                 }
-                setTimeout(() => location.reload(), 1500);
+                // لا نغلق المودال فوراً حتى يرى المستخدم التحديث المباشر
+                startLivePolling();
             } else {
                 if (typeof showToast !== 'undefined') {
                     showToast(result.detail || 'حدث خطأ.', 'error');

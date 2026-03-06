@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
     # Environment: production enables HSTS and stricter defaults
     env: str = "development"
+    vapid_public_key: str | None = None
+    vapid_private_key: str | None = None
+    vapid_subject: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

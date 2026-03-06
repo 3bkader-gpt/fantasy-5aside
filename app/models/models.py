@@ -100,6 +100,7 @@ class Player(Base):
     last_season_clean_sheets = Column(Integer, default=0)
     last_season_own_goals = Column(Integer, default=0)
     last_season_matches = Column(Integer, default=0)
+    last_season_previous_rank = Column(Integer, default=0)
 
     league = relationship("League", back_populates="players")
     team = relationship("Team", back_populates="players")
@@ -127,6 +128,7 @@ class Match(Base):
     team_b = relationship("Team", foreign_keys=[team_b_id])
     stats = relationship("MatchStat", back_populates="match", cascade="all, delete")
     votes = relationship("Vote", back_populates="match", cascade="all, delete")
+    media = relationship("MatchMedia", back_populates="match", cascade="all, delete-orphan")
 
 
 class MatchStat(Base):
@@ -189,8 +191,19 @@ class HallOfFame(Base):
     points_scored = Column(Integer)
     season_matches_count = Column(Integer, nullable=True)  # matches count when season ended (for undo)
 
+    # Seasonal awards snapshots
+    top_scorer_id = Column(Integer, ForeignKey("players.id"), nullable=True)
+    top_scorer_goals = Column(Integer, default=0)
+    top_assister_id = Column(Integer, ForeignKey("players.id"), nullable=True)
+    top_assister_assists = Column(Integer, default=0)
+    top_gk_id = Column(Integer, ForeignKey("players.id"), nullable=True)
+    top_gk_saves = Column(Integer, default=0)
+
     league = relationship("League", back_populates="hall_of_fame_records")
-    player = relationship("Player")
+    player = relationship("Player", foreign_keys=[player_id])
+    top_scorer = relationship("Player", foreign_keys=[top_scorer_id])
+    top_assister = relationship("Player", foreign_keys=[top_assister_id])
+    top_gk = relationship("Player", foreign_keys=[top_gk_id])
 
 
 class Vote(Base):
@@ -229,3 +242,30 @@ class RevokedToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     jti = Column(String(64), nullable=False, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class MatchMedia(Base):
+    __tablename__ = "match_media"
+
+    id = Column(Integer, primary_key=True, index=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=False)
+    filename = Column(String(255), nullable=False, unique=True)
+    original_name = Column(String(255), nullable=True)
+    mime_type = Column(String(100), nullable=True)
+    size_bytes = Column(Integer, default=0)
+    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    match = relationship("Match", back_populates="media")
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False)
+    endpoint = Column(String(500), nullable=False, unique=True)
+    p256dh = Column(String(255), nullable=False)
+    auth = Column(String(255), nullable=False)
+    player_id = Column(Integer, ForeignKey("players.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

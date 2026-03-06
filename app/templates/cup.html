@@ -12,47 +12,52 @@
     </div>
     {% else %}
     <div class="cup-bracket">
-        {% set current_round = None %}
-        {% for matchup in matchups %}
-        {% if current_round != matchup.round_name %}
-        <h2 class="text-center card-header"
-            style="background: var(--nav-bg); color: var(--text-primary); padding: 0.75rem; border-radius: var(--radius-md); margin-top: 2rem; font-size: 1.1rem;">
-            {{ matchup.round_name }}
-        </h2>
-        {% set current_round = matchup.round_name %}
-        {% endif %}
+        {% for bracket_type, rounds in grouped_matchups.items() %}
+        <div class="bracket-section">
+            <h2 class="text-center bracket-title">
+                {% if bracket_type == 'goalkeeper' %}كأس الحراس 🧤{% else %}كأس اللاعبين 🏃‍♂️{% endif %}
+            </h2>
+            <div class="bracket-grid">
+                {% for round_name, round_matchups in rounds.items() %}
+                <div class="bracket-column">
+                    <h3 class="bracket-round-title">{{ round_name }}</h3>
+                    <div class="bracket-round-list">
+                        {% for matchup in round_matchups %}
+                        <div
+                            class="card matchup-card flex-between mb-1 {% if matchup.is_active %}active-matchup{% else %}resolved-matchup{% endif %}">
 
-        <div
-            class="card matchup-card flex-between mb-1 {% if matchup.is_active %}active-matchup{% else %}resolved-matchup{% endif %}">
+                            <div class="player player1 text-center {% if not matchup.is_active and matchup.winner_id and matchup.winner_id != matchup.player1_id %}loser{% endif %}">
+                                <div class="player-name {% if matchup.winner_id == matchup.player1_id %}text-success{% endif %}">
+                                    {{ matchup.player1.name }}
+                                    {% if matchup.winner_id == matchup.player1_id %} 🏆 {% endif %}
+                                </div>
+                                <div class="text-secondary small-text">
+                                    إجمالي النقاط: {{ matchup.player1.total_points }}
+                                </div>
+                            </div>
 
-            <div class="player player1 text-center {% if not matchup.is_active and matchup.winner_id != matchup.player1_id %}loser{% endif %}"
-                style="flex: 1;">
-                <div class="player-name {% if matchup.winner_id == matchup.player1_id %}text-success{% endif %}"
-                    style="font-weight: bold; font-size: 1.2rem;">
-                    {{ matchup.player1.name }}
-                    {% if matchup.winner_id == matchup.player1_id %} 🏆 {% endif %}
-                </div>
-                <div class="text-secondary" style="font-size: 0.9rem;">إجمالي النقاط: {{ matchup.player1.total_points }}
-                </div>
-            </div>
+                            <div class="vs">
+                                {% if matchup.is_active %}
+                                <span class="vs-badge active-vs">VS<br><small>قيد الانتظار</small></span>
+                                {% else %}
+                                <span class="vs-badge resolved-vs">انتهت</span>
+                                {% endif %}
+                            </div>
 
-            <div class="vs" style="padding: 0 20px; font-weight: bold; text-align: center;">
-                {% if matchup.is_active %}
-                <span class="vs-badge active-vs">VS<br><small>قيد الانتظار</small></span>
-                {% else %}
-                <span class="vs-badge resolved-vs">انتهت</span>
-                {% endif %}
-            </div>
-
-            <div class="player player2 text-center {% if matchup.player2_id and not matchup.is_active and matchup.winner_id != matchup.player2_id %}loser{% endif %}"
-                style="flex: 1;">
-                <div class="player-name {% if matchup.winner_id == matchup.player2_id %}text-success{% endif %}"
-                    style="font-weight: bold; font-size: 1.2rem;">
-                    {% if matchup.winner_id == matchup.player2_id %} 🏆 {% endif %}
-                    {% if matchup.player2 %}{{ matchup.player2.name }}{% else %}إعفاء{% endif %}
+                            <div class="player player2 text-center {% if matchup.player2_id and not matchup.is_active and matchup.winner_id and matchup.winner_id != matchup.player2_id %}loser{% endif %}">
+                                <div class="player-name {% if matchup.winner_id == matchup.player2_id %}text-success{% endif %}">
+                                    {% if matchup.winner_id == matchup.player2_id %} 🏆 {% endif %}
+                                    {% if matchup.player2 %}{{ matchup.player2.name }}{% else %}إعفاء{% endif %}
+                                </div>
+                                <div class="text-secondary small-text">
+                                    {% if matchup.player2 %}إجمالي النقاط: {{ matchup.player2.total_points }}{% else %}—{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="text-secondary" style="font-size: 0.9rem;">{% if matchup.player2 %}إجمالي النقاط: {{ matchup.player2.total_points }}{% else %}—{% endif %}
-                </div>
+                {% endfor %}
             </div>
         </div>
         {% endfor %}
@@ -125,6 +130,57 @@
     .resolved-vs {
         color: var(--color-gray-500);
         font-size: 1.2rem;
+    }
+
+    .cup-bracket {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .bracket-title {
+        background: var(--nav-bg);
+        color: var(--text-primary);
+        padding: 0.75rem;
+        border-radius: var(--radius-md);
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .bracket-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .bracket-column {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .bracket-round-title {
+        font-size: 0.95rem;
+        margin: 0 0 0.5rem 0;
+        color: var(--text-secondary);
+        text-align: center;
+    }
+
+    .bracket-round-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .small-text {
+        font-size: 0.85rem;
+    }
+
+    @media (max-width: 640px) {
+        .bracket-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 {% endblock %}

@@ -51,6 +51,14 @@ class IAnalyticsService(ABC):
     def get_player_form_and_chart_data(self, player_id: int, league_id: int) -> Optional[Dict[str, Any]]:
         pass
 
+    @abstractmethod
+    def get_head_to_head(self, player1_id: int, player2_id: int, league_id: int) -> Dict[str, Any] | None:
+        pass
+
+    @abstractmethod
+    def get_league_stats(self, league_id: int) -> Dict[str, Any]:
+        pass
+
 class IVotingService(ABC):
     @abstractmethod
     def get_voting_status(self, match_id: int, voter_id: int) -> schemas.VotingStatusResponse: pass
@@ -64,3 +72,17 @@ class IVotingService(ABC):
     def get_live_stats(self, match_id: int) -> schemas.LiveVotingStatsResponse: pass
     @abstractmethod
     def reset_current_round_votes(self, match_id: int) -> dict: pass
+
+
+class INotificationService(ABC):
+    @abstractmethod
+    def subscribe(self, league_id: int, endpoint: str, p256dh: str, auth: str, player_id: Optional[int] = None) -> None:
+        pass
+
+    @abstractmethod
+    def unsubscribe(self, endpoint: str) -> None:
+        pass
+
+    @abstractmethod
+    def notify_league(self, league_id: int, title: str, body: str, url: str) -> None:
+        pass

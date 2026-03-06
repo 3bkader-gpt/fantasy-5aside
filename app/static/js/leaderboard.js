@@ -1,78 +1,135 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const tabs = document.querySelectorAll(".tab-btn");
+    const sortTabs = document.querySelectorAll(".tab-btn[data-sort]");
+    const scopeTabs = document.querySelectorAll("#scope-tabs .tab-btn");
     const tbody = document.getElementById("leaderboard-body");
 
-    if (tabs.length === 0 || !tbody) return;
+    if (!tbody) return;
 
-    tabs.forEach(tab => {
-        tab.addEventListener("click", () => {
-            // Update active state
-            tabs.forEach(t => t.classList.remove("active"));
-            tab.classList.add("active");
+    function getActiveScope() {
+        return tbody.getAttribute("data-active-scope") || "current";
+    }
 
-            // Get sort metric
-            const sortMetric = tab.getAttribute("data-sort");
+    function updateRowVisibleValues(row) {
+        const scope = getActiveScope();
+        const getVal = (metric) => row.getAttribute(`data-${metric}-${scope}`) || "0";
 
-            // Sort rows
-            const rows = Array.from(tbody.querySelectorAll("tr"));
-            rows.sort((a, b) => {
-                const valA = parseInt(a.getAttribute(`data-${sortMetric}`)) || 0;
-                const valB = parseInt(b.getAttribute(`data-${sortMetric}`)) || 0;
-                // If sorting by metric is tied, sort by points implicitly (optional fallback)
-                if (valB === valA && sortMetric !== 'points') {
-                    const pointsA = parseInt(a.getAttribute('data-points')) || 0;
-                    const pointsB = parseInt(b.getAttribute('data-points')) || 0;
-                    return pointsB - pointsA;
+        const matchesCell = row.querySelector(".matches-cell");
+        const pointsCell = row.querySelector(".points-cell");
+        const goalsCell = row.querySelector(".goals-cell");
+        const assistsCell = row.querySelector(".assists-cell");
+        const savesCell = row.querySelector(".saves-cell");
+        const csCell = row.querySelector(".cs-cell");
+
+        if (matchesCell) matchesCell.textContent = getVal("matches");
+        if (pointsCell) pointsCell.querySelector("strong").textContent = getVal("points");
+        if (goalsCell) goalsCell.textContent = getVal("goals");
+        if (assistsCell) assistsCell.textContent = getVal("assists");
+        if (savesCell) savesCell.textContent = getVal("saves");
+        if (csCell) csCell.textContent = getVal("clean-sheets");
+    }
+
+    function sortAndRender(sortMetric) {
+        const scope = getActiveScope();
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+
+        rows.forEach(updateRowVisibleValues);
+
+        rows.sort((a, b) => {
+            const key = sortMetric === "points" ? "points" : sortMetric;
+            const attr = `data-${key}-${scope}`;
+            const valA = parseInt(a.getAttribute(attr)) || 0;
+            const valB = parseInt(b.getAttribute(attr)) || 0;
+
+            if (valB === valA && key !== "points") {
+                const pointsA = parseInt(a.getAttribute(`data-points-${scope}`)) || 0;
+                const pointsB = parseInt(b.getAttribute(`data-points-${scope}`)) || 0;
+                return pointsB - pointsA;
+            }
+            return valB - valA;
+        });
+
+        tbody.innerHTML = "";
+        let visibleRank = 0;
+
+        rows.forEach((row) => {
+            const savesAttr = `data-saves-${scope}`;
+            const csAttr = `data-clean-sheets-${scope}`;
+            const saves = parseInt(row.getAttribute(savesAttr)) || 0;
+            const cleanSheets = parseInt(row.getAttribute(csAttr)) || 0;
+
+            let isVisible = true;
+            if (sortMetric === "saves") {
+                if (saves === 0 && cleanSheets === 0) {
+                    isVisible = false;
                 }
-                return valB - valA;
-            });
+            }
 
-            // Re-append sorted rows and update ranks dynamically
-            tbody.innerHTML = "";
-            let visibleRank = 0;
+            if (isVisible) {
+                visibleRank++;
+                row.style.display = "";
 
-            rows.forEach((row) => {
-                const saves = parseInt(row.getAttribute('data-saves')) || 0;
-                const cleanSheets = parseInt(row.getAttribute('data-clean-sheets')) || 0;
+                const rankText = visibleRank;
+                const rankPrefix =
+                    rankText === 1 ? "🥇" : rankText === 2 ? "🥈" : rankText === 3 ? "🥉" : "";
 
-                let isVisible = true;
-                if (sortMetric === 'saves') {
-                    // Filter: Only show players with at least one save or clean sheet
-                    if (saves === 0 && cleanSheets === 0) {
-                        isVisible = false;
+                const rankCell = row.querySelector(".rank-col");
+                if (rankCell) {
+                    const trendSpan = rankCell.querySelector(".trend-indicator");
+                    const trendHtml = trendSpan ? trendSpan.outerHTML : "";
+                    rankCell.innerHTML = `${trendHtml} ${rankText} ${rankPrefix}`;
+                }
+
+                const nameCell = row.querySelector("td[data-label='اللاعب']");
+                if (nameCell) {
+                    const existingCrown = nameCell.querySelector(".crown");
+                    if (existingCrown) existingCrown.remove();
+                    if (rankText === 1 && sortMetric === "points" && scope === "current") {
+                        nameCell.insertAdjacentHTML("beforeend", '<span class="crown">👑</span>');
                     }
                 }
+            } else {
+                row.style.display = "none";
+            }
 
-                if (isVisible) {
-                    visibleRank++;
-                    row.style.display = '';
+            tbody.appendChild(row);
+        });
+    }
 
-                    const rankText = visibleRank;
-                    const rankPrefix = rankText === 1 ? '🥇' : rankText === 2 ? '🥈' : rankText === 3 ? '🥉' : '';
-
-                    // Update the visible rank column
-                    const rankCell = row.querySelector(".rank-col");
-                    if (rankCell) {
-                        rankCell.innerHTML = `${rankText} ${rankPrefix}`;
-                    }
-
-                    // Keep the crown logic only for the first row of points leaderboard
-                    const nameLink = row.querySelector("td[data-label='اللاعب']");
-                    if (nameLink) {
-                        const existingCrown = nameLink.querySelector(".crown");
-                        if (existingCrown) existingCrown.remove();
-                        if (rankText === 1 && sortMetric === 'points') {
-                            nameLink.insertAdjacentHTML('beforeend', '<span class="crown">👑</span>');
-                        }
-                    }
-                } else {
-                    row.style.display = 'none';
-                }
-
-                tbody.appendChild(row);
+    // Sorting tabs
+    if (sortTabs.length > 0) {
+        sortTabs.forEach((tab) => {
+            tab.addEventListener("click", () => {
+                sortTabs.forEach((t) => t.classList.remove("active"));
+                tab.classList.add("active");
+                const sortMetric = tab.getAttribute("data-sort") || "points";
+                sortAndRender(sortMetric);
             });
         });
-    });
+    }
+
+    // Scope tabs
+    if (scopeTabs.length > 0) {
+        scopeTabs.forEach((tab) => {
+            tab.addEventListener("click", () => {
+                const scope = tab.getAttribute("data-scope") || "current";
+                tbody.setAttribute("data-active-scope", scope);
+                scopeTabs.forEach((t) => t.classList.remove("active"));
+                tab.classList.add("active");
+
+                const activeSortTab =
+                    Array.from(sortTabs).find((t) => t.classList.contains("active")) || sortTabs[0];
+                const sortMetric = activeSortTab
+                    ? activeSortTab.getAttribute("data-sort") || "points"
+                    : "points";
+                sortAndRender(sortMetric);
+            });
+        });
+    }
+
+    if (sortTabs.length > 0) {
+        const defaultSort = sortTabs[0].getAttribute("data-sort") || "points";
+        sortAndRender(defaultSort);
+    }
 
     // Share Leaderboard Logic
     const shareBtn = document.getElementById("share-leaderboard");

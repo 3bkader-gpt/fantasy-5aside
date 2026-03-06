@@ -16,12 +16,24 @@ class LeagueService(ILeagueService):
         if players:
             top_player = players[0]
             if top_player.total_points > 0:
+                # Compute seasonal awards based on current season aggregates
+                top_scorer = max(players, key=lambda p: p.total_goals)
+                top_assister = max(players, key=lambda p: p.total_assists)
+                goalkeepers = [p for p in players if p.default_is_gk]
+                top_gk = max(goalkeepers, key=lambda p: p.total_saves) if goalkeepers else None
+
                 hof = models.HallOfFame(
                     league_id=league_id,
                     month_year=month_name,
                     player_id=top_player.id,
                     points_scored=top_player.total_points,
                     season_matches_count=season_matches_count,
+                    top_scorer_id=top_scorer.id if top_scorer and top_scorer.total_goals > 0 else None,
+                    top_scorer_goals=top_scorer.total_goals if top_scorer else 0,
+                    top_assister_id=top_assister.id if top_assister and top_assister.total_assists > 0 else None,
+                    top_assister_assists=top_assister.total_assists if top_assister else 0,
+                    top_gk_id=top_gk.id if top_gk and top_gk.total_saves > 0 else None,
+                    top_gk_saves=top_gk.total_saves if top_gk else 0,
                 )
                 self.hof_repo.save(hof)
 
@@ -34,6 +46,7 @@ class LeagueService(ILeagueService):
             player.last_season_clean_sheets = player.total_clean_sheets
             player.last_season_own_goals = player.total_own_goals
             player.last_season_matches = player.total_matches
+            player.last_season_previous_rank = player.previous_rank
 
             # Add to all-time
             player.all_time_points += player.total_points
@@ -98,6 +111,9 @@ class LeagueService(ILeagueService):
             player.all_time_own_goals = max(0, player.all_time_own_goals - player.last_season_own_goals)
             player.all_time_matches = max(0, player.all_time_matches - player.last_season_matches)
 
+            # Restore previous_rank from snapshot
+            player.previous_rank = player.last_season_previous_rank
+
             # Clear snapshot
             player.last_season_points = 0
             player.last_season_goals = 0
@@ -106,6 +122,7 @@ class LeagueService(ILeagueService):
             player.last_season_clean_sheets = 0
             player.last_season_own_goals = 0
             player.last_season_matches = 0
+            player.last_season_previous_rank = 0
 
             self.player_repo.save(player)
 

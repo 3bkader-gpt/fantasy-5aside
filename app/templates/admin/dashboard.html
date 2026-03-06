@@ -457,6 +457,24 @@
             كاملة للملفات (JSON).</p>
     </div>
 
+    <!-- Import Backup -->
+    <div class="card mb-4 border-right-danger">
+        <h3 style="color: var(--danger-color);">⬆️ استعادة نسخة احتياطية</h3>
+        <p class="text-secondary mb-1" style="font-size: 0.85rem;">
+            استخدم هذه الأداة لتحميل ملف النسخة الاحتياطية (JSON) الذي تم تصديره من نفس النظام. سيتم مسح بيانات الدوري الحالية واستبدالها بما في الملف.
+        </p>
+        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <input type="file" id="backup-file-input" accept=".json,application/json"
+                style="flex:2; min-width:180px; padding:6px;" />
+            <button type="button" id="import-backup-btn" class="btn btn-danger" style="flex:1; min-width:160px;">
+                استعادة النسخة الاحتياطية 💾
+            </button>
+        </div>
+        <p class="text-muted mt-1" style="font-size: 0.8rem;">
+            ⚠️ يفضل حفظ نسخة احتياطية جديدة قبل الاستعادة. الحد الأقصى للحجم 5MB.
+        </p>
+    </div>
+
     <!-- League Settings -->
     <div class="card mb-4 border-right-primary">
         <h3 style="color: var(--text-color);">⚙️ إعدادات الدوري (أساسيات)</h3>

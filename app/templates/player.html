@@ -111,6 +111,88 @@
         </div>
     </div>
 
+    {% if streaks %}
+    <div class="card mb-2" style="border: 1px solid var(--border-color); background: var(--card-bg);">
+        <h3 class="mb-1" style="color: var(--text-color); font-size: 1.15rem;">📊 السلاسل المتتالية</h3>
+        <div class="flex-center" style="flex-wrap: wrap; gap: 1rem; margin-top: 0.75rem;">
+            <div class="streak-card">
+                <div class="streak-label">🔥 أهداف متتالية</div>
+                <div class="streak-values">
+                    <span>الحالي: <strong>{{ streaks.goals.current }}</strong></span>
+                    <span>الأقصى: <strong>{{ streaks.goals.max }}</strong></span>
+                </div>
+            </div>
+            <div class="streak-card">
+                <div class="streak-label">🏆 انتصارات متتالية</div>
+                <div class="streak-values">
+                    <span>الحالي: <strong>{{ streaks.wins.current }}</strong></span>
+                    <span>الأقصى: <strong>{{ streaks.wins.max }}</strong></span>
+                </div>
+            </div>
+            <div class="streak-card">
+                <div class="streak-label">🛡️ كلين شيت متتالي</div>
+                <div class="streak-values">
+                    <span>الحالي: <strong>{{ streaks.clean_sheets.current }}</strong></span>
+                    <span>الأقصى: <strong>{{ streaks.clean_sheets.max }}</strong></span>
+                </div>
+            </div>
+            <div class="streak-card">
+                <div class="streak-label">✊ بدون هزيمة</div>
+                <div class="streak-values">
+                    <span>الحالي: <strong>{{ streaks.unbeaten.current }}</strong></span>
+                    <span>الأقصى: <strong>{{ streaks.unbeaten.max }}</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- H2H Comparison & Radar -->
+    <div class="card mb-2" style="border: 1px solid var(--border-color); background: var(--card-bg);">
+        <h3 class="mb-1" style="color: var(--text-color); font-size: 1.15rem;">⚔️ مقارنة مباشرة مع لاعب آخر</h3>
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="h2h-select" class="form-label">قارن مع...</label>
+            <select id="h2h-select" class="form-control">
+                <option value="">اختر لاعباً من الدوري</option>
+                {% if other_players %}
+                {% for p in other_players %}
+                <option value="{{ p.id }}">{{ p.name }}</option>
+                {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div id="h2h-summary" style="display: none; margin-bottom: 1rem;">
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between;">
+                <div style="flex:1; min-width: 180px; text-align:center;">
+                    <h4 style="margin-bottom: 0.5rem; color: var(--text-color);">{{ player.name }}</h4>
+                    <div id="h2h-p1-points" class="text-secondary" style="font-size: 0.9rem;"></div>
+                </div>
+                <div style="flex:1; min-width: 180px; text-align:center;">
+                    <h4 id="h2h-p2-name" style="margin-bottom: 0.5rem; color: var(--text-color);"></h4>
+                    <div id="h2h-p2-points" class="text-secondary" style="font-size: 0.9rem;"></div>
+                </div>
+            </div>
+            <div class="table-responsive" style="margin-top: 1rem;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>المباراة</th>
+                            <th>النتيجة</th>
+                            <th>{{ player.name }}</th>
+                            <th id="h2h-p2-header"></th>
+                            <th>الفائز</th>
+                        </tr>
+                    </thead>
+                    <tbody id="h2h-matches-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div style="margin-top: 1.25rem;">
+            <canvas id="playerRadarChart"></canvas>
+        </div>
+    </div>
+
     <!-- Analytics Chart -->
     {% if history and history|length >= 1 %}
     <div class="card mb-2" style="border: 1px solid var(--border-color); background: var(--card-bg);">
@@ -185,6 +267,32 @@
 
         .achievement-desc {
             font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Streak cards */
+        .streak-card {
+            min-width: 200px;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(16,185,129,0.08));
+            border: 1px solid rgba(148,163,184,0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .streak-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .streak-values {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            font-size: 0.85rem;
             color: var(--text-secondary);
         }
 

@@ -16,7 +16,7 @@ from .core.config import settings
 from .core.rate_limit import limiter
 from .database import Base, engine
 from .middleware.security_headers import SecurityHeadersMiddleware
-from .routers import admin, public, auth, voting
+from .routers import admin, public, auth, voting, media, notifications
 
 # Use Uvicorn's logger so logs appear in the same output
 logger = logging.getLogger("uvicorn.error")
@@ -48,6 +48,7 @@ async def lifespan(app: FastAPI):
             ("players", "total_own_goals", "INTEGER DEFAULT 0"),
             ("players", "all_time_own_goals", "INTEGER DEFAULT 0"),
             ("players", "last_season_own_goals", "INTEGER DEFAULT 0"),
+            ("players", "last_season_previous_rank", "INTEGER DEFAULT 0"),
             ("players", "team", "VARCHAR(50) DEFAULT NULL"),
             ("players", "default_is_gk", "BOOLEAN DEFAULT FALSE"),
             ("match_stats", "bonus_points", "INTEGER DEFAULT 0"),
@@ -181,14 +182,19 @@ app.add_middleware(
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Mount Static Files
-# Ensure the directory exists to avoid errors on startup
+# Ensure the directories exist to avoid errors on startup
 if not os.path.exists("app/static"):
     os.makedirs("app/static")
-    
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/media", StaticFiles(directory="uploads"), name="media")
 
 # Include Routers
 app.include_router(auth.router)
 app.include_router(public.router)
 app.include_router(admin.router)
 app.include_router(voting.router)
+app.include_router(media.router)
+app.include_router(notifications.router)

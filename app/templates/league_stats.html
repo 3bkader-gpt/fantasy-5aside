@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-sm" style="max-width: 960px;">
+    <h1 class="mb-2" style="color: var(--text-color); font-size: 2rem;">
+        📊 إحصائيات {{ league.name }}
+    </h1>
+
+    {% set totals = stats.totals %}
+    {% set records = stats.records %}
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:1rem; margin-bottom:2rem;">
+        <div class="card text-center">
+            <h3 class="text-secondary mb-1" style="font-size:0.9rem;">إجمالي المباريات</h3>
+            <div style="font-size:2rem; font-weight:bold; color:var(--text-color);">{{ totals.matches }}</div>
+        </div>
+        <div class="card text-center">
+            <h3 class="text-secondary mb-1" style="font-size:0.9rem;">إجمالي الأهداف</h3>
+            <div style="font-size:2rem; font-weight:bold; color:var(--success-color);">{{ totals.goals }}</div>
+        </div>
+        <div class="card text-center">
+            <h3 class="text-secondary mb-1" style="font-size:0.9rem;">إجمالي الأسيست</h3>
+            <div style="font-size:2rem; font-weight:bold; color:var(--accent-color);">{{ totals.assists }}</div>
+        </div>
+        <div class="card text-center">
+            <h3 class="text-secondary mb-1" style="font-size:0.9rem;">إجمالي التصديات</h3>
+            <div style="font-size:2rem; font-weight:bold; color:var(--primary-color);">{{ totals.saves }}</div>
+        </div>
+        <div class="card text-center">
+            <h3 class="text-secondary mb-1" style="font-size:0.9rem;">متوسط أهداف/مباراة</h3>
+            <div style="font-size:2rem; font-weight:bold; color:var(--warning-color);">{{ totals.avg_goals_per_match }}</div>
+        </div>
+    </div>
+
+    <div class="card mb-2">
+        <h2 class="mb-1" style="font-size:1.3rem; color:var(--text-color);">🏅 الأرقام القياسية</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>السجل</th>
+                        <th>الوصف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>أعلى مباراة أهدافاً</td>
+                        <td>
+                            {% if records.highest_scoring_match %}
+                            {{ records.highest_scoring_match.team_a_name }}
+                            {{ records.highest_scoring_match.score }}
+                            {{ records.highest_scoring_match.team_b_name }}
+                            ({{ records.highest_scoring_match.total_goals }} هدف)
+                            {% else %}
+                            لا يوجد بيانات كافية بعد.
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>أكثر مباراة إثارة</td>
+                        <td>
+                            {% if records.most_exciting_match %}
+                            {{ records.most_exciting_match.team_a_name }}
+                            {{ records.most_exciting_match.score }}
+                            {{ records.most_exciting_match.team_b_name }}
+                            (فارق {{ records.most_exciting_match.point_diff }} نقاط)
+                            {% else %}
+                            لا يوجد بيانات كافية بعد.
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>أعلى نقاط فردية في مباراة</td>
+                        <td>
+                            {% if records.single_game_points_record %}
+                            {{ records.single_game_points_record.player_name }}
+                            ({{ records.single_game_points_record.points }} نقطة)
+                            {% else %}
+                            لا يوجد بيانات كافية بعد.
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-2">
+        <h2 class="mb-1" style="font-size:1.3rem; color:var(--text-color);">⭐ أفضل مساهمين بالمباراة</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>اللاعب</th>
+                        <th>المباريات</th>
+                        <th>نقاط/مباراة</th>
+                        <th>مساهمة (G+A)/مباراة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if records.best_contributors %}
+                    {% for r in records.best_contributors %}
+                    <tr>
+                        <td>{{ r.player_name }}</td>
+                        <td>{{ r.matches }}</td>
+                        <td>{{ r.points_per_match }}</td>
+                        <td>{{ r.ga_per_match }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-secondary">لا يوجد بعد عدد كافٍ من المباريات لعرض الإحصائية.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

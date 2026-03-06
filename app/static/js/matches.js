@@ -371,4 +371,80 @@ document.addEventListener('DOMContentLoaded', function () {
         const isOpen = btn.getAttribute('data-is-open') === 'true';
         btn.style.backgroundColor = isOpen ? '#f39c12' : '#27ae60';
     });
+
+    // =========================================
+    // Match media upload & delete
+    // =========================================
+    document.querySelectorAll('.upload-media-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const matchId = this.getAttribute('data-match-id');
+            const input = document.querySelector(`.match-media-input[data-match-id="${matchId}"]`);
+            if (input) {
+                input.click();
+            }
+        });
+    });
+
+    document.querySelectorAll('.match-media-input').forEach(input => {
+        input.addEventListener('change', async function () {
+            const matchId = this.getAttribute('data-match-id');
+            if (!this.files || this.files.length === 0) return;
+
+            const formData = new FormData();
+            Array.from(this.files).forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const resp = await fetch(`/l/${window.LEAGUE_SLUG}/match/${matchId}/media`, {
+                    method: 'POST',
+                    headers: {
+                        ...getCsrfHeader(),
+                    },
+                    body: formData,
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    alert(data.detail || 'فشل رفع الصور. تأكد من أن الملفات صور أقل من 5MB.');
+                    return;
+                }
+                alert('✅ تم رفع الصور بنجاح.');
+                window.location.reload();
+            } catch (err) {
+                console.error('Error uploading media:', err);
+                alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
+            } finally {
+                this.value = '';
+            }
+        });
+    });
+
+    document.querySelectorAll('.delete-media-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const mediaId = this.getAttribute('data-media-id');
+            if (!confirm('⚠️ هل أنت متأكد من حذف هذه الصورة؟')) {
+                return;
+            }
+            try {
+                const resp = await fetch(`/l/${window.LEAGUE_SLUG}/media/${mediaId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getCsrfHeader(),
+                    },
+                    body: JSON.stringify({}),
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    alert(data.detail || 'تعذر حذف الصورة.');
+                    return;
+                }
+                alert('✅ تم حذف الصورة بنجاح.');
+                window.location.reload();
+            } catch (err) {
+                console.error('Error deleting media:', err);
+                alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
+            }
+        });
+    });
 });

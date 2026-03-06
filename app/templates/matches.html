@@ -189,6 +189,91 @@
             </div>
 
         </div> <!-- End Flex Container -->
+
+        <!-- Match Timeline (Per-Match Event Summary) -->
+        <details class="match-timeline">
+            <summary class="match-timeline-summary">
+                عرض التفاصيل 📋
+            </summary>
+            <div class="match-timeline-body">
+                <ul class="match-timeline-list">
+                    {% for stat in match.stats %}
+                    {% if (stat.goals or 0) > 0
+                          or (stat.assists or 0) > 0
+                          or (stat.saves or 0) > 0
+                          or stat.clean_sheet
+                          or stat.defensive_contribution|default(false)
+                          or (stat.bonus_points or 0) > 0 %}
+                    <li class="match-timeline-item">
+                        <span class="match-timeline-player">
+                            {{ stat.player.name }}
+                            {% if stat.team == 'A' %}
+                            <span class="match-timeline-team-tag team-a-tag">فريق A</span>
+                            {% elif stat.team == 'B' %}
+                            <span class="match-timeline-team-tag team-b-tag">فريق B</span>
+                            {% endif %}
+                        </span>
+                        <span class="match-timeline-events">
+                            {% if (stat.goals or 0) > 0 %}
+                            <span class="event-chip goal-chip">⚽ x{{ stat.goals }}</span>
+                            {% endif %}
+                            {% if (stat.assists or 0) > 0 %}
+                            <span class="event-chip assist-chip">👟 x{{ stat.assists }}</span>
+                            {% endif %}
+                            {% if (stat.saves or 0) > 0 %}
+                            <span class="event-chip save-chip">🧤 {{ stat.saves }} تصدي</span>
+                            {% endif %}
+                            {% if stat.clean_sheet %}
+                            <span class="event-chip cs-chip">🛡️ كلين شيت</span>
+                            {% endif %}
+                            {% if stat.defensive_contribution|default(false) %}
+                            <span class="event-chip def-chip">🛡️+ مساهمة دفاعية</span>
+                            {% endif %}
+                            {% if (stat.bonus_points or 0) > 0 %}
+                            <span class="event-chip bonus-chip">⭐ +{{ stat.bonus_points }} بونص</span>
+                            {% endif %}
+                        </span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </details>
+        <!-- Match Media Gallery -->
+        <div class="match-media-section">
+            <div class="flex-between" style="align-items:center; gap:0.75rem; margin-top:0.75rem;">
+                <h4 class="mb-0" style="font-size:0.95rem; color:var(--text-color);">📷 صور المباراة</h4>
+                {% if is_admin %}
+                <div class="flex-center" style="gap:0.5rem;">
+                    <input type="file" accept="image/png,image/jpeg,image/webp" multiple
+                        class="match-media-input" data-match-id="{{ match.id }}"
+                        style="display:none;">
+                    <button type="button" class="btn btn-sm btn-secondary upload-media-btn"
+                        data-match-id="{{ match.id }}">
+                        إضافة صور 📷
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% if match.media %}
+            <div class="match-media-grid">
+                {% for media in match.media %}
+                <div class="match-media-item">
+                    <a href="/media/{{ media.filename }}" target="_blank">
+                        <img src="/media/{{ media.filename }}" alt="{{ media.original_name or 'match photo' }}">
+                    </a>
+                    {% if is_admin %}
+                    <button type="button" class="delete-media-btn" data-media-id="{{ media.id }}">
+                        ✕
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-secondary" style="font-size:0.8rem; margin-top:0.25rem;">لا توجد صور مرفوعة لهذه المباراة بعد.</p>
+            {% endif %}
+        </div>
     </div>
     {% endfor %}
     {% endif %}

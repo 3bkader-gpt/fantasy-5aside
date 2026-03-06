@@ -1,6 +1,6 @@
 import json
 import re
-from fastapi import APIRouter, Depends, Request, HTTPException, Form, Response
+from fastapi import APIRouter, Depends, Request, HTTPException, Form, Response, UploadFile, File
 
 SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
 from fastapi.responses import RedirectResponse, JSONResponse, StreamingResponse
@@ -10,6 +10,8 @@ from ..schemas import schemas
 from ..models import models
 from ..core import security
 from ..core.csrf import generate_csrf_token, set_csrf_cookie, verify_csrf_token, verify_csrf, CSRF_COOKIE_NAME
+from ..database import get_db
+from sqlalchemy.orm import Session
 from ..dependencies import (
     get_league_service, get_cup_service, get_match_service,
     get_league_repository, get_player_repository, get_match_repository,
@@ -20,6 +22,7 @@ from ..dependencies import (
     ILeagueRepository, IPlayerRepository, IMatchRepository,
     ITeamRepository, ITransferRepository,
     IAnalyticsService, IVotingService,
+    get_notification_service,
 )
 from ..services.achievements import achievement_service
 
@@ -149,6 +152,7 @@ def end_season(
     league: models.League = Depends(get_current_admin_league),
     league_service: ILeagueService = Depends(get_league_service),
     league_repo: ILeagueRepository = Depends(get_league_repository),
+    notification_service=Depends(get_notification_service),
     audit=Depends(get_audit_logger),
 ):
     cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
@@ -162,6 +166,16 @@ def end_season(
             updated.season_number += 1
             league_repo.save(updated)
         audit(league.id, "end_season", league.slug, {"month_name": month_name})
+
+        try:
+            notification_service.notify_league(
+                league_id=league.id,
+                title="انتهى الموسم! 🏆",
+                body=f"تم إنهاء الموسم '{month_name}' وتحديث لوحة الشرف.",
+                url=f"/l/{league.slug}/hall-of-fame",
+            )
+        except Exception:
+            pass
         return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -442,12 +456,15 @@ def export_league_backup(
                     player_name = s.player.name if s.player else "Unknown"
                     match_entry["stats"].append({
                         "player_name": player_name,
+                        "team": s.team,
                         "goals": s.goals,
                         "assists": s.assists,
                         "saves": s.saves,
                         "conceded": s.goals_conceded,
                         "clean_sheet": s.clean_sheet,
                         "is_gk": s.is_gk,
+                        "mvp": s.mvp,
+                        "is_captain": s.is_captain,
                         "points": s.points_earned,
                         "bps": s.bonus_points,
                         "own_goals": getattr(s, "own_goals", 0),
@@ -474,6 +491,144 @@ def export_league_backup(
             media_type="application/json",
             status_code=500
         )
+
+
+@router.post("/import/backup")
+async def import_league_backup(
+    file: UploadFile = File(...),
+    _csrf: None = Depends(verify_csrf),
+    league: models.League = Depends(get_current_admin_league),
+    db: Session = Depends(get_db),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    team_repo: ITeamRepository = Depends(get_team_repository),
+    audit=Depends(get_audit_logger),
+):
+    """Admin-only: restore league players and matches from a JSON backup."""
+    if file.content_type not in ("application/json", "text/json", "application/octet-stream"):
+        raise HTTPException(status_code=400, detail="الرجاء رفع ملف JSON صالح.")
+
+    raw_bytes = await file.read()
+    max_size = 5 * 1024 * 1024  # 5MB
+    if len(raw_bytes) > max_size:
+        raise HTTPException(status_code=400, detail="حجم الملف كبير جداً. الحد الأقصى 5MB.")
+
+    try:
+        payload = schemas.BackupImportPayload.model_validate_json(raw_bytes)
+    except Exception:
+        raise HTTPException(status_code=400, detail="صيغة ملف النسخة الاحتياطية غير صالحة.")
+
+    from datetime import datetime
+
+    try:
+        with db.begin():
+            # Clear existing league data (order matters for FKs)
+            db.query(models.CupMatchup).filter_by(league_id=league.id).delete(synchronize_session=False)
+            db.query(models.HallOfFame).filter_by(league_id=league.id).delete(synchronize_session=False)
+            db.query(models.MatchMedia).filter_by(league_id=league.id).delete(synchronize_session=False)
+            db.query(models.Vote).filter_by(league_id=league.id).delete(synchronize_session=False)
+            db.query(models.MatchStat).filter(
+                models.MatchStat.match_id.in_(
+                    db.query(models.Match.id).filter_by(league_id=league.id)
+                )
+            ).delete(synchronize_session=False)
+            db.query(models.Match).filter_by(league_id=league.id).delete(synchronize_session=False)
+            db.query(models.Transfer).filter_by(league_id=league.id).delete(synchronize_session=False)
+            db.query(models.Player).filter_by(league_id=league.id).delete(synchronize_session=False)
+
+            # Recreate players
+            team_cache: dict[str, models.Team] = {}
+            for p in payload.players:
+                team_id = None
+                if p.team_name:
+                    if p.team_name not in team_cache:
+                        team = team_repo.get_by_name(league.id, p.team_name)
+                        team_cache[p.team_name] = team
+                    team = team_cache[p.team_name]
+                    team_id = team.id if team else None
+
+                player = models.Player(
+                    league_id=league.id,
+                    name=p.name,
+                    team_id=team_id,
+                    total_points=p.total_points,
+                    total_goals=p.goals,
+                    total_assists=p.assists,
+                    total_saves=p.saves,
+                    total_clean_sheets=p.clean_sheets,
+                    total_own_goals=p.total_own_goals,
+                    total_matches=p.total_matches,
+                    all_time_points=p.all_time_points,
+                    all_time_goals=p.all_time_goals,
+                    all_time_assists=p.all_time_assists,
+                    all_time_saves=p.all_time_saves,
+                    all_time_clean_sheets=p.all_time_clean_sheets,
+                    all_time_own_goals=p.all_time_own_goals,
+                    all_time_matches=p.all_time_matches,
+                )
+                db.add(player)
+            db.flush()
+
+            # Build name -> player map
+            players_in_db = db.query(models.Player).filter_by(league_id=league.id).all()
+            name_map = {p.name: p for p in players_in_db}
+
+            # Recreate matches and stats
+            for m in payload.matches:
+                try:
+                    match_date = datetime.fromisoformat(m.date)
+                except Exception:
+                    match_date = datetime.utcnow()
+
+                match = models.Match(
+                    league_id=league.id,
+                    date=match_date,
+                    team_a_name=m.team_a_name,
+                    team_b_name=m.team_b_name,
+                    team_a_score=m.team_a_score,
+                    team_b_score=m.team_b_score,
+                )
+                db.add(match)
+                db.flush()
+
+                for s in m.stats:
+                    player = name_map.get(s.player_name)
+                    if not player:
+                        # Create a placeholder player if not listed explicitly in players
+                        player = models.Player(league_id=league.id, name=s.player_name)
+                        db.add(player)
+                        db.flush()
+                        name_map[s.player_name] = player
+
+                    stat = models.MatchStat(
+                        player_id=player.id,
+                        match_id=match.id,
+                        team=s.team,
+                        goals=s.goals,
+                        assists=s.assists,
+                        saves=s.saves,
+                        goals_conceded=s.conceded,
+                        own_goals=s.own_goals,
+                        is_gk=s.is_gk,
+                        clean_sheet=s.clean_sheet,
+                        defensive_contribution=s.defensive_contribution,
+                        points_earned=s.points,
+                        bonus_points=s.bps,
+                        mvp=s.mvp,
+                        is_captain=s.is_captain,
+                    )
+                    db.add(stat)
+
+            # Reset league counters based on imported data
+            league.current_season_matches = len(payload.matches)
+            league_repo.save(league)
+
+        audit(league.id, "import_backup", league.slug, {"players": len(payload.players), "matches": len(payload.matches)})
+        return {"success": True, "message": "تم استعادة النسخة الاحتياطية بنجاح."}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"فشل استعادة النسخة الاحتياطية: {str(e)}")
 
 @router.delete("/player/{player_id}")
 def delete_player(

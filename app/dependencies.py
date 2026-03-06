@@ -19,14 +19,15 @@ from .repositories.db_repository import (
 )
 
 from .services.interfaces import (
-    ILeagueService, ICupService, IMatchService, 
-    IAnalyticsService, IVotingService
+    ILeagueService, ICupService, IMatchService,
+    IAnalyticsService, IVotingService, INotificationService
 )
 from .services.league_service import LeagueService
 from .services.cup_service import CupService
 from .services.match_service import MatchService
 from .services.analytics_service import AnalyticsService
 from .services.voting_service import VotingService
+from .services.notification_service import NotificationService
 
 # --- Repositories ---
 def get_league_repository(db: Session = Depends(get_db)) -> ILeagueRepository:
@@ -90,6 +91,12 @@ def get_analytics_service(
     match_repo: IMatchRepository = Depends(get_match_repository)
 ) -> IAnalyticsService:
     return AnalyticsService(player_repo, match_repo)
+
+
+def get_notification_service(
+    db: Session = Depends(get_db),
+) -> INotificationService:
+    return NotificationService(db)
 
 # --- Security ---
 def _get_token_payload(request: Request) -> dict | None:

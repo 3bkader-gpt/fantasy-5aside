@@ -6,7 +6,7 @@
     <p class="text-secondary mb-2 hero-subtitle">سجل الشرف لأبطال الخماسي عبر الأشهر</p>
 
     {% if hof_records %}
-    <div class="leagues-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+    <div class="leagues-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
         {% for record in hof_records %}
         <div class="card"
             style="box-shadow: 0 10px 25px rgba(241, 196, 15, 0.2); position: relative; overflow: hidden; border-bottom: 6px solid #f1c40f;">
@@ -20,11 +20,52 @@
                 </a>
             </div>
 
-            <div class="flex-center gap-2 text-secondary">
+            <div class="flex-center gap-2 text-secondary mb-1">
                 <span style="font-size: 1.5rem;">🔥</span>
-                <span style="font-weight: bold; font-size: 1.2rem; color: var(--danger-color);">{{ record.points_scored
-                    }}</span>
+                <span style="font-weight: bold; font-size: 1.2rem; color: var(--danger-color);">
+                    {{ record.points_scored }}</span>
                 نقطة
+            </div>
+
+            <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem; text-align: right;">
+                <div style="font-weight: bold; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-secondary);">
+                    جوائز الشهر:
+                </div>
+                <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9rem;">
+                    <li style="margin-bottom: 0.25rem;">
+                        <span>⚽ هداف الشهر:</span>
+                        {% if record.top_scorer %}
+                        <a href="/l/{{ league.slug }}/player/{{ record.top_scorer.id }}" style="font-weight: bold; margin-inline-start: 4px;">
+                            {{ record.top_scorer.name }}
+                        </a>
+                        <span class="text-secondary">({{ record.top_scorer_goals }} هدف)</span>
+                        {% else %}
+                        <span class="text-secondary">لا يوجد (0 أهداف)</span>
+                        {% endif %}
+                    </li>
+                    <li style="margin-bottom: 0.25rem;">
+                        <span>🎯 صانع الشهر:</span>
+                        {% if record.top_assister %}
+                        <a href="/l/{{ league.slug }}/player/{{ record.top_assister.id }}" style="font-weight: bold; margin-inline-start: 4px;">
+                            {{ record.top_assister.name }}
+                        </a>
+                        <span class="text-secondary">({{ record.top_assister_assists }} أسيست)</span>
+                        {% else %}
+                        <span class="text-secondary">لا يوجد (0 أسيست)</span>
+                        {% endif %}
+                    </li>
+                    <li>
+                        <span>🧤 حارس الشهر:</span>
+                        {% if record.top_gk %}
+                        <a href="/l/{{ league.slug }}/player/{{ record.top_gk.id }}" style="font-weight: bold; margin-inline-start: 4px;">
+                            {{ record.top_gk.name }}
+                        </a>
+                        <span class="text-secondary">({{ record.top_gk_saves }} تصدي)</span>
+                        {% else %}
+                        <span class="text-secondary">لا يوجد (0 تصديات)</span>
+                        {% endif %}
+                    </li>
+                </ul>
             </div>
         </div>
         {% endfor %}

@@ -354,6 +354,43 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Import Backup
+    const importBtn = document.getElementById('import-backup-btn');
+    const backupInput = document.getElementById('backup-file-input');
+    if (importBtn && backupInput) {
+        importBtn.addEventListener('click', async function () {
+            const file = backupInput.files[0];
+            if (!file) {
+                alert('⚠️ يرجى اختيار ملف النسخة الاحتياطية أولاً.');
+                return;
+            }
+            if (!confirm('⚠️ سيتم مسح بيانات الدوري الحالية واستبدالها بمحتوى النسخة الاحتياطية.\nهل أنت متأكد من المتابعة؟')) {
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const resp = await fetch(`/l/${window.LEAGUE_SLUG}/admin/import/backup`, {
+                    method: 'POST',
+                    headers: {
+                        ...getCsrfHeader(),
+                    },
+                    body: formData,
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) {
+                    alert(data.detail || data.error || 'فشل استعادة النسخة الاحتياطية.');
+                    return;
+                }
+                alert('✅ تم استعادة النسخة الاحتياطية بنجاح. سيتم إعادة تحميل الصفحة الآن.');
+                window.location.reload();
+            } catch (err) {
+                console.error('Error importing backup:', err);
+                alert('❌ حدث خطأ أثناء الاتصال بالخادم.');
+            }
+        });
+    }
+
     // Player Deletion
     document.querySelectorAll('.delete-player-btn').forEach(btn => {
         btn.addEventListener('click', async function () {
@@ -547,36 +584,64 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            let rowsHtml = '';
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.style.fontSize = '0.9rem';
+
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            headerRow.style.borderBottom = '1px solid var(--border-color)';
+            ['#', 'اللاعب', 'الأصوات', 'النسبة'].forEach((label, idx) => {
+                const th = document.createElement('th');
+                th.style.padding = '6px 8px';
+                th.style.textAlign = idx === 0 || idx === 1 ? 'right' : 'center';
+                th.textContent = label;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+
+            const tbody = document.createElement('tbody');
             data.candidates.forEach((c, index) => {
-                rowsHtml += `
-                    <tr>
-                        <td style="padding:6px 8px;">#${index + 1}</td>
-                        <td style="padding:6px 8px; font-weight:bold;">${c.name}</td>
-                        <td style="padding:6px 8px; text-align:center;">${c.votes}</td>
-                        <td style="padding:6px 8px; text-align:center;">${c.percent.toFixed(1)}%</td>
-                    </tr>
-                `;
+                const tr = document.createElement('tr');
+                const idxCell = document.createElement('td');
+                idxCell.style.padding = '6px 8px';
+                idxCell.textContent = `#${index + 1}`;
+
+                const nameCell = document.createElement('td');
+                nameCell.style.padding = '6px 8px';
+                nameCell.style.fontWeight = 'bold';
+                nameCell.textContent = c.name;
+
+                const votesCell = document.createElement('td');
+                votesCell.style.padding = '6px 8px';
+                votesCell.style.textAlign = 'center';
+                votesCell.textContent = String(c.votes);
+
+                const percentCell = document.createElement('td');
+                percentCell.style.padding = '6px 8px';
+                percentCell.style.textAlign = 'center';
+                percentCell.textContent = `${c.percent.toFixed(1)}%`;
+
+                tr.appendChild(idxCell);
+                tr.appendChild(nameCell);
+                tr.appendChild(votesCell);
+                tr.appendChild(percentCell);
+                tbody.appendChild(tr);
             });
 
-            bodyEl.innerHTML = `
-                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
-                    <thead>
-                        <tr style="border-bottom:1px solid var(--border-color);">
-                            <th style="text-align:right; padding:6px 8px;">#</th>
-                            <th style="text-align:right; padding:6px 8px;">اللاعب</th>
-                            <th style="text-align:center; padding:6px 8px;">الأصوات</th>
-                            <th style="text-align:center; padding:6px 8px;">النسبة</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                    </tbody>
-                </table>
-                <p class="text-secondary" style="margin-top:8px; font-size:0.8rem;">
-                    إجمالي الأصوات في هذه الجولة: <strong>${data.total_votes}</strong>
-                </p>
-            `;
+            table.appendChild(thead);
+            table.appendChild(tbody);
+
+            bodyEl.innerHTML = '';
+            bodyEl.appendChild(table);
+
+            const p = document.createElement('p');
+            p.className = 'text-secondary';
+            p.style.marginTop = '8px';
+            p.style.fontSize = '0.8rem';
+            p.innerHTML = `إجمالي الأصوات في هذه الجولة: <strong>${data.total_votes}</strong>`;
+            bodyEl.appendChild(p);
         } catch (err) {
             console.error('Error fetching live voting stats', err);
         }

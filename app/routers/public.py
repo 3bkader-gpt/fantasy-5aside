@@ -148,13 +148,16 @@ def read_leaderboard(
     # Check for active voting using optimized query
     active_voting_match = match_repo.get_active_voting_match(league.id)
     
-    # Add badges and form (last 5 match outcomes W/D/L) to each player
+    # Add badges, form, and scope-based aggregates (current / all-time / last 5)
     for player in players:
-        # History is preloaded via joinedload in get_leaderboard
-        player.badges = achievement_service.get_earned_badges(player, player.match_stats)
-        # Form: last 5 matches, chronological (oldest first), same logic as analytics form_history
+        history = list(player.match_stats or [])
+
+        # Badges (single source of truth)
+        player.badges = achievement_service.get_earned_badges(player, history)
+
+        # Form: last 5 matches, chronological (oldest first)
         recent = sorted(
-            (s for s in (player.match_stats or []) if getattr(s, "match", None)),
+            (s for s in history if getattr(s, "match", None)),
             key=lambda s: s.match.date,
             reverse=True
         )[:5]
@@ -167,6 +170,43 @@ def read_leaderboard(
             else:
                 form_chars.append("L")
         player.form = "".join(form_chars) if form_chars else ""
+
+        # Precompute aggregates per scope
+        # Current season numbers already stored on player.*total_* fields
+        player.scope_points_current = player.total_points
+        player.scope_goals_current = player.total_goals
+        player.scope_assists_current = player.total_assists
+        player.scope_saves_current = getattr(player, "total_saves", 0)
+        player.scope_clean_sheets_current = getattr(player, "total_clean_sheets", 0)
+        player.scope_matches_current = getattr(player, "total_matches", 0)
+
+        # All-time = historical + current
+        player.scope_points_all_time = (getattr(player, "all_time_points", 0) or 0) + (player.total_points or 0)
+        player.scope_goals_all_time = (getattr(player, "all_time_goals", 0) or 0) + (player.total_goals or 0)
+        player.scope_assists_all_time = (getattr(player, "all_time_assists", 0) or 0) + (player.total_assists or 0)
+        player.scope_saves_all_time = (getattr(player, "all_time_saves", 0) or 0) + (getattr(player, "total_saves", 0) or 0)
+        player.scope_clean_sheets_all_time = (getattr(player, "all_time_clean_sheets", 0) or 0) + (getattr(player, "total_clean_sheets", 0) or 0)
+        player.scope_matches_all_time = (getattr(player, "all_time_matches", 0) or 0) + (getattr(player, "total_matches", 0) or 0)
+
+        # Last 5 matches (using same "recent" list)
+        last5_points = 0
+        last5_goals = 0
+        last5_assists = 0
+        last5_saves = 0
+        last5_cs = 0
+        for stat in recent:
+            last5_points += getattr(stat, "points_earned", 0) or 0
+            last5_goals += getattr(stat, "goals", 0) or 0
+            last5_assists += getattr(stat, "assists", 0) or 0
+            last5_saves += getattr(stat, "saves", 0) or 0
+            if getattr(stat, "clean_sheet", False):
+                last5_cs += 1
+        player.scope_points_last5 = last5_points
+        player.scope_goals_last5 = last5_goals
+        player.scope_assists_last5 = last5_assists
+        player.scope_saves_last5 = last5_saves
+        player.scope_clean_sheets_last5 = last5_cs
+        player.scope_matches_last5 = len(recent)
 
     resp = templates.TemplateResponse(
         request=request,
@@ -208,6 +248,32 @@ def read_matches(
     set_csrf_cookie(resp, token)
     return resp
 
+
+@router.get("/l/{slug}/stats")
+def read_league_stats(
+    request: Request,
+    slug: str = Path(..., pattern=SLUG_PATTERN),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    analytics_service: IAnalyticsService = Depends(get_analytics_service),
+):
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_league_redirect(request, slug, league.slug)
+
+    stats = analytics_service.get_league_stats(league.id)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="league_stats.html",
+        context={
+            "league": league,
+            "stats": stats,
+            "is_admin": check_admin_status(slug, request),
+        },
+    )
+
 @router.get("/l/{slug}/cup")
 def read_cup(
     request: Request,
@@ -222,11 +288,19 @@ def read_cup(
         return _canonical_league_redirect(request, slug, league.slug)
         
     matchups = cup_repo.get_all_for_league(league.id)
+    # Group matchups by bracket_type then round_name for easier bracket rendering
+    grouped = {"outfield": {}, "goalkeeper": {}}
+    for m in matchups:
+        bt = getattr(m, "bracket_type", "outfield") or "outfield"
+        round_name = m.round_name or "مباريات"
+        bucket = grouped.setdefault(bt, {})
+        bucket.setdefault(round_name, []).append(m)
+
     is_admin = check_admin_status(slug, request)
     return templates.TemplateResponse(
         request=request,
         name="cup.html",
-        context={"league": league, "matchups": matchups, "is_admin": is_admin}
+        context={"league": league, "matchups": matchups, "grouped_matchups": grouped, "is_admin": is_admin}
     )
 
 @router.get("/l/{slug}/player/{player_id}")
@@ -266,9 +340,14 @@ def read_player(
     
     # Fetch transfers
     transfers = transfer_repo.get_all_for_player(player_id)
+
+    # Other players for H2H comparison
+    all_players = player_repo.get_leaderboard(league.id)
+    other_players = [p for p in all_players if p.id != player_id]
         
-    # Badges are already calculated in the analytics service
+    # Badges and streaks are already calculated in the analytics service
     earned_badges = analytics.get("badges", [])
+    streaks = analytics.get("streaks", {})
         
     return templates.TemplateResponse(
         request=request,
@@ -286,9 +365,32 @@ def read_player(
             "total_matches": analytics.get("total_matches", 0),
             "win_rate": analytics.get("win_rate", 0),
             "ga_per_match": analytics.get("ga_per_match", 0),
-            "is_admin": is_admin
+            "is_admin": is_admin,
+            "other_players": other_players,
+            "streaks": streaks,
         }
     )
+
+
+@router.get("/l/{slug}/api/player/{player1_id}/vs/{player2_id}")
+def read_player_h2h(
+    request: Request,
+    slug: str = Path(..., pattern=SLUG_PATTERN),
+    player1_id: int = Path(...),
+    player2_id: int = Path(...),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    analytics_service: IAnalyticsService = Depends(get_analytics_service),
+):
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_league_redirect(request, slug, league.slug)
+
+    data = analytics_service.get_head_to_head(player1_id, player2_id, league.id)
+    if not data:
+        raise HTTPException(status_code=404, detail="Players not found in this league or same player")
+    return data
 
 @router.get("/l/{slug}/hall-of-fame")
 def read_hof(

@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from ..core.csrf import verify_csrf
 from ..core.rate_limit import limiter
 from ..schemas import schemas
-from ..dependencies import get_voting_service, get_current_admin_league, get_match_repository
+from ..dependencies import get_voting_service, get_current_admin_league, get_match_repository, get_notification_service
 from ..repositories.interfaces import IMatchRepository
-from ..services.interfaces import IVotingService
+from ..services.interfaces import IVotingService, INotificationService
 from ..models.models import League
 
 router = APIRouter(prefix="/api/voting", tags=["Voting"])
@@ -63,6 +63,7 @@ def open_voting(
     voting_service: IVotingService = Depends(get_voting_service),
     league: League = Depends(get_current_admin_league),
     match_repo: IMatchRepository = Depends(get_match_repository),
+    notification_service: INotificationService = Depends(get_notification_service),
 ):
     """
     Manually open voting for a match (starts round 1).
@@ -70,7 +71,20 @@ def open_voting(
     match = match_repo.get_by_id(match_id)
     if not match or match.league_id != league.id:
         raise HTTPException(status_code=404, detail="Match not found")
-    return voting_service.open_voting(match_id)
+    result = voting_service.open_voting(match_id)
+
+    try:
+        notification_service.notify_league(
+            league_id=league.id,
+            title="التصويت مفتوح الآن 🗳️",
+            body=f"تم فتح التصويت لمباراة {match.team_a_name} ضد {match.team_b_name}.",
+            url=f"/l/{league.slug}#voting-banner",
+        )
+    except Exception:
+        # Notifications are best-effort; don't break admin flow
+        pass
+
+    return result
 
 @router.post("/{slug}/close/{match_id}")
 def close_round(
