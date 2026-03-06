@@ -1,4 +1,20 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const matchesConfig = document.getElementById('matches-config');
+    if (matchesConfig) {
+        const config = matchesConfig.dataset;
+        window.LEAGUE_SLUG = config.slug || '';
+        const isAdmin = config.isAdmin === 'true';
+        if (isAdmin) {
+            try {
+                const matchesDataElement = document.getElementById('matches-data-json');
+                window.MATCHES_DATA = matchesDataElement ? JSON.parse(matchesDataElement.textContent) : {};
+            } catch (e) {
+                console.error("Match data parsing error:", e);
+                window.MATCHES_DATA = {};
+            }
+        }
+    }
+
     function getCsrfHeader() {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         return token ? { 'X-CSRF-Token': token } : {};

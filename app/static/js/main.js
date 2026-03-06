@@ -29,6 +29,20 @@ document.addEventListener("DOMContentLoaded", function () {
             wrapper.appendChild(table);
         }
     });
+
+    const copyLeagueLinkBtn = document.getElementById("copy-league-link-btn");
+    if (copyLeagueLinkBtn) {
+        copyLeagueLinkBtn.addEventListener("click", copyLeagueLink);
+    }
+
+    const openRulesModalLink = document.getElementById("open-rules-modal-link");
+    if (openRulesModalLink) {
+        openRulesModalLink.addEventListener("click", showRulesModal);
+    }
+
+    document.querySelectorAll(".close-rules-modal-btn").forEach((btn) => {
+        btn.addEventListener("click", closeRulesModal);
+    });
 });
 
 // Global UI functions

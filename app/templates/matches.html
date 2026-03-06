@@ -414,24 +414,5 @@
 {% endif %}
 
 <div id="matches-config" data-slug="{{ league.slug }}" data-is-admin="{{ is_admin | tojson }}"></div>
-<script>
-    (function () {
-        const config = document.getElementById('matches-config').dataset;
-        window.LEAGUE_SLUG = config.slug;
-        const isAdmin = config.isAdmin === 'true';
-
-        if (isAdmin) {
-            try {
-                const matchesDataElement = document.getElementById('matches-data-json');
-                if (matchesDataElement) {
-                    window.MATCHES_DATA = JSON.parse(matchesDataElement.textContent);
-                }
-            } catch (e) {
-                console.error("Match data parsing error:", e);
-                window.MATCHES_DATA = {};
-            }
-        }
-    })();
-</script>
 <script src="/static/js/matches.js"></script>
 {% endblock %}

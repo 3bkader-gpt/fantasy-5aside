@@ -37,6 +37,24 @@ function getCsrfHeader() {
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
+    const leagueData = document.getElementById('league-data');
+    if (leagueData) {
+        const data = leagueData.dataset;
+        window.LEAGUE_SLUG = data.slug || '';
+        try {
+            window.LEAGUE_PLAYERS = JSON.parse(data.playersJson || '[]');
+        } catch (e) {
+            window.LEAGUE_PLAYERS = [];
+        }
+        try {
+            window.LEAGUE_TEAMS = JSON.parse(data.teamsJson || '[]');
+        } catch (e) {
+            window.LEAGUE_TEAMS = [];
+        }
+        window.TEAM_A_LABEL = data.teamALabel || 'فريق أ';
+        window.TEAM_B_LABEL = data.teamBLabel || 'فريق ب';
+    }
+
     const teamABody = document.getElementById('team-a-body');
     const teamBBody = document.getElementById('team-b-body');
     const template = document.getElementById('player-row-template');
@@ -46,6 +64,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const teamBNameInput = document.getElementById('team_b_name');
     const startNewMatchBtn = document.getElementById('start-new-match-btn');
     const matchFormCard = document.getElementById('match-form-card');
+    const toggleAssignBtn = document.getElementById('toggle-player-assign');
+    const playerAssignPanel = document.getElementById('player-assign-panel');
+    const playerSearchInput = document.getElementById('player-search-input');
+
+    function filterPlayerList(query) {
+        const items = document.querySelectorAll('.player-assign-item');
+        const normalized = (query || '').trim().toLowerCase();
+        items.forEach(function (label) {
+            const name = label.querySelector('span').textContent.trim().toLowerCase();
+            label.style.display = name.includes(normalized) ? '' : 'none';
+        });
+    }
+
+    if (toggleAssignBtn && playerAssignPanel) {
+        toggleAssignBtn.addEventListener('click', function () {
+            playerAssignPanel.style.display = playerAssignPanel.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+
+    if (playerSearchInput) {
+        playerSearchInput.addEventListener('input', function () {
+            filterPlayerList(this.value);
+        });
+    }
 
     // Function to add a new row
     function addPlayerRow(targetBody, player = null) {
@@ -538,16 +580,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // ─── Team Creation: Player Assignment Helpers ──────────────────────────────
-
-function filterPlayerList(query) {
-    const items = document.querySelectorAll('.player-assign-item');
-    const normalized = query.trim().toLowerCase();
-    items.forEach(function (label) {
-        const name = label.querySelector('span').textContent.trim().toLowerCase();
-        label.style.display = name.includes(normalized) ? '' : 'none';
-    });
-}
-
 // Update selected count when checkboxes change
 document.addEventListener('change', function (e) {
     if (e.target && e.target.name === 'player_ids') {

@@ -29,8 +29,7 @@
         <div class="banner-card banner-info pulse-animation" id="voting-banner">
             🗳️ التصويت لماتش {{ active_voting_match.date.strftime('%Y-%m-%d') }} مفتوح الآن! (الجولة {{
             active_voting_match.voting_round }})
-            <button class="btn btn-sm btn-light ms-2" data-match-id="{{ active_voting_match.id }}"
-                onclick="openVotingModal(this.dataset.matchId)">
+            <button class="btn btn-sm btn-light ms-2 open-voting-modal-btn" data-match-id="{{ active_voting_match.id }}">
                 صوّت الآن
             </button>
         </div>
@@ -46,8 +45,7 @@
                 <p>من أنت؟ (اختر اسمك للتصويت)</p>
                 <div class="player-grid" id="voter-list">
                     {% for player in players %}
-                    <div class="player-card mini-card" data-id="{{ player.id }}" data-name="{{ player.name }}"
-                        onclick="selectVoter(parseInt(this.dataset.id), this.dataset.name)">
+                    <div class="player-card mini-card" data-id="{{ player.id }}" data-name="{{ player.name }}">
                         {{ player.name }}
                     </div>
                     {% endfor %}
@@ -57,8 +55,7 @@
                 <p>من هو أفضل لاعب في الماتش؟ (لا يمكنك اختيار نفسك أو فائز سابق)</p>
                 <div class="player-grid" id="candidate-list">
                     {% for player in players %}
-                    <div class="player-card mini-card candidate-card" data-id="{{ player.id }}"
-                        onclick="selectCandidate(parseInt(this.dataset.id))">
+                    <div class="player-card mini-card candidate-card" data-id="{{ player.id }}">
                         {{ player.name }}
                     </div>
                     {% endfor %}
@@ -83,8 +80,8 @@
                 </div>
             </div>
             <div class="modal-actions mt-2">
-                <button class="btn btn-secondary" onclick="closeVotingModal()">إغلاق</button>
-                <button class="btn btn-primary" id="submit-vote-btn" style="display: none;" onclick="submitVote()">إرسال
+                <button class="btn btn-secondary" id="close-voting-modal-btn">إغلاق</button>
+                <button class="btn btn-primary" id="submit-vote-btn" style="display: none;">إرسال
                     التصويت 🚀</button>
             </div>
         </div>
@@ -211,275 +208,5 @@
 </div> <!-- End capture-area -->
 
 <script src="/static/js/leaderboard.js"></script>
-<script>
-    (function () {
-        const config = document.getElementById('voting-config').dataset;
-        window.isMatchActive = config.active === 'true';
-        window.currentMatchId = config.matchId !== 'null' ? parseInt(config.matchId) : null;
-        window.currentRound = parseInt(config.round) || 0;
-    })();
-
-    let currentVoterId = null;
-    let currentCandidateId = null;
-    let livePollingInterval = null;
-
-    async function generateFingerprint() {
-        const components = [
-            screen.width, screen.height, screen.colorDepth,
-            navigator.language,
-            Intl.DateTimeFormat().resolvedOptions().timeZone,
-            navigator.userAgent,
-            navigator.hardwareConcurrency || '',
-            navigator.platform || ''
-        ];
-        try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.textBaseline = 'top';
-            ctx.font = '14px Arial';
-            ctx.fillText('fp_probe', 2, 2);
-            components.push(canvas.toDataURL().slice(-50));
-        } catch (e) { }
-        const raw = components.join('|');
-        const encoded = new TextEncoder().encode(raw);
-        const hashBuf = await crypto.subtle.digest('SHA-256', encoded);
-        return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    function _voteStorageKey() {
-        return `voted_${currentMatchId}_${currentRound}`;
-    }
-
-    function startLivePolling() {
-        if (!window.currentMatchId) return;
-        const liveSection = document.getElementById('voting-live-results');
-        const liveBody = document.getElementById('voting-live-body');
-        const liveMeta = document.getElementById('voting-live-meta');
-        if (!liveSection || !liveBody || !liveMeta) return;
-
-        liveSection.style.display = 'block';
-
-        const fetchLive = async () => {
-            try {
-                const res = await fetch(`/api/voting/match/${window.currentMatchId}/live`);
-                if (!res.ok) {
-                    if (res.status === 404) {
-                        liveSection.style.display = 'none';
-                    }
-                    return;
-                }
-                const data = await res.json();
-                const totalVotes = data.total_votes || 0;
-                const isClosed = !data.is_open;
-                const rows = Array.isArray(data.candidates) ? data.candidates : [];
-
-                if (totalVotes === 0) {
-                    liveMeta.textContent = 'لا توجد أصوات حتى الآن. كن أول من يصوّت!';
-                    liveBody.innerHTML = '';
-                } else {
-                    liveMeta.textContent = `إجمالي الأصوات: ${totalVotes}`;
-                    liveBody.innerHTML = '';
-                    const maxVotes = rows.reduce((max, row) => Math.max(max, row.votes || 0), 0);
-                    rows.forEach((row) => {
-                        const percent = typeof row.percent === 'number'
-                            ? row.percent.toFixed(1)
-                            : (totalVotes > 0 ? ((row.votes / totalVotes) * 100).toFixed(1) : '0.0');
-                        const tr = document.createElement('tr');
-                        if (maxVotes > 0 && row.votes === maxVotes) {
-                            tr.classList.add('highlight-row');
-                        }
-                        const nameCell = document.createElement('td');
-                        nameCell.textContent = row.name;
-                        const votesCell = document.createElement('td');
-                        votesCell.textContent = String(row.votes);
-                        const percentCell = document.createElement('td');
-                        percentCell.textContent = `${percent}%`;
-                        tr.appendChild(nameCell);
-                        tr.appendChild(votesCell);
-                        tr.appendChild(percentCell);
-                        liveBody.appendChild(tr);
-                    });
-                }
-
-                if (isClosed) {
-                    if (livePollingInterval) {
-                        clearInterval(livePollingInterval);
-                        livePollingInterval = null;
-                    }
-                    liveMeta.textContent += ' · تم إغلاق التصويت لهذه المباراة.';
-                }
-            } catch (e) {
-                console.error('Error fetching live voting results', e);
-            }
-        };
-
-        // Fetch immediately then poll every 5s
-        fetchLive();
-        if (livePollingInterval) {
-            clearInterval(livePollingInterval);
-        }
-        livePollingInterval = setInterval(fetchLive, 5000);
-    }
-
-    function stopLivePolling() {
-        if (livePollingInterval) {
-            clearInterval(livePollingInterval);
-            livePollingInterval = null;
-        }
-    }
-
-    function openVotingModal(matchId) {
-        // نتأكد إن عندنا matchId صالح حتى لو الـ dataset راجعة undefined
-        const effectiveMatchId = matchId ?? window.currentMatchId;
-        if (!effectiveMatchId) {
-            console.error('openVotingModal called without a valid matchId', {
-                matchId,
-                currentMatchId: window.currentMatchId,
-                currentRound
-            });
-            if (typeof showToast !== 'undefined') {
-                showToast('في مشكلة في تحديد رقم الماتش للتصويت. رجاءً حدّث الصفحة وحاول تاني.', 'error');
-            } else {
-                alert('في مشكلة في تحديد رقم الماتش للتصويت. رجاءً حدّث الصفحة وحاول تاني.');
-            }
-            return;
-        }
-
-        currentMatchId = parseInt(effectiveMatchId);
-        try {
-            const key = _voteStorageKey();
-            const existingVote = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : null;
-
-            if (existingVote) {
-                // لو في تصويت مخزَّن في localStorage، نعرض رسالة بس
-                // وما نمنعش فتح المودال، الاعتماد الأساسي على فحص الـ Backend (IP + fingerprint)
-                if (typeof showToast !== 'undefined') {
-                    showToast('يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.', 'error');
-                } else {
-                    alert('يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.');
-                }
-            }
-        } catch (e) {
-            console.error('localStorage voting check failed:', e);
-            // لو في مشكلة في localStorage، نسمح بالتصويت بدل ما نوقف الـ UI بالكامل
-        }
-        const modal = document.getElementById('voting-modal');
-        if (modal) {
-            // أظهر المودال وفعّل الـ overlay (opacity + pointer-events) عن طريق الكلاس active
-            modal.style.display = 'flex';
-            modal.classList.add('active');
-            resetVotingSteps();
-            startLivePolling();
-        }
-    }
-
-    function closeVotingModal() {
-        const modal = document.getElementById('voting-modal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.remove('active');
-        }
-        stopLivePolling();
-    }
-
-    function selectVoter(id, name) {
-        currentVoterId = id;
-        // Visual feedback
-        document.querySelectorAll('#voter-list .player-card').forEach(c => c.classList.remove('selected'));
-        event.currentTarget.classList.add('selected');
-
-        // Go to next step
-        document.getElementById('voting-step-1').style.display = 'none';
-        document.getElementById('voting-step-2').style.display = 'block';
-
-        // Filter candidates (can't vote for self)
-        document.querySelectorAll('.candidate-card').forEach(card => {
-            if (parseInt(card.getAttribute('data-id')) === id) {
-                card.style.display = 'none';
-            } else {
-                card.style.display = 'flex';
-            }
-        });
-    }
-
-    function selectCandidate(id) {
-        currentCandidateId = id;
-        document.querySelectorAll('#candidate-list .player-card').forEach(c => c.classList.remove('selected'));
-        event.currentTarget.classList.add('selected');
-        document.getElementById('submit-vote-btn').style.display = 'inline-block';
-    }
-
-    function resetVotingSteps() {
-        currentVoterId = null;
-        currentCandidateId = null;
-        document.getElementById('voting-step-1').style.display = 'block';
-        document.getElementById('voting-step-2').style.display = 'none';
-        document.getElementById('submit-vote-btn').style.display = 'none';
-        document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-    }
-
-    async function submitVote() {
-        if (!currentVoterId || !currentCandidateId || !currentMatchId) return;
-
-        const btn = document.getElementById('submit-vote-btn');
-        btn.disabled = true;
-        btn.innerHTML = 'جاري الإرسال... ⏳';
-
-        try {
-            const fp = await generateFingerprint();
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const response = await fetch('/api/voting/vote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-                body: JSON.stringify({
-                    match_id: currentMatchId,
-                    round_number: currentRound,
-                    voter_id: currentVoterId,
-                    candidate_id: currentCandidateId,
-                    device_fingerprint: fp
-                })
-            });
-
-            const result = await response.json();
-            if (response.ok) {
-                localStorage.setItem(_voteStorageKey(), '1');
-                if (typeof showToast !== 'undefined') {
-                    showToast('تم تسجيل تصويتك بنجاح!', 'success');
-                } else {
-                    alert('تم تسجيل تصويتك بنجاح!');
-                }
-                // لا نغلق المودال فوراً حتى يرى المستخدم التحديث المباشر
-                startLivePolling();
-            } else {
-                if (typeof showToast !== 'undefined') {
-                    showToast(result.detail || 'حدث خطأ.', 'error');
-                } else {
-                    alert(result.detail || 'حدث خطأ.');
-                }
-                btn.disabled = false;
-                btn.innerHTML = 'إرسال التصويت 🚀';
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            if (typeof showToast !== 'undefined') {
-                showToast('حدث خطأ في الاتصال.', 'error');
-            }
-            btn.disabled = false;
-            btn.innerHTML = 'إرسال التصويت 🚀';
-        }
-    }
-
-    // ربط زر التصويت في البانر بشكل إضافي احتياطي
-    document.addEventListener('DOMContentLoaded', function () {
-        const bannerButton = document.querySelector('#voting-banner button[data-match-id]');
-
-        if (bannerButton) {
-            bannerButton.addEventListener('click', function (e) {
-                e.preventDefault();
-                const id = bannerButton.dataset.matchId || window.currentMatchId;
-                openVotingModal(id);
-            });
-        }
-    });
-</script>
+<script src="/static/js/leaderboard_voting.js"></script>
 {% endblock %}

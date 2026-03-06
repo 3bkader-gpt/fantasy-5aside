@@ -314,8 +314,7 @@
                         style="height: 42px; padding: 2px 4px; cursor: pointer;">
                 </div>
                 <button type="button" id="toggle-player-assign" class="btn"
-                    style="background: var(--hover-bg); color: var(--text-color); height: 42px; white-space: nowrap; font-size: 0.85rem;"
-                    onclick="document.getElementById('player-assign-panel').style.display = document.getElementById('player-assign-panel').style.display === 'none' ? 'block' : 'none'">
+                    style="background: var(--hover-bg); color: var(--text-color); height: 42px; white-space: nowrap; font-size: 0.85rem;">
                     👥 تعيين لاعبين
                 </button>
                 <button type="submit" class="btn"
@@ -343,7 +342,7 @@
                 {% if unassigned %}
                 <!-- Search box -->
                 <input type="text" id="player-search-input" class="form-control" placeholder="ابحث عن لاعب..."
-                    style="margin-bottom: 8px; font-size: 0.85rem;" oninput="filterPlayerList(this.value)">
+                    style="margin-bottom: 8px; font-size: 0.85rem;">
                 <div id="player-assign-list"
                     style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; max-height: 220px; overflow-y: auto;">
                     {% for player in unassigned %}
@@ -571,16 +570,6 @@
     data-team-b-label="{{ league.team_b_label or 'فريق ب' }}">
 </div>
 
-<script>
-    (function () {
-        const leagueData = document.getElementById('league-data').dataset;
-        window.LEAGUE_SLUG = leagueData.slug;
-        window.LEAGUE_PLAYERS = JSON.parse(leagueData.playersJson);
-        window.LEAGUE_TEAMS = JSON.parse(leagueData.teamsJson || '[]');
-        window.TEAM_A_LABEL = leagueData.teamALabel || 'فريق أ';
-        window.TEAM_B_LABEL = leagueData.teamBLabel || 'فريق ب';
-    })();
-</script>
 <script src="/static/js/admin_dashboard.js"></script>
 {% else %}
 <div class="alert alert-danger text-center" style="margin-top: 5rem; padding: 3rem;">
