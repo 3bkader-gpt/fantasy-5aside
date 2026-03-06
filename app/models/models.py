@@ -210,3 +210,22 @@ class Vote(Base):
     match = relationship("Match", back_populates="votes")
     voter = relationship("Player", foreign_keys=[voter_id])
     candidate = relationship("Player", foreign_keys=[candidate_id])
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_log"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    action = Column(String(64), nullable=False)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False)
+    actor = Column(String(128), nullable=True)  # e.g. league slug from JWT
+    details = Column(Text, nullable=True)  # JSON string, no passwords/tokens
+
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    jti = Column(String(64), nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import List, Optional
+from typing import List, Literal, Optional
 from datetime import datetime
 
 # --- Team Schemas ---
@@ -87,7 +87,7 @@ class PlayerResponse(PlayerBase):
 # --- MatchStat Schemas ---
 class MatchStatBase(BaseModel):
     player_name: str
-    team: str
+    team: Literal["A", "B"]
     goals: int = Field(default=0, ge=0)
     assists: int = Field(default=0, ge=0)
     saves: int = Field(default=0, ge=0)
@@ -137,6 +137,8 @@ class MatchCreate(MatchBase):
 
 class MatchEditRequest(MatchBase):
     stats: List[MatchStatCreate] = []
+    team_a_id: Optional[int] = None
+    team_b_id: Optional[int] = None
 
 class MatchResponse(MatchBase):
     id: int

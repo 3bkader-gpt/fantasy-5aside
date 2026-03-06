@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from ..core.csrf import verify_csrf
+from ..core.rate_limit import limiter
 from ..schemas import schemas
 from ..dependencies import get_voting_service, get_current_admin_league, get_match_repository
 from ..repositories.interfaces import IMatchRepository
@@ -39,9 +41,11 @@ def get_live_voting_stats(
     return voting_service.get_live_stats(match_id)
 
 @router.post("/vote", response_model=schemas.VoteResponse)
+@limiter.limit("20/minute")
 def submit_vote(
-    vote_in: schemas.VoteCreate,
     request: Request,
+    vote_in: schemas.VoteCreate,
+    _csrf: None = Depends(verify_csrf),
     voting_service: IVotingService = Depends(get_voting_service)
 ):
     """
@@ -52,8 +56,10 @@ def submit_vote(
 
 @router.post("/{slug}/open/{match_id}")
 def open_voting(
+    request: Request,
     slug: str,
     match_id: int,
+    _csrf: None = Depends(verify_csrf),
     voting_service: IVotingService = Depends(get_voting_service),
     league: League = Depends(get_current_admin_league),
     match_repo: IMatchRepository = Depends(get_match_repository),
@@ -68,8 +74,10 @@ def open_voting(
 
 @router.post("/{slug}/close/{match_id}")
 def close_round(
+    request: Request,
     slug: str,
     match_id: int,
+    _csrf: None = Depends(verify_csrf),
     voting_service: IVotingService = Depends(get_voting_service),
     league: League = Depends(get_current_admin_league),
     match_repo: IMatchRepository = Depends(get_match_repository),

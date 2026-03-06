@@ -44,14 +44,14 @@
                 {% endif %}
             </div>
 
-            <div class="player player2 text-center {% if not matchup.is_active and matchup.winner_id != matchup.player2_id %}loser{% endif %}"
+            <div class="player player2 text-center {% if matchup.player2_id and not matchup.is_active and matchup.winner_id != matchup.player2_id %}loser{% endif %}"
                 style="flex: 1;">
                 <div class="player-name {% if matchup.winner_id == matchup.player2_id %}text-success{% endif %}"
                     style="font-weight: bold; font-size: 1.2rem;">
                     {% if matchup.winner_id == matchup.player2_id %} 🏆 {% endif %}
-                    {{ matchup.player2.name }}
+                    {% if matchup.player2 %}{{ matchup.player2.name }}{% else %}إعفاء{% endif %}
                 </div>
-                <div class="text-secondary" style="font-size: 0.9rem;">إجمالي النقاط: {{ matchup.player2.total_points }}
+                <div class="text-secondary" style="font-size: 0.9rem;">{% if matchup.player2 %}إجمالي النقاط: {{ matchup.player2.total_points }}{% else %}—{% endif %}
                 </div>
             </div>
         </div>

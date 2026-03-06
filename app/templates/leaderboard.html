@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+<meta name="csrf-token" content="{{ csrf_token }}">
 <h1>🏆 ترتيب دوري الأبطال</h1>
 
 <div class="text-center mb-1">
@@ -20,7 +21,7 @@
 
         {% if next_cup %}
         <div class="banner-card banner-danger">
-            🏆 موعد الكأس القادم: {{ next_cup.player1.name }} 🆚 {{ next_cup.player2.name }} 🏆
+            🏆 موعد الكأس القادم: {{ next_cup.player1.name }} 🆚 {% if next_cup.player2 %}{{ next_cup.player2.name }}{% else %}إعفاء{% endif %} 🏆
         </div>
         {% endif %}
 
@@ -301,9 +302,10 @@
 
         try {
             const fp = await generateFingerprint();
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const response = await fetch('/api/voting/vote', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
                 body: JSON.stringify({
                     match_id: currentMatchId,
                     round_number: currentRound,

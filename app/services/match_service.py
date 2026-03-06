@@ -230,6 +230,10 @@ class MatchService(IMatchService):
         match.team_b_name = update_data.team_b_name
         match.team_a_score = team_a_score
         match.team_b_score = team_b_score
+        if getattr(update_data, "team_a_id", None) is not None:
+            match.team_a_id = update_data.team_a_id
+        if getattr(update_data, "team_b_id", None) is not None:
+            match.team_b_id = update_data.team_b_id
 
         # Phase 1: Collect base stats
         team_a_base = []

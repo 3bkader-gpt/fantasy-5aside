@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+<meta name="csrf-token" content="{{ csrf_token }}">
 <div class="matches-container">
     <h1 class="text-center mb-2">سجل المباريات</h1>
 
@@ -221,12 +222,11 @@
                                     <th style="min-width: 100px;">اللاعب</th>
                                     <th>⚽ أهداف</th>
                                     <th>👟 أسيست</th>
+                                    <th>🤡 عكسية</th>
                                     <th>🧤 حارس؟</th>
                                     <th>✋ تصديات</th>
                                     <th>🛡️ CS</th>
-                                    <th>🛡️ DF</th>
-                                    <th>⭐ MVP</th>
-                                    <th>©️ كابتن</th>
+                                    <th>🛡️ مس.دف</th>
                                     <th>حذف/تبديل</th>
                                 </tr>
                             </thead>
@@ -249,12 +249,11 @@
                                     <th style="min-width: 100px;">اللاعب</th>
                                     <th>⚽ أهداف</th>
                                     <th>👟 أسيست</th>
+                                    <th>🤡 عكسية</th>
                                     <th>🧤 حارس؟</th>
                                     <th>✋ تصديات</th>
                                     <th>🛡️ CS</th>
-                                    <th>🛡️ DF</th>
-                                    <th>⭐ MVP</th>
-                                    <th>©️ كابتن</th>
+                                    <th>🛡️ مس.دف</th>
                                     <th>حذف/تبديل</th>
                                 </tr>
                             </thead>
@@ -280,6 +279,8 @@
                 style="min-width: 40px; padding: 5px;"></td>
         <td data-label="أسيست"><input type="number" class="assists-input form-control" value="0" min="0"
                 style="min-width: 40px; padding: 5px;"></td>
+        <td data-label="أهداف عكسية"><input type="number" class="own-goals-input form-control" value="0" min="0"
+                style="min-width: 40px; padding: 5px;"></td>
         <td data-label="حارس؟"><input type="checkbox" class="is-gk-check"></td>
         <td data-label="تصديات"><input type="number" class="saves-input form-control" value="0" min="0" disabled
                 style="min-width: 40px; padding: 5px; opacity: 0.5;"></td>
@@ -299,15 +300,16 @@
 {
     {% for match in matches %}
     "{{ match.id }}": {
-        "team_a_name": "{{ match.team_a_name }}",
-        "team_b_name": "{{ match.team_b_name }}",
+        "team_a_name": {{ match.team_a_name | tojson }},
+        "team_b_name": {{ match.team_b_name | tojson }},
         "stats": [
             {% for stat in match.stats %}
             {
-                "player_name": "{{ stat.player.name }}",
-                "team": "{{ stat.team }}",
+                "player_name": {{ stat.player.name | tojson }},
+                "team": {{ stat.team | tojson }},
                 "goals": {{ stat.goals or 0 }},
                 "assists": {{ stat.assists or 0 }},
+                "own_goals": {{ stat.own_goals or 0 }},
                 "saves": {{ stat.saves or 0 }},
                 "goals_conceded": {{ stat.goals_conceded or 0 }},
                 "is_gk": {{ 'true' if stat.is_gk else 'false' }},

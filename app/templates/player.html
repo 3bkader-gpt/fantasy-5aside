@@ -120,12 +120,13 @@
                 data-points="{{ chart_data|join(',') }}" data-point-colors="{{ point_colors|join(',') }}"
                 data-goals="{% for stat in history|reverse %}{{ stat.goals }}{% if not loop.last %},{% endif %}{% endfor %}"
                 data-assists="{% for stat in history|reverse %}{{ stat.assists }}{% if not loop.last %},{% endif %}{% endfor %}"
-                data-outcomes="{% for stat in history|reverse %}{{ 'W' if stat.is_winner else 'L' }}{% if not loop.last %},{% endif %}{% endfor %}">
+                data-outcomes="{% for stat in history|reverse %}{{ 'D' if stat.match.team_a_score == stat.match.team_b_score else ('W' if stat.is_winner else 'L') }}{% if not loop.last %},{% endif %}{% endfor %}">
             </canvas>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Pin Chart.js version for SRI; integrity from jsDelivr/cdnjs when available -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
     <script src="/static/js/player_chart.js"></script>
     {% endif %}
 
@@ -292,7 +293,7 @@
                 <tr>
                     <td data-label="تاريخ المباراة">{{ stat.match.date.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td data-label="النقاط"><strong>{{ stat.points_earned }}</strong></td>
-                    <td data-label="حالة الفوز">{% if stat.is_winner %}<span
+                    <td data-label="حالة الفوز">{% if stat.match.team_a_score == stat.match.team_b_score %}<span class="text-secondary">تعادل</span>{% elif stat.is_winner %}<span
                             style="color: var(--success-color); font-weight: bold;">فوز</span>{% else %}<span
                             class="text-secondary">خسارة</span>{% endif %}</td>
                     <td data-label="أهداف">{{ stat.goals }}</td>

@@ -2,6 +2,7 @@
 
 {% block content %}
 {% if is_admin %}
+<meta name="csrf-token" content="{{ csrf_token }}">
 
 <!-- ═══ Admin Header ═══ -->
 <div class="admin-header">
@@ -125,6 +126,7 @@
                                 <th>🧤 حارس؟</th>
                                 <th>✋ تصديات</th>
                                 <th>🛡️ CS</th>
+                                <th title="مساهمة دفاعية (مدافع يختاره الحارس)">🛡️ مس.دف</th>
                                 <th>تبديل/حذف</th>
                             </tr>
                         </thead>
@@ -153,6 +155,7 @@
                                 <th>🧤 حارس؟</th>
                                 <th>✋ تصديات</th>
                                 <th>🛡️ CS</th>
+                                <th title="مساهمة دفاعية (مدافع يختاره الحارس)">🛡️ مس.دف</th>
                                 <th>تبديل/حذف</th>
                             </tr>
                         </thead>
@@ -183,6 +186,7 @@
     <div id="add-player-card" class="card mb-4 border-right-success">
         <h3 style="color: var(--success-color);">➕ إضافة لاعب للدوري (الفرق الثابتة)</h3>
         <form action="/l/{{ league.slug }}/admin/player/add" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="form-group mb-1">
                 <input type="text" name="name" placeholder="اسم اللاعب" required class="form-control">
             </div>
@@ -228,10 +232,10 @@
                     <tr style="border-bottom: 1px solid var(--border-color);" data-team-id="{{ player.team_id or '' }}">
                         <td style="padding: 10px;">
                             <span style="font-weight: bold;">{{ player.name }}</span>
-                            {% if player.team_id %}
+                            {% if player.team_id and player.team_short_code %}
                             <span class="badge"
-                                style="--team-color: {{ player.team.color if player.team else '#888' }}; background-color: var(--team-color); color: white; margin-inline-start: 5px; font-size: 0.7rem;">
-                                {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
+                                style="--team-color: {{ player.team_color or '#888' }}; background-color: var(--team-color); color: white; margin-inline-start: 5px; font-size: 0.7rem;">
+                                {{ player.team_short_code }}
                             </span>
                             {% endif %}
                         </td>
@@ -249,6 +253,7 @@
                                 <!-- Transfer Dropdown -->
                                 <form action="/l/{{ league.slug }}/admin/player/{{ player.id }}/transfer" method="POST"
                                     style="display: flex; gap: 2px;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <select name="to_team_id" class="form-control"
                                         style="font-size: 0.8rem; height: 30px; min-width: 120px; padding: 2px 6px; border-radius: var(--radius-pill);">
                                         <option value="">-- نقل --</option>
@@ -293,6 +298,7 @@
 
         <!-- Add Team Form -->
         <form action="/l/{{ league.slug }}/admin/team/add" method="POST" style="margin-bottom: 1rem;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
                 <div class="form-group" style="flex: 2; min-width: 120px;">
                     <label style="font-size: 0.85rem; margin-bottom: 4px;">اسم الفريق</label>
@@ -378,6 +384,7 @@
                 <!-- Edit Form -->
                 <form action="/l/{{ league.slug }}/admin/team/{{ t.id }}/update" method="POST"
                     style="display: flex; gap: 6px; align-items: center;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="text" name="name" value="{{ t.name }}" class="form-control"
                         style="width: 110px; font-size: 0.85rem;">
                     <input type="text" name="short_code" value="{{ t.short_code }}" class="form-control"
@@ -421,6 +428,7 @@
     <div class="card mb-2 border-right-warning">
         <h3 style="color: var(--warning-color);">🏆 إدارة الكأس</h3>
         <form action="/l/{{ league.slug }}/admin/cup/generate" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="form-group mb-1">
                 <button type="submit" class="btn" style="background-color: var(--warning-color); color: white;">
                     إنشاء قرعة الكأس (أعلى 10 لاعبين)
@@ -457,6 +465,7 @@
             الدوريات القديمة، ويمكن تجاهلها إذا كنت تعتمد على نظام الفرق المسجلة في الأسفل.
         </p>
         <form action="/l/{{ league.slug }}/admin/settings/update" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="form-group mb-1">
                 <label>اسم الدوري الجديد (اختياري)</label>
                 <input type="text" name="name" class="form-control" placeholder="{{ league.name }}">
@@ -526,6 +535,9 @@
         </td>
         <td data-label="CS">
             <input type="checkbox" class="clean-sheet-check" disabled style="opacity: 0.5;">
+        </td>
+        <td data-label="مس.دف">
+            <input type="checkbox" class="defensive-contrib-check" title="مساهمة دفاعية (مدافع يختاره الحارس)">
         </td>
         <td data-label="الإجراء" style="white-space: nowrap;">
             <button class="swap-row-btn" title="انقل اللاعب للفريق الآخر"

@@ -1,8 +1,10 @@
 from fastapi import Depends, Request, HTTPException
 from sqlalchemy.orm import Session
 from .database import get_db
+from .services.audit_log import log_audit
 
 from .core import security
+from .core.revocation import is_revoked
 from .models import models
 
 from .repositories.interfaces import (
@@ -93,29 +95,39 @@ def get_analytics_service(
 def get_current_admin_league(
     slug: str,
     request: Request,
-    league_repo: ILeagueRepository = Depends(get_league_repository)
+    db: Session = Depends(get_db),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
 ) -> models.League:
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
-        
+
     authorization: str = request.cookies.get("access_token")
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="غير مصرح لك بالدخول، يرجى تسجيل الدخول")
-        
+
     token = authorization.split(" ")[1]
     payload = security.verify_token(token)
     if not payload:
         raise HTTPException(
-            status_code=401, 
+            status_code=401,
             detail="الجلسة انتهت أو غير صالحة، يرجى تسجيل الدخول مجدداً"
         )
-        
-    token_slug = payload.get("sub")
-    if token_slug != league.slug:
+    if is_revoked(db, payload.get("jti") or ""):
+        raise HTTPException(status_code=401, detail="تم تسجيل الخروج من هذه الجلسة، يرجى تسجيل الدخول مجدداً")
+
+    token_slug = (payload.get("sub") or "").strip().lower()
+    if token_slug != (league.slug or "").strip().lower():
         raise HTTPException(status_code=403, detail="غير مصرح لك بإدارة هذا الدوري")
-        
+
     return league
+
+def get_audit_logger(db: Session = Depends(get_db)):
+    """Dependency that returns the log_audit function bound to the current session."""
+    def audit(league_id: int, action: str, actor: str | None, details: dict | None = None):
+        return log_audit(db, league_id, action, actor, details)
+    return audit
+
 
 def check_admin_status(
     slug: str,

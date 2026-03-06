@@ -1,3 +1,4 @@
+import re
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Path
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -7,6 +8,7 @@ SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
 from ..models import models
 from ..schemas import schemas
 from ..core import security
+from ..core.csrf import generate_csrf_token, set_csrf_cookie, verify_csrf_token, CSRF_COOKIE_NAME
 from ..dependencies import (
     get_league_repository, get_player_repository, get_match_repository,
     get_hof_repository, get_cup_repository, get_analytics_service,
@@ -38,11 +40,14 @@ def read_root(
     league_repo: ILeagueRepository = Depends(get_league_repository)
 ):
     leagues = league_repo.get_all()
-    return templates.TemplateResponse(
+    token = generate_csrf_token()
+    resp = templates.TemplateResponse(
         request=request,
         name="landing.html", 
-        context={"leagues": leagues, "is_admin": False}
+        context={"leagues": leagues, "is_admin": False, "csrf_token": token}
     )
+    set_csrf_cookie(resp, token)
+    return resp
 
 @router.post("/create-league")
 def create_league(
@@ -50,27 +55,57 @@ def create_league(
     name: str = Form(...),
     slug: str = Form(...),
     admin_password: str = Form(...),
+    csrf_token: str = Form(None),
     league_repo: ILeagueRepository = Depends(get_league_repository)
 ):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        token = generate_csrf_token()
+        resp = templates.TemplateResponse(
+            request=request,
+            name="landing.html",
+            context={"error": "Invalid or missing security token. Please try again.", "leagues": league_repo.get_all(), "is_admin": False, "csrf_token": token}
+        )
+        set_csrf_cookie(resp, token)
+        return resp
     slug = slug.strip()
     name = name.strip()
-    
+
+    if not re.match(SLUG_PATTERN, slug):
+        return templates.TemplateResponse(
+            request=request,
+            name="landing.html",
+            context={"error": "رابط الدوري يجب أن يحتوي على أحرف إنجليزية وأرقام و _ أو - فقط", "leagues": league_repo.get_all(), "is_admin": False}
+        )
+
     existing_name = league_repo.get_by_name(name)
     if existing_name:
         return templates.TemplateResponse(
-            request=request, 
-            name="landing.html", 
-            context={"error": "هذا الاسم مستخدم بالفعل", "is_admin": False}
+            request=request,
+            name="landing.html",
+            context={"error": "هذا الاسم مستخدم بالفعل", "leagues": league_repo.get_all(), "is_admin": False}
         )
-        
+
     existing_slug = league_repo.get_by_slug(slug)
     if existing_slug:
         return templates.TemplateResponse(
-            request=request, 
-            name="landing.html", 
-            context={"error": "هذا الرابط مستخدم بالفعل", "is_admin": False}
+            request=request,
+            name="landing.html",
+            context={"error": "هذا الرابط مستخدم بالفعل", "leagues": league_repo.get_all(), "is_admin": False}
         )
-        
+
+    try:
+        security.validate_password_strength(admin_password)
+    except ValueError as e:
+        token = generate_csrf_token()
+        resp = templates.TemplateResponse(
+            request=request,
+            name="landing.html",
+            context={"error": str(e), "leagues": league_repo.get_all(), "is_admin": False, "csrf_token": token}
+        )
+        set_csrf_cookie(resp, token)
+        return resp
+
     hashed_password = security.get_password_hash(admin_password)
     new_league = models.League(
         name=name,
@@ -106,27 +141,48 @@ def read_leaderboard(
     next_cup = active_cups[0] if active_cups else None
     
     is_admin = check_admin_status(slug, request)
-    
+
+    # CSRF token for voting (leaderboard has vote modal)
+    token = generate_csrf_token()
+
     # Check for active voting using optimized query
     active_voting_match = match_repo.get_active_voting_match(league.id)
     
-    # Add badges to each player
+    # Add badges and form (last 5 match outcomes W/D/L) to each player
     for player in players:
         # History is preloaded via joinedload in get_leaderboard
         player.badges = achievement_service.get_earned_badges(player, player.match_stats)
-    
-    return templates.TemplateResponse(
+        # Form: last 5 matches, chronological (oldest first), same logic as analytics form_history
+        recent = sorted(
+            (s for s in (player.match_stats or []) if getattr(s, "match", None)),
+            key=lambda s: s.match.date,
+            reverse=True
+        )[:5]
+        form_chars = []
+        for stat in reversed(recent):
+            if stat.match.team_a_score == stat.match.team_b_score:
+                form_chars.append("D")
+            elif stat.is_winner:
+                form_chars.append("W")
+            else:
+                form_chars.append("L")
+        player.form = "".join(form_chars) if form_chars else ""
+
+    resp = templates.TemplateResponse(
         request=request,
-        name="leaderboard.html", 
+        name="leaderboard.html",
         context={
-            "league": league, 
-            "players": players, 
-            "latest_hof": latest_hof, 
-            "next_cup": next_cup, 
+            "league": league,
+            "players": players,
+            "latest_hof": latest_hof,
+            "next_cup": next_cup,
             "is_admin": is_admin,
-            "active_voting_match": active_voting_match
+            "active_voting_match": active_voting_match,
+            "csrf_token": token,
         }
     )
+    set_csrf_cookie(resp, token)
+    return resp
 
 @router.get("/l/{slug}/matches")
 def read_matches(
@@ -143,11 +199,14 @@ def read_matches(
         
     matches = match_repo.get_all_for_league(league.id)
     is_admin = check_admin_status(slug, request)
-    return templates.TemplateResponse(
+    token = generate_csrf_token()
+    resp = templates.TemplateResponse(
         request=request,
-        name="matches.html", 
-        context={"league": league, "matches": matches, "is_admin": is_admin}
+        name="matches.html",
+        context={"league": league, "matches": matches, "is_admin": is_admin, "csrf_token": token}
     )
+    set_csrf_cookie(resp, token)
+    return resp
 
 @router.get("/l/{slug}/cup")
 def read_cup(

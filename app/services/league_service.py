@@ -53,6 +53,7 @@ class LeagueService(ILeagueService):
             player.total_own_goals = 0
             player.total_matches = 0
             player.is_active_in_cup = False
+            player.previous_rank = 0
             self.player_repo.save(player)
 
         self.cup_repo.delete_all_for_league(league_id)

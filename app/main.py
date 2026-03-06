@@ -10,7 +10,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
+from slowapi.errors import RateLimitExceeded
+
+from .core.config import settings
+from .core.rate_limit import limiter
 from .database import Base, engine
+from .middleware.security_headers import SecurityHeadersMiddleware
 from .routers import admin, public, auth, voting
 
 # Use Uvicorn's logger so logs appear in the same output
@@ -78,6 +83,19 @@ async def lifespan(app: FastAPI):
             ("cup_matchups", "league_id", "INDEX"),
             ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL")
         ]
+
+        # Ensure audit_log and revoked_tokens tables exist (OWASP)
+        try:
+            from app.models import models as _models
+            tables = []
+            if hasattr(_models, "AuditLog"):
+                tables.append(_models.AuditLog.__table__)
+            if hasattr(_models, "RevokedToken"):
+                tables.append(_models.RevokedToken.__table__)
+            if tables:
+                Base.metadata.create_all(bind=engine, tables=tables)
+        except Exception as e:
+            logger.debug(f"Audit/revocation table ensure: {e}")
         
         for table, col_name, col_type in migrations:
             # Each column in its own transaction to prevent poisoning
@@ -102,6 +120,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="5-a-side Fantasy Football", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, lambda r, e: JSONResponse(status_code=429, content={"detail": "Too many requests. Please try again later."}))
 templates = Jinja2Templates(directory="app/templates")
 
 @app.api_route("/health", methods=["GET", "HEAD"])
@@ -149,13 +169,16 @@ async def custom_500_handler(request: Request, exc: Exception):
     # For normal pages, show HTML error template
     return templates.TemplateResponse("errors/500.html", {"request": request}, status_code=500)
 
-# CORS
+# CORS: use allowlist from config; credentials only when not wildcard
+_cors_origins = settings.cors_origins_list
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
+    allow_credentials=("*" not in _cors_origins),
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Mount Static Files
 # Ensure the directory exists to avoid errors on startup

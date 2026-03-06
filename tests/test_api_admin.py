@@ -1,6 +1,14 @@
 from app.schemas import schemas
 from app.core import security
 
+
+def _get_csrf(client, league_slug: str) -> str:
+    """GET admin dashboard to obtain CSRF cookie; return token for header/form."""
+    r = client.get(f"/l/{league_slug}/admin/")
+    assert r.status_code == 200
+    return r.cookies.get("csrf_token", "")
+
+
 class TestAdminAPI:
     def test_admin_dashboard_access(self, client, league_repo):
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l", admin_password="p"), security.get_password_hash("p"))
@@ -24,7 +32,12 @@ class TestAdminAPI:
         }
         token = security.create_access_token({"sub": l.slug})
         client.cookies.set("access_token", f"Bearer {token}")
-        response = client.post(f"/l/{l.slug}/admin/match", json=match_data)
+        csrf = _get_csrf(client, l.slug)
+        response = client.post(
+            f"/l/{l.slug}/admin/match",
+            json=match_data,
+            headers={"X-CSRF-Token": csrf}
+        )
         assert response.status_code == 200
         assert response.json()["message"] == "Match registered successfully"
 
@@ -34,19 +47,27 @@ class TestAdminAPI:
         player_repo.create("P1", l.id)
         player_repo.create("P2", l.id)
         
-        data = {}
         token = security.create_access_token({"sub": l.slug})
         client.cookies.set("access_token", f"Bearer {token}")
-        response = client.post(f"/l/{l.slug}/admin/cup/generate", data=data, follow_redirects=False)
+        csrf = _get_csrf(client, l.slug)
+        response = client.post(
+            f"/l/{l.slug}/admin/cup/generate",
+            data={"csrf_token": csrf},
+            follow_redirects=False
+        )
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"
 
     def test_end_season_api(self, client, league_repo):
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l", admin_password="p"), security.get_password_hash("p"))
-        data = {"month_name": "October 2024"}
         token = security.create_access_token({"sub": l.slug})
         client.cookies.set("access_token", f"Bearer {token}")
-        response = client.post(f"/l/{l.slug}/admin/season/end", data=data, follow_redirects=False)
+        csrf = _get_csrf(client, l.slug)
+        response = client.post(
+            f"/l/{l.slug}/admin/season/end",
+            data={"month_name": "October 2024", "csrf_token": csrf},
+            follow_redirects=False
+        )
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"
 
@@ -75,9 +96,10 @@ class TestAdminAPI:
             security.get_password_hash("p")
         )
         self._auth_client(client, l)
+        csrf = _get_csrf(client, l.slug)
         response = client.post(
             f"/l/{l.slug}/admin/team/add",
-            data={"name": "Raptors", "short_code": "RAP", "color": "#00ff00"},
+            data={"name": "Raptors", "short_code": "RAP", "color": "#00ff00", "csrf_token": csrf},
             follow_redirects=False
         )
         assert response.status_code == 303
@@ -93,12 +115,12 @@ class TestAdminAPI:
         player_repo.save(player)
 
         self._auth_client(client, l)
-        # Starlette TestClient.delete in this stack doesn't support the `json` kwarg,
-        # so we use the generic request() helper with method DELETE.
+        csrf = _get_csrf(client, l.slug)
         response = client.request(
             "DELETE",
             f"/l/{l.slug}/admin/team/{team.id}",
-            json={}
+            json={},
+            headers={"X-CSRF-Token": csrf}
         )
         assert response.status_code == 400
 
@@ -111,8 +133,13 @@ class TestAdminAPI:
         team_repo.create(l.id, "Only Team", None, None)
 
         self._auth_client(client, l)
+        csrf = _get_csrf(client, l.slug)
         match_data = {"team_a_name": "A", "team_b_name": "B", "stats": []}
-        response = client.post(f"/l/{l.slug}/admin/match", json=match_data)
+        response = client.post(
+            f"/l/{l.slug}/admin/match",
+            json=match_data,
+            headers={"X-CSRF-Token": csrf}
+        )
         assert response.status_code == 422
 
     def test_create_match_with_team_ids(self, client, league_repo, team_repo):
@@ -124,6 +151,7 @@ class TestAdminAPI:
         tb = team_repo.create(l.id, "Zeus", "ZSS", None)
 
         self._auth_client(client, l)
+        csrf = _get_csrf(client, l.slug)
         match_data = {
             "team_a_name": "Apollo",
             "team_b_name": "Zeus",
@@ -131,5 +159,9 @@ class TestAdminAPI:
             "team_b_id": tb.id,
             "stats": []
         }
-        response = client.post(f"/l/{l.slug}/admin/match", json=match_data)
+        response = client.post(
+            f"/l/{l.slug}/admin/match",
+            json=match_data,
+            headers={"X-CSRF-Token": csrf}
+        )
         assert response.status_code == 200

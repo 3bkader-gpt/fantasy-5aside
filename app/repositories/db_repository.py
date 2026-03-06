@@ -107,7 +107,12 @@ class PlayerRepository(IPlayerRepository):
     def get_by_name(self, league_id: int, name: str) -> Optional[models.Player]:
         return self.db.query(models.Player).filter(models.Player.name == name, models.Player.league_id == league_id).first()
     def get_all_for_league(self, league_id: int) -> List[models.Player]:
-        return self.db.query(models.Player).filter(models.Player.league_id == league_id).all()
+        return (
+            self.db.query(models.Player)
+            .options(joinedload(models.Player.team))
+            .filter(models.Player.league_id == league_id)
+            .all()
+        )
     def create(self, name: str, league_id: int) -> models.Player:
         player = models.Player(name=name, league_id=league_id)
         self.db.add(player)

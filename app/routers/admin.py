@@ -1,16 +1,21 @@
 import json
+import re
 from fastapi import APIRouter, Depends, Request, HTTPException, Form, Response
+
+SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
 from fastapi.responses import RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
 from ..schemas import schemas
 from ..models import models
 from ..core import security
+from ..core.csrf import generate_csrf_token, set_csrf_cookie, verify_csrf_token, verify_csrf, CSRF_COOKIE_NAME
 from ..dependencies import (
     get_league_service, get_cup_service, get_match_service,
     get_league_repository, get_player_repository, get_match_repository,
     get_team_repository, get_transfer_repository, get_voting_service,
     get_current_admin_league,
+    get_audit_logger,
     ILeagueService, ICupService, IMatchService,
     ILeagueRepository, IPlayerRepository, IMatchRepository,
     ITeamRepository, ITransferRepository,
@@ -45,7 +50,18 @@ def admin_dashboard(
         return _canonical_admin_redirect(request, slug, league.slug)
         
     players_raw = player_repo.get_all_for_league(league.id)
-    players = [schemas.PlayerResponse.model_validate(p).model_dump() for p in players_raw]
+    players = []
+    for p in players_raw:
+        d = schemas.PlayerResponse.model_validate(p).model_dump()
+        if p.team:
+            d["team_name"] = p.team.name
+            d["team_short_code"] = (p.team.short_code or p.team.name[:2]) if p.team.name else "??"
+            d["team_color"] = p.team.color or "#888"
+        else:
+            d["team_name"] = None
+            d["team_short_code"] = None
+            d["team_color"] = "#888"
+        players.append(d)
     teams_raw = team_repo.get_all_for_league(league.id)
     teams = [
         {
@@ -56,8 +72,8 @@ def admin_dashboard(
         for t in teams_raw
     ]
     active_voting_match = match_repo.get_active_voting_match(league.id)
-
-    return templates.TemplateResponse(
+    token = generate_csrf_token()
+    resp = templates.TemplateResponse(
         request=request,
         name="admin/dashboard.html", 
         context={
@@ -66,32 +82,41 @@ def admin_dashboard(
             "teams": teams,
             "is_admin": True,
             "active_voting_match": active_voting_match,
+            "csrf_token": token,
         }
     )
+    set_csrf_cookie(resp, token)
+    return resp
 
 @router.post("/match")
 def create_match(
-    match_data: schemas.MatchCreate, 
+    request: Request,
+    match_data: schemas.MatchCreate,
+    _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
     match_service: IMatchService = Depends(get_match_service),
     league_service: ILeagueService = Depends(get_league_service),
-    league_repo: ILeagueRepository = Depends(get_league_repository)
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    audit=Depends(get_audit_logger),
 ):
-        
     try:
         match = match_service.register_match(league.id, match_data)
-        
+
         season_ended = False
         league.current_season_matches += 1
         if league.current_season_matches >= 4:
             month_name = f"الموسم {league.season_number}"
-            league_service.end_current_season(league.id, month_name)
-            league.current_season_matches = 0
-            league.season_number += 1
+            league_service.end_current_season(league.id, month_name, season_matches_count=league.current_season_matches)
             season_ended = True
-            
-        league_repo.save(league)
-            
+            league = league_repo.get_by_id(league.id)
+            if league:
+                league.current_season_matches = 0
+                league.season_number = (league.season_number or 1) + 1
+                league_repo.save(league)
+        else:
+            league_repo.save(league)
+
+        audit(league.id, "create_match", league.slug, {"match_id": match.id})
         return {"message": "Match registered successfully", "match_id": match.id, "season_ended": season_ended}
     except HTTPException as e:
         raise e
@@ -100,22 +125,35 @@ def create_match(
 
 @router.post("/cup/generate")
 def generate_cup(
+    request: Request,
+    csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
-    cup_service: ICupService = Depends(get_cup_service)
+    cup_service: ICupService = Depends(get_cup_service),
+    audit=Depends(get_audit_logger),
 ):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
         
     success = cup_service.generate_cup_draw(league.id)
     if not success:
         raise HTTPException(status_code=400, detail="Not enough players to generate cup in this league")
+    audit(league.id, "generate_cup", league.slug, {})
     return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
 
 @router.post("/season/end")
 def end_season(
+    request: Request,
     month_name: str = Form(...),
+    csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
     league_service: ILeagueService = Depends(get_league_service),
     league_repo: ILeagueRepository = Depends(get_league_repository),
+    audit=Depends(get_audit_logger),
 ):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
     try:
         league_service.end_current_season(league.id, month_name, season_matches_count=league.current_season_matches)
         updated = league_repo.get_by_id(league.id)
@@ -123,34 +161,51 @@ def end_season(
             updated.current_season_matches = 0
             updated.season_number += 1
             league_repo.save(updated)
+        audit(league.id, "end_season", league.slug, {"month_name": month_name})
         return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/season/undo")
 def undo_end_season(
+    request: Request,
+    csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
-    league_service: ILeagueService = Depends(get_league_service)
+    league_service: ILeagueService = Depends(get_league_service),
+    audit=Depends(get_audit_logger),
 ):
-        
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
     try:
         league_service.undo_end_season(league.id)
+        audit(league.id, "undo_season", league.slug, {})
         return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/settings/update")
 def update_league_settings(
-    name: str = Form(None), 
-    new_slug: str = Form(None), 
+    request: Request,
+    name: str = Form(None),
+    new_slug: str = Form(None),
     new_password: str = Form(None),
     team_a_label: str = Form(None),
     team_b_label: str = Form(None),
+    csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
     league_repo: ILeagueRepository = Depends(get_league_repository),
-    league_service: ILeagueService = Depends(get_league_service)
+    league_service: ILeagueService = Depends(get_league_service),
+    audit=Depends(get_audit_logger),
 ):
-
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+    if new_password:
+        try:
+            security.validate_password_strength(new_password)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
     if name is not None:
         name = name.strip()
         existing_name = league_repo.get_by_name(name)
@@ -159,6 +214,8 @@ def update_league_settings(
 
     if new_slug is not None:
         new_slug = new_slug.strip()
+        if new_slug and not re.match(SLUG_PATTERN, new_slug):
+            raise HTTPException(status_code=400, detail="رابط الدوري يجب أن يحتوي على أحرف إنجليزية وأرقام و _ أو - فقط")
         existing_slug = league_repo.get_by_slug(new_slug)
         if existing_slug and existing_slug.id != league.id:
             raise HTTPException(status_code=400, detail="هذا الرابط مستخدم بالفعل")
@@ -176,6 +233,7 @@ def update_league_settings(
     
     try:
         updated_league = league_service.update_settings(league.id, update_data)
+        audit(league.id, "update_settings", league.slug, {"changed": True})
         return RedirectResponse(url=f"/l/{updated_league.slug}/admin", status_code=303)
     except HTTPException as e:
         raise e
@@ -184,12 +242,14 @@ def update_league_settings(
 
 @router.post("/settings/delete")
 def delete_league_entirely(
+    _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
-    league_service: ILeagueService = Depends(get_league_service)
+    league_service: ILeagueService = Depends(get_league_service),
+    audit=Depends(get_audit_logger),
 ):
-
     try:
         league_service.delete_league(league.id)
+        audit(league.id, "delete_league", league.slug, {})
         return {"success": True, "redirect_url": "/?msg=deleted"}
     except HTTPException as e:
         return {"success": False, "detail": e.detail}
@@ -198,17 +258,19 @@ def delete_league_entirely(
 
 @router.delete("/match/{match_id}")
 def delete_match(
-    match_id: int, 
+    match_id: int,
+    _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
     match_service: IMatchService = Depends(get_match_service),
-    league_repo: ILeagueRepository = Depends(get_league_repository)
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    audit=Depends(get_audit_logger),
 ):
-        
     try:
         match_service.delete_match(match_id, league.id)
         if league.current_season_matches > 0:
             league.current_season_matches -= 1
             league_repo.save(league)
+        audit(league.id, "delete_match", league.slug, {"match_id": match_id})
         return {"success": True, "message": "تم حذف المباراة بنجاح"}
     except HTTPException as e:
         raise e
@@ -240,10 +302,10 @@ def get_match_details(
                 "assists": stat.assists,
                 "saves": stat.saves,
                 "goals_conceded": stat.goals_conceded,
-                "own_goals": getattr(stat, "own_goals", 0),
+                "own_goals": stat.own_goals,
                 "is_gk": stat.is_gk,
                 "clean_sheet": stat.clean_sheet,
-                "defensive_contribution": getattr(stat, "defensive_contribution", False),
+                "defensive_contribution": stat.defensive_contribution,
                 "mvp": stat.mvp,
                 "is_captain": stat.is_captain,
             }
@@ -258,14 +320,16 @@ def get_match_details(
 
 @router.post("/match/{match_id}/edit")
 def edit_match(
-    match_id: int, 
+    match_id: int,
     payload: schemas.MatchEditRequest,
+    _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
-    match_service: IMatchService = Depends(get_match_service)
+    match_service: IMatchService = Depends(get_match_service),
+    audit=Depends(get_audit_logger),
 ):
-        
     try:
         updated_match = match_service.update_match(league.id, match_id, payload)
+        audit(league.id, "edit_match", league.slug, {"match_id": match_id})
         return {"message": "تم تحديث المباراة بنجاح", "match_id": updated_match.id}
     except HTTPException as e:
         raise e
@@ -349,8 +413,18 @@ def export_league_backup(
                 "goals": p.total_goals,
                 "assists": p.total_assists,
                 "saves": p.total_saves,
-                "clean_sheets": p.total_clean_sheets
-                # matches_played removed as it's not a direct column on Player model
+                "clean_sheets": p.total_clean_sheets,
+                "total_own_goals": getattr(p, "total_own_goals", 0),
+                "total_matches": getattr(p, "total_matches", 0),
+                "all_time_points": getattr(p, "all_time_points", 0),
+                "all_time_goals": getattr(p, "all_time_goals", 0),
+                "all_time_assists": getattr(p, "all_time_assists", 0),
+                "all_time_saves": getattr(p, "all_time_saves", 0),
+                "all_time_clean_sheets": getattr(p, "all_time_clean_sheets", 0),
+                "all_time_own_goals": getattr(p, "all_time_own_goals", 0),
+                "all_time_matches": getattr(p, "all_time_matches", 0),
+                "team_id": p.team_id,
+                "team_name": p.team.name if getattr(p, "team", None) else None,
             })
 
         for m in matches:
@@ -371,11 +445,13 @@ def export_league_backup(
                         "goals": s.goals,
                         "assists": s.assists,
                         "saves": s.saves,
-                        "conceded": s.goals_conceded, # Fixed name
+                        "conceded": s.goals_conceded,
                         "clean_sheet": s.clean_sheet,
                         "is_gk": s.is_gk,
-                        "points": s.points_earned,     # Fixed name
-                        "bps": s.bonus_points          # Fixed name
+                        "points": s.points_earned,
+                        "bps": s.bonus_points,
+                        "own_goals": getattr(s, "own_goals", 0),
+                        "defensive_contribution": getattr(s, "defensive_contribution", False),
                     })
             
             backup_data["matches"].append(match_entry)
@@ -402,8 +478,10 @@ def export_league_backup(
 @router.delete("/player/{player_id}")
 def delete_player(
     player_id: int,
+    _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
-    player_repo: IPlayerRepository = Depends(get_player_repository)
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    audit=Depends(get_audit_logger),
 ):
     player = player_repo.get_by_id(player_id)
     if not player or player.league_id != league.id:
@@ -411,14 +489,17 @@ def delete_player(
     success = player_repo.delete(player_id)
     if not success:
         raise HTTPException(status_code=404, detail="Player not found")
+    audit(league.id, "delete_player", league.slug, {"player_id": player_id})
     return {"success": True, "message": "تم حذف اللاعب بنجاح"}
 
 @router.put("/player/{player_id}")
 def update_player_name(
     player_id: int,
     data: dict,
+    _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
-    player_repo: IPlayerRepository = Depends(get_player_repository)
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    audit=Depends(get_audit_logger),
 ):
     """Update a player's name."""
     player = player_repo.get_by_id(player_id)
@@ -430,23 +511,31 @@ def update_player_name(
     player = player_repo.update_name(player_id, new_name)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
+    audit(league.id, "update_player_name", league.slug, {"player_id": player_id})
     return {"success": True, "player": {"id": player.id, "name": player.name}}
 
 @router.post("/player/add")
 def add_player(
+    request: Request,
     name: str = Form(...),
     team_id: int = Form(None),
     default_is_gk: bool = Form(False),
+    csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository),
-    team_repo: ITeamRepository = Depends(get_team_repository)
+    team_repo: ITeamRepository = Depends(get_team_repository),
+    audit=Depends(get_audit_logger),
 ):
     """Add a new player to a fixed team or update existing player."""
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
     player = player_repo.get_by_name(league.id, name)
     if player:
         player.team_id = team_id if team_id else player.team_id
         player.default_is_gk = default_is_gk
         player_repo.save(player)
+        audit(league.id, "add_player", league.slug, {"player_id": player.id, "updated": True})
     else:
         new_player = models.Player(
             league_id=league.id,
@@ -455,7 +544,7 @@ def add_player(
             default_is_gk=default_is_gk
         )
         player_repo.save(new_player)
-    
+        audit(league.id, "add_player", league.slug, {"player_id": new_player.id})
     return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
 
 
@@ -467,11 +556,16 @@ async def add_team(
     name: str = Form(...),
     short_code: str = Form(None),
     color: str = Form(None),
+    csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
     team_repo: ITeamRepository = Depends(get_team_repository),
-    player_repo: IPlayerRepository = Depends(get_player_repository)
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    audit=Depends(get_audit_logger),
 ):
     """Add a new team to the league, optionally assigning players to it."""
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
     name = name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="اسم الفريق مطلوب")
@@ -498,20 +592,27 @@ async def add_team(
             player.team_id = team.id
             player_repo.save(player)
 
+    audit(league.id, "add_team", league.slug, {"team_id": team.id})
     return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
 
 
 
 @router.post("/team/{team_id}/update")
 def update_team(
+    request: Request,
     team_id: int,
     name: str = Form(None),
     short_code: str = Form(None),
     color: str = Form(None),
+    csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
-    team_repo: ITeamRepository = Depends(get_team_repository)
+    team_repo: ITeamRepository = Depends(get_team_repository),
+    audit=Depends(get_audit_logger),
 ):
     """Update a team's name, short code, or color."""
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
     team = team_repo.get_by_id(team_id)
     if not team or team.league_id != league.id:
         raise HTTPException(status_code=404, detail="الفريق غير موجود")
@@ -526,20 +627,24 @@ def update_team(
     if color is not None:
         team.color = color or None
     team_repo.save(team)
+    audit(league.id, "update_team", league.slug, {"team_id": team_id})
     return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
 
 
 @router.delete("/team/{team_id}")
 def delete_team(
     team_id: int,
+    _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
-    team_repo: ITeamRepository = Depends(get_team_repository)
+    team_repo: ITeamRepository = Depends(get_team_repository),
+    audit=Depends(get_audit_logger),
 ):
     """Delete a team (guarded – rejected if team has players or matches)."""
     team = team_repo.get_by_id(team_id)
     if not team or team.league_id != league.id:
         raise HTTPException(status_code=404, detail="الفريق غير موجود")
     team_repo.delete(team_id)   # guard is inside TeamRepository.delete
+    audit(league.id, "delete_team", league.slug, {"team_id": team_id})
     return {"success": True, "message": "تم حذف الفريق بنجاح"}
 
 
@@ -547,37 +652,52 @@ def delete_team(
 
 @router.post("/player/{player_id}/transfer")
 def transfer_player(
+    request: Request,
     player_id: int,
-    data: schemas.TransferCreate,
+    to_team_id: int | None = Form(None),
+    reason: str | None = Form(None),
+    csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository),
     team_repo: ITeamRepository = Depends(get_team_repository),
-    transfer_repo: ITransferRepository = Depends(get_transfer_repository)
+    transfer_repo: ITransferRepository = Depends(get_transfer_repository),
+    audit=Depends(get_audit_logger),
 ):
-    """Admin-only: move a player to another team within the same league."""
+    """Admin-only: move a player to another team within the same league, or remove from team (to_team_id=0/empty)."""
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
     player = player_repo.get_by_id(player_id)
     if not player or player.league_id != league.id:
         raise HTTPException(status_code=404, detail="اللاعب غير موجود")
 
-    to_team = team_repo.get_by_id(data.to_team_id)
+    # "بدون فريق" (no team): to_team_id is 0 or None
+    if to_team_id is None or to_team_id == 0:
+        player.team_id = None
+        player_repo.save(player)
+        audit(league.id, "transfer_player", league.slug, {"player_id": player_id, "to_team_id": None})
+        return {"success": True, "message": "تم إخراج اللاعب من الفريق"}
+
+    to_team = team_repo.get_by_id(to_team_id)
     if not to_team or to_team.league_id != league.id:
         raise HTTPException(status_code=400, detail="الفريق المستهدف غير موجود في هذا الدوري")
 
-    if player.team_id == data.to_team_id:
+    if player.team_id == to_team_id:
         raise HTTPException(status_code=400, detail="اللاعب منتسب بالفعل لهذا الفريق")
 
     transfer = models.Transfer(
         league_id=league.id,
         player_id=player.id,
         from_team_id=player.team_id,
-        to_team_id=data.to_team_id,
-        reason=data.reason
+        to_team_id=to_team_id,
+        reason=reason
     )
     transfer_repo.save(transfer)
 
-    player.team_id = data.to_team_id
+    player.team_id = to_team_id
     player_repo.save(player)
 
+    audit(league.id, "transfer_player", league.slug, {"player_id": player_id, "to_team_id": to_team_id})
     return {"success": True, "message": f"تم انتقال اللاعب إلى {to_team.name}"}
 
 
@@ -585,9 +705,11 @@ def transfer_player(
 def reset_voting_round(
     match_id: int,
     slug: str,
+    _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
     voting_service: IVotingService = Depends(get_voting_service),
     match_repo: IMatchRepository = Depends(get_match_repository),
+    audit=Depends(get_audit_logger),
 ):
     """
     Admin-only: delete all votes for the currently active round of a match,
@@ -599,4 +721,5 @@ def reset_voting_round(
     if not match or match.league_id != league.id:
         raise HTTPException(status_code=404, detail="Match not found")
     result = voting_service.reset_current_round_votes(match_id)
+    audit(league.id, "reset_voting", league.slug, {"match_id": match_id})
     return result

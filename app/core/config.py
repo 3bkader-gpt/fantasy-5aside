@@ -3,6 +3,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SQLITE_URL = "sqlite:///./data/fantasy.db"
 
+
+def _parse_cors_origins(value: str) -> list[str]:
+    """Parse CORS_ORIGINS env (comma-separated) into list. '*' stays as single element."""
+    if not value or not value.strip():
+        return ["*"]
+    parts = [p.strip() for p in value.split(",") if p.strip()]
+    return parts if parts else ["*"]
+
+
 class Settings(BaseSettings):
     database_url: str = SQLITE_URL
     # Optional: use Supabase pooler URL when available (more reliable on some networks)
@@ -13,8 +22,16 @@ class Settings(BaseSettings):
     testing: bool = False
     # لو True نستخدم SQLite حتى لو DATABASE_URL في .env يشير لـ Postgres (للعمل المحلي بدون Supabase)
     use_sqlite: bool = False
+    # CORS: comma-separated origins, e.g. https://fantasy-5aside.onrender.com,https://yourdomain.com. Use * for dev.
+    cors_origins: str = "*"
+    # Environment: production enables HSTS and stricter defaults
+    env: str = "development"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return _parse_cors_origins(self.cors_origins)
 
     @property
     def effective_database_url(self) -> str:

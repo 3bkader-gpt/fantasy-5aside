@@ -27,6 +27,7 @@
         {% endif %}
 
         <form action="/login" method="POST" style="text-align: right;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="mb-2">
                 <label class="form-label" style="font-weight: bold;">اسم الدوري:</label>
                 <input type="text" name="league_name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"

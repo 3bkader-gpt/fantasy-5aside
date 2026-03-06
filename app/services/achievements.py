@@ -48,7 +48,8 @@ class PlaymakerBadge(BadgeRule):
 class TheRocketBadge(BadgeRule):
     def evaluate(self, player, history):
         # Scored 5+ goals in EACH of 3 consecutive matches
-        sorted_history = sorted(history, key=lambda s: s.match.date)
+        history_with_match = [s for s in history if getattr(s, "match", None) is not None and getattr(s.match, "date", None) is not None]
+        sorted_history = sorted(history_with_match, key=lambda s: s.match.date)
         
         if len(sorted_history) < 3:
             return None

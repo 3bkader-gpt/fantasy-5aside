@@ -140,6 +140,7 @@ class CupService(ICupService):
             if is_final:
                 t1 = player_team.get(matchup.player1_id)
                 t2 = player_team.get(matchup.player2_id)
+                # Co-op final rule: same team in final -> both win, no loser deactivated
                 if t1 and t2 and t1 == t2:
                     matchup.winner_id = matchup.player1_id
                     matchup.is_active = False
@@ -224,12 +225,10 @@ class CupService(ICupService):
         if still_active:
             return
 
-        resolved_this_round: List[models.CupMatchup] = []
-        latest_round: Optional[str] = None
-        for m in bracket_matchups:
-            if m.winner_id and not m.is_active:
-                resolved_this_round.append(m)
-                latest_round = m.round_name
+        resolved_this_round = [m for m in bracket_matchups if m.winner_id and not m.is_active]
+        # Deterministic latest round: highest id among resolved (most recently resolved round)
+        resolved_this_round.sort(key=lambda m: m.id, reverse=True)
+        latest_round = resolved_this_round[0].round_name if resolved_this_round else None
 
         if not latest_round:
             return

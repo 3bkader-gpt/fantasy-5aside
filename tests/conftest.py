@@ -30,6 +30,8 @@ def _get_test_db_url() -> str:
     """
     # Force testing mode for the duration of pytest
     settings.testing = True
+    from app.core.rate_limit import limiter
+    limiter.enabled = False
     url = settings.effective_database_url
 
     # CRITICAL SAFEGUARD: Never run tests on Supabase

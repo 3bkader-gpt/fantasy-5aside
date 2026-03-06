@@ -9,10 +9,14 @@ class TestPublicAPI:
         assert 'action="/create-league"' in response.text
 
     def test_create_league_flow(self, client):
+        r = client.get("/")
+        assert r.status_code == 200
+        csrf = r.cookies.get("csrf_token", "")
         data = {
             "name": "API League",
             "slug": "api-league-unique",
-            "admin_password": "shortpassword"
+            "admin_password": "Shortpass1",
+            "csrf_token": csrf,
         }
         response = client.post("/create-league", data=data, follow_redirects=False)
         assert response.status_code == 303

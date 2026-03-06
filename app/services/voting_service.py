@@ -79,6 +79,17 @@ class VotingService(IVotingService):
         if existing:
             raise HTTPException(status_code=400, detail="لقد قمت بالتصويت بالفعل في هذه الجولة")
 
+        # No self-vote
+        if vote_in.voter_id == vote_in.candidate_id:
+            raise HTTPException(status_code=400, detail="لا يمكنك التصويت لنفسك")
+
+        # Voter and candidate must have played in this match
+        participant_ids = {s.player_id for s in match.stats}
+        if vote_in.voter_id not in participant_ids:
+            raise HTTPException(status_code=400, detail="يجب أن تكون مشاركاً في المباراة للتصويت")
+        if vote_in.candidate_id not in participant_ids:
+            raise HTTPException(status_code=400, detail="اللاعب المرشح لم يشارك في المباراة")
+
         # Check if candidate is excluded
         status = self.get_voting_status(match_id, vote_in.voter_id)
         if vote_in.candidate_id in status.excluded_player_ids:
@@ -163,11 +174,12 @@ class VotingService(IVotingService):
             winner.total_points += bonus
             self.player_repo.save(winner)
             
-            # Reflect bonus in the match history
+            # Reflect bonus in the match history (persist so bonus is stored in MatchStat)
             for stat in match.stats:
                 if stat.player_id == winner_id:
                     stat.points_earned += bonus
                     stat.bonus_points = bonus
+                    self.match_repo.db.add(stat)
                     break
         
         if match.voting_round < 3:

@@ -67,4 +67,9 @@ This repository includes a `render.yaml` Blueprint for 1-click deployments to [R
 6. Render will read the `render.yaml` file and prompt you to provide the `DATABASE_URL` environment variable.
 7. Paste your PostgreSQL URL and click **Apply**.
 
+**Security / environment (production):**
+- Set `ENV=production` and `SECRET_KEY` to a strong random value.
+- Set `CORS_ORIGINS` to a comma-separated list of allowed origins (e.g. `https://fantasy-5aside.onrender.com`). Use `*` only for development.
+- Run `pip-audit -r requirements.txt` (or rely on CI) to check for known dependency vulnerabilities.
+
 Render will automatically build and deploy your Fantasy SaaS! 🚀

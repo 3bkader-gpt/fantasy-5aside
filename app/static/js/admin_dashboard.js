@@ -1,3 +1,9 @@
+// CSRF token for state-changing requests (from meta tag set by server)
+function getCsrfHeader() {
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    return token ? { 'X-CSRF-Token': token } : {};
+}
+
 // ─── Admin Tab Switching ─────────────────────────────────────────────────────
 (function () {
     const tabBtns = document.querySelectorAll('.admin-tabs .tab-btn');
@@ -235,7 +241,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/match`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        ...getCsrfHeader()
                     },
                     body: JSON.stringify(payload)
                 });
@@ -304,6 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 cleanSheet = true;
             }
 
+            const defensiveContrib = row.querySelector('.defensive-contrib-check');
             statsArray.push({
                 player_name: name,
                 team: teamIdentifier,
@@ -313,7 +321,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 saves: parseInt(row.querySelector('.saves-input').value) || 0,
                 goals_conceded: goalsConceded,
                 is_gk: isGk,
-                clean_sheet: cleanSheet
+                clean_sheet: cleanSheet,
+                defensive_contribution: defensiveContrib ? defensiveContrib.checked : false
             });
         }
     }
@@ -327,7 +336,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             try {
                 const response = await fetch(`/l/${slug}/admin/settings/delete`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: getCsrfHeader()
                 });
 
                 const result = await response.json();
@@ -357,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/player/${playerId}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
                     body: JSON.stringify({})
                 });
 
@@ -390,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/player/${playerId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
                     body: JSON.stringify({ name: trimmedName })
                 });
 
@@ -470,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const response = await fetch(`/l/${window.LEAGUE_SLUG}/admin/team/${teamId}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
                     body: JSON.stringify({})
                 });
 
@@ -587,7 +597,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const resp = await fetch(`/l/${window.LEAGUE_SLUG}/admin/voting/${matchId}/reset`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
                     body: JSON.stringify({}),
                 });
                 const data = await resp.json();

@@ -23,6 +23,7 @@
         {% endif %}
 
         <form action="/create-league" method="POST" style="text-align: right;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="mb-1">
                 <label class="form-label">اسم الدوري:</label>
                 <input type="text" name="name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"
@@ -33,7 +34,7 @@
                 <label class="form-label">رابط الدوري (الرابط الذي ستشاركه مع أصدقائك):</label>
                 <div class="input-group" style="direction: ltr;">
                     <span class="input-group-text">/l/</span>
-                    <input type="text" name="slug" required placeholder="ashmant-squad" pattern="[a-zA-Z0-9-]+"
+                    <input type="text" name="slug" required placeholder="ashmant-squad" pattern="[a-zA-Z0-9_-]+"
                         title="يسمح فقط بالحروف الإنجليزية والأرقام والشرطة (-)" class="form-control"
                         style="direction: ltr;">
                 </div>
@@ -47,7 +48,7 @@
 
             <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.2rem;">
                 🚀 أنشئ الدوري الآن
-            </button </form>
+            </button></form>
     </div>
 
     {% if leagues %}

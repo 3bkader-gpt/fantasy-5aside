@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
+    function getCsrfHeader() {
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        return token ? { 'X-CSRF-Token': token } : {};
+    }
 
     // =========================================
     // Delete Match Logic
@@ -15,7 +19,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const response = await fetch(`/l/${leagueSlug}/admin/match/${matchId}`, {
                     method: 'DELETE',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        ...getCsrfHeader()
                     },
                     body: JSON.stringify({ admin_password: password })
                 });
@@ -175,6 +180,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 row.querySelector('.player-name-input').value = stat.player_name || '';
                 row.querySelector('.goals-input').value = stat.goals ?? 0;
                 row.querySelector('.assists-input').value = stat.assists ?? 0;
+                const ownGoalsInput = row.querySelector('.own-goals-input');
+                if (ownGoalsInput) ownGoalsInput.value = stat.own_goals ?? 0;
 
                 if (stat.is_gk) {
                     row.querySelector('.is-gk-check').checked = true;
@@ -271,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         team: teamCode,
                         goals: parseInt(row.querySelector('.goals-input').value) || 0,
                         assists: parseInt(row.querySelector('.assists-input').value) || 0,
+                        own_goals: parseInt(row.querySelector('.own-goals-input')?.value) || 0,
                         saves: parseInt(row.querySelector('.saves-input').value) || 0,
                         goals_conceded: goalsConceded,
                         is_gk: isGk,
@@ -306,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const response = await fetch(`/l/${leagueSlug}/admin/match/${currentEditMatchId}/edit`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
                     body: JSON.stringify(payload)
                 });
 
@@ -346,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.disabled = true;
                 const response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
                     body: JSON.stringify({ admin_password: password })
                 });
 

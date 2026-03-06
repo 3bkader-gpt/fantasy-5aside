@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         afterLabel: function (context) {
                             if (context.datasetIndex === 0 && outcomes.length) {
                                 const outcome = outcomes[context.dataIndex].trim();
-                                return outcome === 'W' ? '✅ نتيجة المباراة: فوز' : '❌ نتيجة المباراة: خسارة';
+                                return outcome === 'W' ? '✅ نتيجة المباراة: فوز' : outcome === 'D' ? '➖ نتيجة المباراة: تعادل' : '❌ نتيجة المباراة: خسارة';
                             }
                             return '';
                         }
