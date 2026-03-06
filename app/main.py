@@ -72,6 +72,13 @@ async def lifespan(app: FastAPI):
             ("players", "team_id", "INTEGER DEFAULT NULL"),
             ("matches", "team_a_id", "INTEGER DEFAULT NULL"),
             ("matches", "team_b_id", "INTEGER DEFAULT NULL"),
+            # Hall of Fame seasonal awards
+            ("hall_of_fame", "top_scorer_id", "INTEGER DEFAULT NULL"),
+            ("hall_of_fame", "top_scorer_goals", "INTEGER DEFAULT 0"),
+            ("hall_of_fame", "top_assister_id", "INTEGER DEFAULT NULL"),
+            ("hall_of_fame", "top_assister_assists", "INTEGER DEFAULT 0"),
+            ("hall_of_fame", "top_gk_id", "INTEGER DEFAULT NULL"),
+            ("hall_of_fame", "top_gk_saves", "INTEGER DEFAULT 0"),
             # Indexing for performance
             ("players", "league_id", "INDEX"),
             ("matches", "league_id", "INDEX"),
@@ -82,7 +89,7 @@ async def lifespan(app: FastAPI):
             ("votes", "ip_address", "VARCHAR(64) DEFAULT NULL"),
             ("votes", "device_fingerprint", "VARCHAR(255) DEFAULT NULL"),
             ("cup_matchups", "league_id", "INDEX"),
-            ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL")
+            ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL"),
         ]
 
         # Ensure audit_log and revoked_tokens tables exist (OWASP)
