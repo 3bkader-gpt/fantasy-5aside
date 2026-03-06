@@ -126,13 +126,13 @@
 }
 
 body {
-    font-family: 'Cairo', sans-serif;
+    font-family: 'Tajawal', 'Segoe UI', Tahoma, Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
-    line-height: 1.6;
+    line-height: 1.75;
     direction: rtl;
     text-align: right;
-    font-size: clamp(14px, 2vw, 16px);
+    font-size: clamp(16px, 2.2vw, 18px);
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -574,7 +574,8 @@ nav ul {
 
 nav ul li a {
     color: #ecf0f1;
-    font-weight: 400;
+    font-weight: 500;
+    font-size: 1.02rem;
     transition: color 0.3s;
     padding: 0.5rem;
     display: flex;
@@ -623,7 +624,7 @@ nav ul li a:hover {
     nav ul li a {
         flex-direction: column;
         gap: 2px;
-        font-size: 0.6rem;
+        font-size: 0.7rem;
         padding: 4px 2px;
         text-align: center;
         justify-content: center;
@@ -633,11 +634,11 @@ nav ul li a:hover {
     }
 
     nav ul li a span.icon {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
     }
 
     nav ul li a span.text {
-        font-size: 0.6rem;
+        font-size: 0.72rem;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -725,11 +726,11 @@ h3 {
 }
 
 h1 {
-    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
 }
 
 h2 {
-    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    font-size: clamp(1.45rem, 3vw, 1.95rem);
 }
 
 /* Tables - Responsive Wrapper */
@@ -770,7 +771,7 @@ td {
     th,
     td {
         padding: 8px 6px;
-        font-size: 0.85rem;
+        font-size: 0.92rem;
     }
 }
 
@@ -795,7 +796,7 @@ select {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 1.05rem;
     background-color: var(--input-bg);
     color: var(--text-color);
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;

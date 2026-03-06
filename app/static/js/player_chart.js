@@ -62,13 +62,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 plugins: {
                     legend: {
                         position: 'top',
-                        labels: { color: textColor, font: { family: 'Cairo', size: 12 } }
+                        labels: { color: textColor, font: { family: 'Tajawal', size: 12 } }
                     },
                     tooltip: {
                         padding: 12,
                         backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleFont: { family: 'Cairo', size: 14 },
-                        bodyFont: { family: 'Cairo', size: 13 },
+                        titleFont: { family: 'Tajawal', size: 14 },
+                        bodyFont: { family: 'Tajawal', size: 13 },
                         callbacks: {
                             afterLabel: function (context) {
                                 if (context.datasetIndex === 0 && outcomes.length) {
@@ -82,14 +82,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 scales: {
                     x: {
-                        ticks: { color: textColor, font: { family: 'Cairo' } },
+                        ticks: { color: textColor, font: { family: 'Tajawal' } },
                         grid: { color: gridColor, drawOnChartArea: false },
                     },
                     y: {
                         type: 'linear',
                         display: true,
                         position: 'right',
-                        title: { display: true, text: 'النقاط', color: textColor, font: { family: 'Cairo' } },
+                        title: { display: true, text: 'النقاط', color: textColor, font: { family: 'Tajawal' } },
                         ticks: { color: textColor },
                         grid: { color: gridColor },
                         min: 0,
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         type: 'linear',
                         display: true,
                         position: 'left',
-                        title: { display: true, text: 'الأهداف / الأسيست', color: textColor, font: { family: 'Cairo' } },
+                        title: { display: true, text: 'الأهداف / الأسيست', color: textColor, font: { family: 'Tajawal' } },
                         ticks: { color: textColor, stepSize: 1 },
                         grid: { drawOnChartArea: false },
                         min: 0,
@@ -155,14 +155,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     r: {
                         angleLines: { color: gridColor },
                         grid: { color: gridColor },
-                        pointLabels: { color: textColor, font: { family: 'Cairo' } },
+                        pointLabels: { color: textColor, font: { family: 'Tajawal' } },
                         ticks: { display: false },
                     },
                 },
                 plugins: {
                     legend: {
                         position: 'top',
-                        labels: { color: textColor, font: { family: 'Cairo' } },
+                        labels: { color: textColor, font: { family: 'Tajawal' } },
                     },
                 },
             },
