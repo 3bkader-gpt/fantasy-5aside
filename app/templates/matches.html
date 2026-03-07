@@ -25,7 +25,7 @@
 
             <!-- Score row: Team A - Score - Team B -->
             <div class="scoreboard-score">
-                <span class="scoreboard-team" style="color: var(--accent-color);">
+                <span class="scoreboard-team" style="color: {{ match.team_a.color if match.team_a and match.team_a.color else 'var(--accent-color)' }};">
                     {{ match.team_a.name if match.team_a else match.team_a_name }}
                     {% if match.team_a_id %}
                     <span class="badge"
@@ -35,11 +35,11 @@
                     {% endif %}
                 </span>
                 <span class="scoreboard-result">
-                    <span style="color: var(--accent-color);">{{ match.team_a_score }}</span>
+                    <span style="color: {{ match.team_a.color if match.team_a and match.team_a.color else 'var(--accent-color)' }};">{{ match.team_a_score }}</span>
                     <span style="color: rgba(255,255,255,0.5); font-size: 0.7em;">-</span>
-                    <span style="color: var(--warning-color);">{{ match.team_b_score }}</span>
+                    <span style="color: {{ match.team_b.color if match.team_b and match.team_b.color else 'var(--warning-color)' }};">{{ match.team_b_score }}</span>
                 </span>
-                <span class="scoreboard-team" style="color: var(--warning-color);">
+                <span class="scoreboard-team" style="color: {{ match.team_b.color if match.team_b and match.team_b.color else 'var(--warning-color)' }};">
                     {% if match.team_b_id %}
                     <span class="badge"
                         style="--t-color: {{ match.team_b.color if match.team_b else '#888' }}; background-color: var(--t-color); color: white; font-size: 0.65rem; padding: 2px 5px; vertical-align: middle;">

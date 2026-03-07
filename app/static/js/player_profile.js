@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
             logging: false,
             width: 420,
         }).then(function (canvas) {
-            cardContainer.style.position = "absolute";
+            cardContainer.style.position = "fixed";
             cardContainer.style.left = "-9999px";
 
             const link = document.createElement("a");
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
             link.href = canvas.toDataURL("image/png");
             link.click();
         }).catch(function (err) {
-            cardContainer.style.position = "absolute";
+            cardContainer.style.position = "fixed";
             cardContainer.style.left = "-9999px";
             console.error("Card export failed:", err);
             alert("حدث خطأ أثناء إنشاء البطاقة");
