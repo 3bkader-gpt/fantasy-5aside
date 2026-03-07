@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const config = configElement.dataset;
     let currentMatchId = config.matchId !== "null" ? parseInt(config.matchId, 10) : null;
-    const currentRound = parseInt(config.round, 10) || 0;
+    let currentRound = parseInt(config.round, 10) || 0;
     let currentVoterId = null;
     let currentCandidateId = null;
     let livePollingInterval = null;
@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
         stopLivePolling();
     }
 
-    function openVotingModal(matchId) {
+    async function openVotingModal(matchId) {
         const effectiveMatchId = matchId ?? currentMatchId;
         if (!effectiveMatchId) {
             if (typeof showToast !== "undefined") {
@@ -115,17 +115,28 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         currentMatchId = parseInt(effectiveMatchId, 10);
+
         try {
-            const existingVote = typeof localStorage !== "undefined" ? localStorage.getItem(voteStorageKey()) : null;
-            if (existingVote) {
-                if (typeof showToast !== "undefined") {
-                    showToast("يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.", "error");
-                } else {
-                    alert("يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.");
+            const res = await fetch(`/api/voting/match/${currentMatchId}/live`);
+            if (res.ok) {
+                const data = await res.json();
+                const serverRound = parseInt(data.round_number, 10) || 0;
+                currentRound = serverRound;
+                const roundNumEl = document.getElementById("round-num");
+                if (roundNumEl) roundNumEl.textContent = String(currentRound);
+
+                const key = voteStorageKey();
+                const existingVote = typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
+                if (existingVote) {
+                    if (typeof showToast !== "undefined") {
+                        showToast("يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.", "error");
+                    } else {
+                        alert("يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.");
+                    }
                 }
             }
         } catch (e) {
-            console.error("localStorage voting check failed:", e);
+            console.error("Failed to fetch voting round or check vote:", e);
         }
 
         modal.style.display = "flex";
