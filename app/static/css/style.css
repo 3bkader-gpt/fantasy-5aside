@@ -466,25 +466,6 @@ thead th {
     color: var(--color-gray-400);
 }
 
-/* --- Hall of Fame Page --- */
-.dark-mode .card h3[style*="color: var(--warning-color)"] {
-    color: #f39c12 !important;
-}
-
-/* --- Player Profile Page --- */
-.dark-mode .player-profile .card div[style*="color: var(--heading-color)"] {
-    color: var(--text-primary) !important;
-}
-
-.dark-mode .player-profile .card[style*="linear-gradient"] {
-    background: linear-gradient(135deg, #1a2a3a, #2980b9) !important;
-}
-
-/* --- Admin Dashboard --- */
-.dark-mode .card[style*="rgba(231, 76, 60, 0.05)"] {
-    background: rgba(231, 76, 60, 0.1) !important;
-}
-
 /* --- Leaderboard Header Text --- */
 .dark-mode .table-responsive table thead th {
     color: #fff;
