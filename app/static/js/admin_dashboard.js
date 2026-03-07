@@ -382,6 +382,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Animation: button tap feedback on key admin actions
+    const tapButtons = [
+        '.delete-league-btn', '#import-backup-btn', '#save-match-btn',
+        '.delete-player-btn', '.edit-player-btn', '.delete-team-btn',
+        '#reset-voting-round-btn', '#add-new-player-from-team', '.manage-team-players-btn'
+    ];
+    tapButtons.forEach(sel => {
+        document.querySelectorAll(sel).forEach(btn => {
+            btn.addEventListener('click', function () {
+                if (window.FantasyMotion) window.FantasyMotion.buttonTap(this);
+            });
+        });
+    });
+
     // Delete League Logic
     const deleteBtn = document.querySelector('.delete-league-btn');
     if (deleteBtn) {
@@ -542,7 +556,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     manageTeamButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', function () {
+            if (window.FantasyMotion) window.FantasyMotion.buttonTap(this);
             const teamId = btn.getAttribute('data-team-id') || '';
             // Switch to players tab first
             if (window.adminActivateTab) window.adminActivateTab('players');
@@ -552,6 +567,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 filterPlayersByTeam(teamId);
             }, 50);
+        });
+    });
+
+    // Animation: button tap feedback on admin action buttons
+    document.querySelectorAll('#save-match-btn, .delete-league-btn, #import-backup-btn, .delete-player-btn, .edit-player-btn, .delete-team-btn, #reset-voting-round-btn, #start-new-match-btn').forEach(btn => {
+        if (btn) btn.addEventListener('click', function () {
+            if (window.FantasyMotion) window.FantasyMotion.buttonTap(this);
         });
     });
 

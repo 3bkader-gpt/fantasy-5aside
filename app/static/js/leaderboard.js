@@ -174,4 +174,10 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+
+    // Card stagger animations (banners + table rows)
+    if (window.FantasyMotion) {
+        window.FantasyMotion.cardStaggerIn(".banner-card", 0.05);
+        window.FantasyMotion.cardStaggerIn("#leaderboard-body tr", 0.02);
+    }
 });

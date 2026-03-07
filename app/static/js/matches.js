@@ -117,6 +117,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Card stagger for match cards
+    if (window.FantasyMotion) {
+        window.FantasyMotion.cardStaggerIn(".matches-container .card", 0.04);
+    }
+
     // Helper: Create a new player row in the edit modal
     function addEditPlayerRow(team) {
         const template = document.getElementById('edit-player-row-template');
