@@ -1,19 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="player-profile container-sm" style="max-width: 900px;">
-    <div class="card text-center mb-2"
-        style="background: linear-gradient(135deg, var(--nav-bg), var(--primary-color)); color: white;">
-        <h1 class="mb-0" style="font-size: 2.4rem;">
+<div class="player-profile container-sm">
+    <div class="card text-center mb-2 gradient-hero">
+        <h1 class="mb-0 text-2-4">
             {{ player.name }}
             {% if player.team_id %}
-            <span class="badge"
-                style="--team-color: {{ player.team.color if player.team else '#888' }}; background-color: var(--team-color); color: white; font-size: 1rem; padding: 4px 12px; vertical-align: middle; margin-inline-start: 10px;">
+            <span class="badge badge-team"
+                style="--team-color: {{ player.team.color if player.team else '#888' }};">
                 {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
             </span>
             {% endif %}
         </h1>
-        <p style="font-size: 1.2rem; opacity: 0.9;" class="mb-0 mt-1">
+        <p class="mb-0 mt-1 text-xl opacity-80">
             {% if player.team_id %}
             لاعب فريق {{ player.team.name }}
             {% else %}
@@ -22,8 +21,8 @@
         </p>
 
         {% if form_history %}
-        <div class="flex-center gap-2 mt-1" style="flex-wrap: wrap; align-items: center;">
-            <span style="font-size: 0.85rem; opacity: 0.8; margin-inline-start: 0.5rem;">الفورمة (آخر 5 مباريات):</span>
+        <div class="flex-center gap-2 mt-1 flex-wrap items-center">
+            <span class="text-sm opacity-80 ms-1">الفورمة (آخر 5 مباريات):</span>
             {% for outcome in form_history %}
             <span class="form-badge {{ 'win' if outcome == 'W' else 'loss' if outcome == 'L' else 'draw' }}"
                 title="{{ 'فوز' if outcome == 'W' else 'خسارة' if outcome == 'L' else 'تعادل' }}">
@@ -34,9 +33,9 @@
         {% endif %}
 
         {% if badges %}
-        <div class="flex-center gap-2 mt-1" style="flex-wrap: wrap;">
+        <div class="flex-center gap-2 mt-1 flex-wrap">
             {% for badge in badges %}
-            <span class="badge-pill" title="{{ badge.description }}" style="cursor: help;">
+            <span class="badge-pill cursor-help" title="{{ badge.description }}">
                 {{ badge.icon }} {{ badge.name }}
             </span>
             {% endfor %}
@@ -44,77 +43,72 @@
         {% endif %}
     </div>
 
-    <div
-        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+    <div class="stats-cards-grid">
         <!-- Current Season -->
-        <div class="card text-center" style="border-bottom: 4px solid var(--warning-color);">
-            <h3 class="text-secondary mb-1" style="font-size: 1rem;">إحصائيات الشهر الحالي</h3>
-            <div style="font-size: 2.5rem; font-weight: bold; color: var(--text-color);" class="mb-1">{{
-                player.total_points }}
+        <div class="card text-center border-bottom-warning">
+            <h3 class="text-secondary mb-1 text-lg">إحصائيات الشهر الحالي</h3>
+            <div class="mb-1 text-4xl font-bold">{{ player.total_points }}
             </div>
-            <div class="text-secondary" style="font-size: 0.9rem;">إجمالي النقاط</div>
+            <div class="text-secondary text-sm">إجمالي النقاط</div>
 
-            <div class="flex-center"
-                style="justify-content: space-around; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color);">
+            <div class="flex-center stats-card-footer">
                 <div>
-                    <div style="font-weight: bold; color: var(--text-color);">{{ player.total_goals }}</div>
-                    <div class="text-secondary" style="font-size: 0.8rem;">أهداف</div>
+                    <div class="font-bold">{{ player.total_goals }}</div>
+                    <div class="text-secondary text-xs">أهداف</div>
                 </div>
                 <div>
-                    <div style="font-weight: bold; color: var(--text-color);">{{ player.total_assists }}</div>
-                    <div class="text-secondary" style="font-size: 0.8rem;">أسيست</div>
+                    <div class="font-bold">{{ player.total_assists }}</div>
+                    <div class="text-secondary text-xs">أسيست</div>
                 </div>
             </div>
         </div>
 
         <!-- Analytics -->
-        <div class="card text-center" style="border-bottom: 4px solid var(--success-color);">
-            <h3 class="text-secondary mb-1" style="font-size: 1rem;">التحليل الفني</h3>
-            <div style="font-size: 2.5rem; font-weight: bold; color: var(--success-color);" class="mb-1">{{ win_rate }}%
+        <div class="card text-center border-bottom-success">
+            <h3 class="text-secondary mb-1 text-lg">التحليل الفني</h3>
+            <div class="mb-1 text-4xl font-bold text-success">{{ win_rate }}%
             </div>
-            <div class="text-secondary" style="font-size: 0.9rem;">نسبة الفوز</div>
+            <div class="text-secondary text-sm">نسبة الفوز</div>
 
-            <div class="flex-center"
-                style="justify-content: space-around; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <div class="flex-center stats-card-footer">
                 <div>
-                    <div style="font-weight: bold; color: var(--text-color);">{{ total_matches }}</div>
-                    <div class="text-secondary" style="font-size: 0.8rem;">لعب</div>
+                    <div class="font-bold">{{ total_matches }}</div>
+                    <div class="text-secondary text-xs">لعب</div>
                 </div>
                 <div>
-                    <div style="font-weight: bold; color: var(--text-color);">{{ ga_per_match }}</div>
-                    <div class="text-secondary" style="font-size: 0.8rem;">مساهمة/مباراة</div>
+                    <div class="font-bold">{{ ga_per_match }}</div>
+                    <div class="text-secondary text-xs">مساهمة/مباراة</div>
                 </div>
             </div>
         </div>
 
         <!-- All Time Stats -->
-        <div class="card text-center" style="border-bottom: 4px solid var(--accent-color);">
-            <h3 class="text-secondary mb-1" style="font-size: 1rem;">الإحصائيات التاريخية (All-Time)</h3>
-            <div style="font-size: 2.5rem; font-weight: bold; color: var(--accent-color);" class="mb-1">{{ player.all_time_points
+        <div class="card text-center border-bottom-accent">
+            <h3 class="text-secondary mb-1 text-lg">الإحصائيات التاريخية (All-Time)</h3>
+            <div class="mb-1 text-4xl font-bold text-accent">{{ player.all_time_points
                 + player.total_points }}</div>
-            <div class="text-secondary" style="font-size: 0.9rem;">النقاط التاريخية</div>
+            <div class="text-secondary text-sm">النقاط التاريخية</div>
 
-            <div class="flex-center"
-                style="justify-content: space-around; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <div class="flex-center stats-card-footer">
                 <div>
-                    <div style="font-weight: bold; color: var(--text-color);">{{ player.all_time_goals +
+                    <div class="font-bold">{{ player.all_time_goals +
                         player.total_goals }}</div>
-                    <div class="text-secondary" style="font-size: 0.8rem;">أهداف</div>
+                    <div class="text-secondary text-xs">أهداف</div>
                 </div>
                 <div>
-                    <div style="font-weight: bold; color: var(--text-color);">{{ player.all_time_assists +
+                    <div class="font-bold">{{ player.all_time_assists +
                         player.total_assists }}
                     </div>
-                    <div class="text-secondary" style="font-size: 0.8rem;">أسيست</div>
+                    <div class="text-secondary text-xs">أسيست</div>
                 </div>
             </div>
         </div>
     </div>
 
     {% if streaks %}
-    <div class="card mb-2" style="border: 1px solid var(--border-color); background: var(--card-bg);">
-        <h3 class="mb-1" style="color: var(--text-color); font-size: 1.15rem;">📊 السلاسل المتتالية</h3>
-        <div class="flex-center" style="flex-wrap: wrap; gap: 1rem; margin-top: 0.75rem;">
+    <div class="card mb-2">
+        <h3 class="mb-1 text-xl">📊 السلاسل المتتالية</h3>
+        <div class="flex-center flex-wrap gap-2 mt-1">
             <div class="streak-card">
                 <div class="streak-label">🔥 أهداف متتالية</div>
                 <div class="streak-values">
@@ -148,9 +142,9 @@
     {% endif %}
 
     <!-- H2H Comparison & Radar -->
-    <div class="card mb-2" style="border: 1px solid var(--border-color); background: var(--card-bg);">
-        <h3 class="mb-1" style="color: var(--text-color); font-size: 1.15rem;">⚔️ مقارنة مباشرة مع لاعب آخر</h3>
-        <div class="form-group" style="margin-bottom: 1rem;">
+    <div class="card mb-2">
+        <h3 class="mb-1 text-xl">⚔️ مقارنة مباشرة مع لاعب آخر</h3>
+        <div class="form-group mb-2">
             <label for="h2h-select" class="form-label">قارن مع...</label>
             <select id="h2h-select" class="form-control">
                 <option value="">اختر لاعباً من الدوري</option>
@@ -161,18 +155,18 @@
                 {% endif %}
             </select>
         </div>
-        <div id="h2h-summary" style="display: none; margin-bottom: 1rem;">
-            <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between;">
-                <div style="flex:1; min-width: 180px; text-align:center;">
-                    <h4 style="margin-bottom: 0.5rem; color: var(--text-color);">{{ player.name }}</h4>
-                    <div id="h2h-p1-points" class="text-secondary" style="font-size: 0.9rem;"></div>
+        <div id="h2h-summary" style="display: none;" class="mb-2">
+            <div class="h2h-summary-row">
+                <div class="h2h-player-block">
+                    <h4 class="mb-1">{{ player.name }}</h4>
+                    <div id="h2h-p1-points" class="text-secondary text-sm"></div>
                 </div>
-                <div style="flex:1; min-width: 180px; text-align:center;">
-                    <h4 id="h2h-p2-name" style="margin-bottom: 0.5rem; color: var(--text-color);"></h4>
-                    <div id="h2h-p2-points" class="text-secondary" style="font-size: 0.9rem;"></div>
+                <div class="h2h-player-block">
+                    <h4 id="h2h-p2-name" class="mb-1"></h4>
+                    <div id="h2h-p2-points" class="text-secondary text-sm"></div>
                 </div>
             </div>
-            <div class="table-responsive" style="margin-top: 1rem;">
+            <div class="table-responsive mt-1">
                 <table>
                     <thead>
                         <tr>
@@ -188,16 +182,16 @@
                 </table>
             </div>
         </div>
-        <div style="margin-top: 1.25rem;">
+        <div class="mt-1">
             <canvas id="playerRadarChart"></canvas>
         </div>
     </div>
 
     <!-- Analytics Chart -->
     {% if history and history|length >= 1 %}
-    <div class="card mb-2" style="border: 1px solid var(--border-color); background: var(--card-bg);">
-        <h3 class="mb-2" style="color: var(--text-color); font-size: 1.2rem;">📈 تحليل الأداء والنقاط</h3>
-        <div style="height: 300px; width: 100%;">
+    <div class="card mb-2">
+        <h3 class="mb-2 text-xl">📈 تحليل الأداء والنقاط</h3>
+        <div class="chart-container">
             <canvas id="performanceChart" data-labels="{{ chart_labels|join(',') }}"
                 data-points="{{ chart_data|join(',') }}" data-point-colors="{{ point_colors|join(',') }}"
                 data-goals="{% for stat in history|reverse %}{{ stat.goals }}{% if not loop.last %},{% endif %}{% endfor %}"
@@ -214,7 +208,7 @@
 
     <!-- Badges & Achievements Section -->
     {% if badges %}
-    <h2 class="mb-2" style="color: var(--text-color);">🏆 الأوسمة والإنجازات</h2>
+    <h2 class="mb-2">🏆 الأوسمة والإنجازات</h2>
     <div class="achievements-grid mb-3">
         {% for badge in badges %}
         <div class="achievement-card" title="{{ badge.description }}">
@@ -350,31 +344,30 @@
     {% endif %}
 
     {% if transfers %}
-    <h2 class="mb-2" style="color: var(--text-color);">📑 مسيرة اللاعب والعمليات</h2>
-    <div class="card mb-3" style="background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.05);">
-        <ul style="list-style: none; padding: 0; margin: 0;">
+    <h2 class="mb-2">📑 مسيرة اللاعب والعمليات</h2>
+    <div class="card mb-3 transfers-card">
+        <ul class="transfers-list">
             {% for t in transfers %}
-            <li
-                style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+            <li class="transfer-item">
                 <div>
-                    <span style="color: var(--text-secondary); font-size: 0.8rem;">{{ t.created_at.strftime('%Y-%m-%d')
+                    <span class="text-secondary text-xs">{{ t.created_at.strftime('%Y-%m-%d')
                         }}</span>
-                    <div style="margin-top: 5px;">
+                    <div class="mt-1">
                         {% if t.from_team %}
-                        <span style="font-weight: bold;">{{ t.from_team.name }}</span>
+                        <span class="font-bold">{{ t.from_team.name }}</span>
                         {% else %}
-                        <span style="color: var(--text-secondary);">بداية المسيرة</span>
+                        <span class="text-secondary">بداية المسيرة</span>
                         {% endif %}
-                        <span style="margin: 0 10px;">➡️</span>
+                        <span class="ms-2">➡️</span>
                         {% if t.to_team %}
-                        <span style="font-weight: bold; color: var(--success-color);">{{ t.to_team.name }}</span>
+                        <span class="font-bold text-success">{{ t.to_team.name }}</span>
                         {% else %}
-                        <span style="color: var(--negative-color);">رحيل / لاعب حر</span>
+                        <span class="text-danger">رحيل / لاعب حر</span>
                         {% endif %}
                     </div>
                 </div>
                 {% if t.reason %}
-                <div style="font-style: italic; font-size: 0.85rem; opacity: 0.7;">"{{ t.reason }}"</div>
+                <div class="italic text-sm opacity-80">"{{ t.reason }}"</div>
                 {% endif %}
             </li>
             {% endfor %}
@@ -382,7 +375,7 @@
     </div>
     {% endif %}
 
-    <h2 class="mb-2" style="color: var(--text-color);">📜 سجل المباريات الخاص باللاعب</h2>
+    <h2 class="mb-2">📜 سجل المباريات الخاص باللاعب</h2>
     <div class="table-responsive">
         <table>
             <thead>
@@ -402,7 +395,7 @@
                     <td data-label="تاريخ المباراة">{{ stat.match.date.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td data-label="النقاط"><strong>{{ stat.points_earned }}</strong></td>
                     <td data-label="حالة الفوز">{% if stat.match.team_a_score == stat.match.team_b_score %}<span class="text-secondary">تعادل</span>{% elif stat.is_winner %}<span
-                            style="color: var(--success-color); font-weight: bold;">فوز</span>{% else %}<span
+                            class="text-success font-bold">فوز</span>{% else %}<span
                             class="text-secondary">خسارة</span>{% endif %}</td>
                     <td data-label="أهداف">{{ stat.goals }}</td>
                     <td data-label="أسيست">{{ stat.assists }}</td>
@@ -427,12 +420,12 @@
     </div>
 
     <!-- Player Card Export Section -->
-    <div class="text-center mb-2 mt-2" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-        <button id="export-player-card" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.75rem 2rem;">
+    <div class="text-center mb-2 mt-2 export-buttons-row">
+        <button id="export-player-card" class="btn btn-primary btn-export">
             📥 تحميل بطاقة اللاعب
         </button>
         {% if is_admin %}
-        <button id="delete-player-btn" class="btn btn-danger" style="font-size: 1.1rem; padding: 0.75rem 2rem;"
+        <button id="delete-player-btn" class="btn btn-danger btn-export"
             title="حذف اللاعب نهائياً" aria-label="حذف اللاعب نهائياً">
             🗑️ مسح اللاعب نهائياً
         </button>
@@ -440,36 +433,13 @@
     </div>
 
     <!-- Hidden FIFA-Style Player Card -->
-    <div id="player-card-container" style="position: absolute; left: -9999px; top: 0;">
-        <div id="player-card" style="
-            width: 420px;
-            padding: 0;
-            border-radius: 20px;
-            overflow: hidden;
-            font-family: 'Tajawal', sans-serif;
-            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
-            color: #fff;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-            border: 2px solid rgba(255,215,0,0.3);
-        ">
+    <div id="player-card-container">
+        <div id="player-card">
             <!-- Card Header -->
-            <div style="
-                background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
-                padding: 2rem 1.5rem 1rem;
-                text-align: center;
-                border-bottom: 1px solid rgba(255,215,0,0.2);
-            ">
-                <div style="
-                    width: 90px; height: 90px;
-                    margin: 0 auto 0.75rem;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #ffd700, #ff8c00);
-                    display: flex; align-items: center; justify-content: center;
-                    font-size: 2.5rem;
-                    box-shadow: 0 5px 20px rgba(255,215,0,0.3);
-                ">⚽</div>
-                <div style="font-size: 2rem; font-weight: 800;">{{ player.name }}</div>
-                <div style="font-size: 0.9rem; opacity: 0.7; margin-top: 0.25rem;">
+            <div class="player-card-header">
+                <div class="player-card-avatar">⚽</div>
+                <div class="player-card-name">{{ player.name }}</div>
+                <div class="player-card-meta">
                     {% if player.team_id %}
                     {{ player.team.name }} | {{ league.name }}
                     {% else %}
@@ -479,63 +449,44 @@
             </div>
 
             <!-- Rating Circle -->
-            <div style="text-align: center; margin: -1.5rem auto 0; position: relative; z-index: 1;">
-                <div style="
-                    display: inline-block;
-                    width: 70px; height: 70px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #ffd700, #ff6b00);
-                    font-size: 1.8rem;
-                    font-weight: 900;
-                    line-height: 70px;
-                    color: #1a1a2e;
-                    box-shadow: 0 5px 15px rgba(255,215,0,0.4);
-                ">{{ player.total_points }}</div>
-                <div style="font-size: 0.75rem; margin-top: 0.25rem; opacity: 0.7;">النقاط</div>
+            <div class="player-card-rating-wrap">
+                <div class="player-card-rating-circle">{{ player.total_points }}</div>
+                <div class="player-card-rating-label">النقاط</div>
             </div>
 
             <!-- Stats Grid -->
-            <div style="
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1px;
-                background: rgba(255,255,255,0.05);
-                margin: 1rem 1.5rem;
-                border-radius: 12px;
-                overflow: hidden;
-                border: 1px solid rgba(255,255,255,0.08);
-            ">
-                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.2);">
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #2ecc71;">{{ player.total_goals }}</div>
-                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">أهداف</div>
+            <div class="player-card-stats-grid">
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value">{{ player.total_goals }}</div>
+                    <div class="player-card-stat-label">أهداف</div>
                 </div>
-                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.2);">
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #9b59b6;">{{ player.total_assists }}</div>
-                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">أسيست</div>
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value">{{ player.total_assists }}</div>
+                    <div class="player-card-stat-label">أسيست</div>
                 </div>
-                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.2);">
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #3498db;">{{ player.total_saves }}</div>
-                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">تصديات</div>
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value">{{ player.total_saves }}</div>
+                    <div class="player-card-stat-label">تصديات</div>
                 </div>
-                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #f39c12;">{{ total_matches }}</div>
-                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">لعب</div>
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value">{{ total_matches }}</div>
+                    <div class="player-card-stat-label">لعب</div>
                 </div>
-                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #1abc9c;">{{ win_rate }}%</div>
-                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">فوز</div>
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value">{{ win_rate }}%</div>
+                    <div class="player-card-stat-label">فوز</div>
                 </div>
-                <div style="text-align: center; padding: 0.75rem 0.5rem; background: rgba(0,0,0,0.15);">
-                    <div style="font-size: 1.4rem; font-weight: 800; color: #3498db;">{{ ga_per_match }}</div>
-                    <div style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase;">مساهمة/م</div>
+                <div class="player-card-stat">
+                    <div class="player-card-stat-value">{{ ga_per_match }}</div>
+                    <div class="player-card-stat-label">مساهمة/م</div>
                 </div>
             </div>
 
             <!-- Form Bar -->
             {% if form_history %}
-            <div style="text-align: center; margin: 0.5rem 1.5rem;">
-                <div style="font-size: 0.7rem; opacity: 0.5; margin-bottom: 0.3rem;">الفورمة (آخر 5 مباريات)</div>
-                <div style="display: flex; justify-content: center; gap: 6px;">
+            <div class="player-card-form">
+                <div class="player-card-form-label">الفورمة (آخر 5 مباريات)</div>
+                <div class="player-card-form-bar">
                     {% for outcome in form_history %}
                     <span
                         class="form-badge-mini {{ 'win' if outcome == 'W' else 'loss' if outcome == 'L' else 'draw' }}">
@@ -548,31 +499,17 @@
 
             <!-- Badges -->
             {% if badges %}
-            <div style="text-align: center; padding: 0.5rem 1.5rem 1rem;">
-                <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="player-card-badges">
+                <div class="player-card-badge-list">
                     {% for badge in badges %}
-                    <span style="
-                        background: rgba(255,215,0,0.15);
-                        border: 1px solid rgba(255,215,0,0.3);
-                        padding: 0.2rem 0.6rem;
-                        border-radius: 20px;
-                        font-size: 0.7rem;
-                        color: #ffd700;
-                    ">{{ badge.icon }} {{ badge.name }}</span>
+                    <span class="player-card-badge">{{ badge.icon }} {{ badge.name }}</span>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
 
             <!-- Card Footer -->
-            <div style="
-                text-align: center;
-                padding: 0.5rem;
-                background: rgba(0,0,0,0.3);
-                font-size: 0.6rem;
-                opacity: 0.4;
-                letter-spacing: 2px;
-            ">FANTASY 5-A-SIDE</div>
+            <div class="player-card-footer">FANTASY 5-A-SIDE</div>
         </div>
     </div>
 
