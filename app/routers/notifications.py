@@ -5,14 +5,28 @@ from ..dependencies import get_notification_service, get_league_repository
 from ..services.interfaces import INotificationService
 from ..repositories.interfaces import ILeagueRepository
 from ..core.config import settings
+from ..core.vapid import normalize_vapid_key, is_vapid_public_key_valid
 
 
 router = APIRouter(tags=["notifications"])
 
 
+@router.get("/api/notifications/vapid-status")
+def vapid_status():
+    """Debug endpoint: verify VAPID keys are configured and valid."""
+    pub = normalize_vapid_key(settings.vapid_public_key)
+    priv = normalize_vapid_key(settings.vapid_private_key)
+    return {
+        "public_configured": bool(pub),
+        "private_configured": bool(priv),
+        "public_key_valid": is_vapid_public_key_valid(pub),
+        "subject": settings.vapid_subject or "mailto:admin@example.com",
+    }
+
+
 @router.get("/api/notifications/public-key", response_model=schemas.PushPublicKeyResponse)
 def get_public_key():
-    key = (settings.vapid_public_key or "").strip().replace("\n", "").replace("\r", "")
+    key = normalize_vapid_key(settings.vapid_public_key)
     return schemas.PushPublicKeyResponse(public_key=key)
 
 

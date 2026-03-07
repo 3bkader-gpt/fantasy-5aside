@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..models import models
 from ..core.config import settings
+from ..core.vapid import normalize_vapid_key
 from .interfaces import INotificationService
 
 
@@ -38,14 +39,13 @@ class NotificationService(INotificationService):
         self.db.commit()
 
     def notify_league(self, league_id: int, title: str, body: str, url: str) -> None:
-        # If VAPID is not configured, silently no-op
-        if not settings.vapid_public_key or not settings.vapid_private_key:
+        priv = normalize_vapid_key(settings.vapid_private_key)
+        if not priv or not normalize_vapid_key(settings.vapid_public_key):
             return
 
         try:
             from pywebpush import webpush, WebPushException  # type: ignore
         except Exception:
-            # pywebpush not installed; fail silently for now
             return
 
         subs = self.db.query(models.PushSubscription).filter_by(league_id=league_id).all()
@@ -66,7 +66,7 @@ class NotificationService(INotificationService):
                 webpush(
                     subscription_info=subscription_info,
                     data=payload,
-                    vapid_private_key=settings.vapid_private_key,
+                    vapid_private_key=priv,
                     vapid_claims={"sub": settings.vapid_subject or "mailto:admin@example.com"},
                 )
             except WebPushException:

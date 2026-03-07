@@ -59,7 +59,15 @@ document.addEventListener("DOMContentLoaded", function () {
         } catch (err) {
             console.error("Notification subscription error", err);
             const msg = err?.message || String(err);
-            alert("❌ حدث خطأ أثناء تفعيل الإشعارات.\n\n" + msg);
+            let hint = "";
+            if (msg.toLowerCase().includes("push service error")) {
+                hint =
+                    "\n\n💡 جرّب:\n" +
+                    "• متصفح Chrome على الكمبيوتر\n" +
+                    "• إذا كنت على Brave: الإعدادات → الخصوصية → تفعيل «خدمات Google للإشعارات»\n" +
+                    "• تأكد أن مفاتيح VAPID مضبوطة بشكل صحيح في Render";
+            }
+            alert("❌ حدث خطأ أثناء تفعيل الإشعارات.\n\n" + msg + hint);
         }
     }
 
