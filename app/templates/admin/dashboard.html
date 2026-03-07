@@ -43,7 +43,7 @@
     <div class="card mb-2" id="live-voting-card" data-match-id="{{ active_voting_match.id }}">
         <h3 style="margin-top:0; color: var(--heading-color);">📊 التصويت الحالي (الجولة {{
             active_voting_match.voting_round }})</h3>
-        <p class="text-secondary" style="font-size: 0.85rem;">
+        <p class="text-secondary" style="font-size: 1rem; font-weight: 700;">
             يتم تحديث هذه الإحصائيات تلقائياً كل عدة ثواني أثناء فتح التصويت. الأرقام تجميعية فقط ولا تكشف من صوّت لمَن.
         </p>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
@@ -52,7 +52,7 @@
             </button>
         </div>
         <div id="live-voting-body">
-            <p class="text-muted" style="font-size: 0.85rem;">⏳ جاري تحميل بيانات التصويت...</p>
+            <p class="text-muted" style="font-size: 1rem; font-weight: 700;">⏳ جاري تحميل بيانات التصويت...</p>
         </div>
     </div>
     {% endif %}
@@ -80,7 +80,7 @@
         {% if teams|length >= 2 %}
         <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 160px;">
-                <label style="font-size: 0.85rem; font-weight: bold; color: var(--primary-color);">🔵 الفريق أ</label>
+                <label style="font-size: 1rem; font-weight: 700; color: var(--primary-color);">🔵 الفريق أ</label>
                 <select id="team_a_select" class="form-control" style="border-bottom: 3px solid var(--primary-color);">
                     {% for t in teams %}
                     <option value="{{ t.id }}"
@@ -93,7 +93,7 @@
             </div>
             <div style="font-size: 1.5rem; align-self: flex-end; padding-bottom: 6px;">⚔️</div>
             <div style="flex: 1; min-width: 160px;">
-                <label style="font-size: 0.85rem; font-weight: bold; color: var(--warning-color);">🟡 الفريق ب</label>
+                <label style="font-size: 1rem; font-weight: 700; color: var(--warning-color);">🟡 الفريق ب</label>
                 <select id="team_b_select" class="form-control" style="border-bottom: 3px solid var(--warning-color);">
                     {% for t in teams %}
                     <option value="{{ t.id }}" {% if loop.index==2 %}selected{% endif %}
@@ -255,7 +255,7 @@
                                     style="display: flex; gap: 2px;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <select name="to_team_id" class="form-control"
-                                        style="font-size: 0.8rem; height: 30px; min-width: 120px; padding: 2px 6px; border-radius: var(--radius-pill);">
+                                        style="font-size: 1rem; font-weight: 700; height: 30px; min-width: 120px; padding: 2px 6px; border-radius: var(--radius-pill);">
                                         <option value="">-- نقل --</option>
                                         {% for t in teams %}
                                         {% if t.id != player.team_id %}
@@ -301,20 +301,20 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
                 <div class="form-group" style="flex: 2; min-width: 120px;">
-                    <label style="font-size: 0.85rem; margin-bottom: 4px;">اسم الفريق</label>
+                    <label style="font-size: 1rem; font-weight: 700; margin-bottom: 4px;">اسم الفريق</label>
                     <input type="text" name="name" class="form-control" placeholder="مثال: ريال مدريد" required>
                 </div>
                 <div class="form-group" style="flex: 1; min-width: 80px;">
-                    <label style="font-size: 0.85rem; margin-bottom: 4px;">رمز قصير</label>
+                    <label style="font-size: 1rem; font-weight: 700; margin-bottom: 4px;">رمز قصير</label>
                     <input type="text" name="short_code" class="form-control" placeholder="مثال: RMA" maxlength="5">
                 </div>
                 <div class="form-group" style="min-width: 60px;">
-                    <label style="font-size: 0.85rem; margin-bottom: 4px;">اللون</label>
+                    <label style="font-size: 1rem; font-weight: 700; margin-bottom: 4px;">اللون</label>
                     <input type="color" name="color" class="form-control" value="#3498db"
                         style="height: 42px; padding: 2px 4px; cursor: pointer;">
                 </div>
                 <button type="button" id="toggle-player-assign" class="btn"
-                    style="background: var(--hover-bg); color: var(--text-color); height: 42px; white-space: nowrap; font-size: 0.85rem;">
+                    style="background: var(--hover-bg); color: var(--text-color); height: 42px; white-space: nowrap; font-size: 1rem; font-weight: 700;">
                     👥 تعيين لاعبين
                 </button>
                 <button type="submit" class="btn"
@@ -330,11 +330,11 @@
                         <span style="font-size: 0.9rem; font-weight: bold; color: var(--primary-color);">اختر اللاعبين
                             للانضمام
                             لهذا الفريق</span>
-                        <div style="font-size: 0.8rem; color: var(--text-muted, #888);">يُعرض فقط اللاعبون بدون فريق
+                        <div style="font-size: 1rem; font-weight: 700; color: var(--text-muted, #888);">يُعرض فقط اللاعبون بدون فريق
                         </div>
                     </div>
                     <button type="button" id="add-new-player-from-team" class="btn btn-secondary"
-                        style="font-size: 0.8rem; padding: 4px 10px;">
+                        style="font-size: 1rem; font-weight: 700; padding: 4px 10px;">
                         ➕ إضافة لاعب جديد
                     </button>
                 </div>
@@ -342,23 +342,23 @@
                 {% if unassigned %}
                 <!-- Search box -->
                 <input type="text" id="player-search-input" class="form-control" placeholder="ابحث عن لاعب..."
-                    style="margin-bottom: 8px; font-size: 0.85rem;">
+                    style="margin-bottom: 8px; font-size: 1rem; font-weight: 700;">
                 <div id="player-assign-list"
                     style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; max-height: 220px; overflow-y: auto;">
                     {% for player in unassigned %}
                     <label
-                        style="display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 0.85rem;"
+                        style="display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 700;"
                         class="player-assign-item">
                         <input type="checkbox" name="player_ids" value="{{ player.id }}" style="cursor: pointer;">
                         <span>{{ player.name }}</span>
                     </label>
                     {% endfor %}
                 </div>
-                <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted, #888);">
+                <div style="margin-top: 8px; font-size: 1rem; font-weight: 700; color: var(--text-muted, #888);">
                     ✅ <span id="selected-count">0</span> لاعب مختار
                 </div>
                 {% else %}
-                <p style="color: var(--text-muted, #888); font-size: 0.85rem; margin: 0;">كل اللاعبين منتسبون بالفعل
+                <p style="color: var(--text-muted, #888); font-size: 1rem; font-weight: 700; margin: 0;">كل اللاعبين منتسبون بالفعل
                     لفرق.
                     يمكنك نقلهم لاحقاً من خلال خاصية الانتقالات.</p>
                 {% endif %}
@@ -373,21 +373,21 @@
                 style="display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); border-right-width: 5px; border-right-style: solid; --team-color: {{ t.color or '#888' }}; border-right-color: var(--team-color);">
                 <!-- Color Badge -->
                 <div
-                    style="--badge-color: {{ t.color or '#888' }}; width: 36px; height: 36px; border-radius: 50%; background-color: var(--badge-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8rem; flex-shrink: 0;">
+                    style="--badge-color: {{ t.color or '#888' }}; width: 36px; height: 36px; border-radius: 50%; background-color: var(--badge-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1rem; font-weight: 700; flex-shrink: 0;">
                     {{ t.short_code or t.name[:2] }}</div>
                 <!-- Info -->
                 <div style="flex: 1;">
                     <div style="font-weight: bold;">{{ t.name }}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted, #888);">{{ t.player_count }} لاعب</div>
+                    <div style="font-size: 1rem; font-weight: 700; color: var(--text-muted, #888);">{{ t.player_count }} لاعب</div>
                 </div>
                 <!-- Edit Form -->
                 <form action="/l/{{ league.slug }}/admin/team/{{ t.id }}/update" method="POST"
                     style="display: flex; gap: 6px; align-items: center;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="text" name="name" value="{{ t.name }}" class="form-control"
-                        style="width: 110px; font-size: 0.85rem;">
+                        style="width: 110px; font-size: 1rem; font-weight: 700;">
                     <input type="text" name="short_code" value="{{ t.short_code }}" class="form-control"
-                        style="width: 65px; font-size: 0.85rem;" maxlength="5">
+                        style="width: 65px; font-size: 1rem; font-weight: 700;" maxlength="5">
                     <input type="color" name="color" value="{{ t.color }}"
                         style="height: 36px; width: 44px; padding: 2px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 6px;"
                         title="اختيار لون الفريق">
@@ -459,7 +459,7 @@
     <!-- Import Backup -->
     <div class="card mb-4 border-right-danger">
         <h3 style="color: var(--danger-color);">⬆️ استعادة نسخة احتياطية</h3>
-        <p class="text-secondary mb-1" style="font-size: 0.85rem;">
+        <p class="text-secondary mb-1" style="font-size: 1rem; font-weight: 700;">
             استخدم هذه الأداة لتحميل ملف النسخة الاحتياطية (JSON) الذي تم تصديره من نفس النظام. سيتم مسح بيانات الدوري الحالية واستبدالها بما في الملف.
         </p>
         <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
@@ -469,7 +469,7 @@
                 استعادة النسخة الاحتياطية 💾
             </button>
         </div>
-        <p class="text-muted mt-1" style="font-size: 0.8rem;">
+        <p class="text-muted mt-1" style="font-size: 1rem; font-weight: 700;">
             ⚠️ يفضل حفظ نسخة احتياطية جديدة قبل الاستعادة. الحد الأقصى للحجم 5MB.
         </p>
     </div>
@@ -477,7 +477,7 @@
     <!-- League Settings -->
     <div class="card mb-4 border-right-primary">
         <h3 style="color: var(--text-color);">⚙️ إعدادات الدوري (أساسيات)</h3>
-        <p class="text-secondary mb-1" style="font-size: 0.85rem;">
+        <p class="text-secondary mb-1" style="font-size: 1rem; font-weight: 700;">
             استخدم هذه الإعدادات لتعديل اسم الدوري، الرابط وكلمة السر. حقول أسماء الفريقين A/B موجودة فقط للتوافق مع
             الدوريات القديمة، ويمكن تجاهلها إذا كنت تعتمد على نظام الفرق المسجلة في الأسفل.
         </p>

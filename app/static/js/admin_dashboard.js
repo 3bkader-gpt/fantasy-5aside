@@ -620,12 +620,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await resp.json();
 
             if (!data.is_open) {
-                bodyEl.innerHTML = '<p class="text-muted" style="font-size:0.85rem;">لا يوجد تصويت مفتوح حالياً لهذه المباراة.</p>';
+                bodyEl.innerHTML = '<p class="text-muted" style="font-size: 1rem; font-weight: 700;">لا يوجد تصويت مفتوح حالياً لهذه المباراة.</p>';
                 return;
             }
 
             if (!data.candidates || data.candidates.length === 0) {
-                bodyEl.innerHTML = '<p class="text-muted" style="font-size:0.85rem;">لم يتم تسجيل أي صوت حتى الآن.</p>';
+                bodyEl.innerHTML = '<p class="text-muted" style="font-size: 1rem; font-weight: 700;">لم يتم تسجيل أي صوت حتى الآن.</p>';
                 return;
             }
 
@@ -684,7 +684,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const p = document.createElement('p');
             p.className = 'text-secondary';
             p.style.marginTop = '8px';
-            p.style.fontSize = '0.8rem';
+            p.style.fontSize = '1rem';
+            p.style.fontWeight = '700';
             p.innerHTML = `إجمالي الأصوات في هذه الجولة: <strong>${data.total_votes}</strong>`;
             bodyEl.appendChild(p);
         } catch (err) {

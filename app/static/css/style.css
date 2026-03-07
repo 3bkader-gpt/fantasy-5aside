@@ -443,7 +443,8 @@ thead th {
 @media (max-width: 480px) {
     .match-timeline-summary {
         padding: 0.5rem 0.7rem;
-        font-size: 0.85rem;
+        font-size: 1rem;
+        font-weight: 700;
     }
 
     .match-timeline-item {
@@ -475,7 +476,7 @@ thead th {
 .badge-pill {
     display: inline-block;
     padding: 6px 14px;
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: bold;
     color: white;
     background: linear-gradient(135deg, #f1c40f, #e67e22);
@@ -838,7 +839,8 @@ nav ul li a:hover {
 }
 
 .league-slug {
-    font-size: 0.85rem;
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 h1,
@@ -981,7 +983,8 @@ input[type="checkbox"] {
 
 .btn-sm {
     padding: 4px 10px;
-    font-size: 0.85rem;
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 /* Admin Dashboard Specific Layouts */
@@ -1752,7 +1755,7 @@ button,
     display: inline-flex;
     align-items: center;
     padding: 0.25rem 0.75rem;
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: 700;
     border-radius: var(--radius-pill);
     background-color: var(--bg-color);
@@ -2113,7 +2116,7 @@ button,
 
     .tab-btn {
         padding: 8px 12px;
-        font-size: 0.85rem;
+        font-size: 1rem;
         white-space: nowrap;
         flex-shrink: 0;
     }
@@ -2303,7 +2306,8 @@ button,
 }
 
 .admin-stat-card .stat-label {
-    font-size: 0.85rem;
+    font-size: 1rem;
+    font-weight: 700;
     color: var(--text-secondary);
     margin-top: 2px;
 }
