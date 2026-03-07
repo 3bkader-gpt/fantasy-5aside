@@ -149,6 +149,24 @@ a {
     color: #ff4757;
 }
 
+/* Skip link for keyboard users */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    padding: 0.5rem 1rem;
+    border-radius: 0 0 var(--radius-md) 0;
+    z-index: 2000;
+    font-size: 0.9rem;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
 /* =========================================
    COMPREHENSIVE DARK MODE FIXES (ALL PAGES)
    ========================================= */
@@ -298,7 +316,7 @@ thead th {
     gap: 0.4rem;
     padding: 0.35rem 0.4rem;
     border-radius: var(--radius-sm);
-    background-color: rgba(15, 23, 42, 0.35);
+    background-color: var(--hover-bg);
 }
 
 .match-timeline-player {
@@ -755,6 +773,30 @@ nav ul li a:hover {
     .container {
         padding: 0 0.5rem;
         margin: 0.75rem auto;
+    }
+}
+
+/* Site footer */
+.site-footer {
+    margin-top: 2rem;
+    padding: 1.5rem 1rem;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.site-footer a {
+    color: var(--primary-color);
+}
+
+.dark-mode .site-footer {
+    background-color: var(--card-bg);
+}
+
+@media (max-width: 768px) {
+    .site-footer {
+        padding-bottom: 4.5rem;
     }
 }
 
