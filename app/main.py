@@ -143,12 +143,19 @@ async def robots_txt():
 
 
 @app.get("/static/sw.js")
-async def service_worker():
+async def service_worker_static():
     """Serve SW with Service-Worker-Allowed so scope '/' works from /static/sw.js."""
     from fastapi.responses import FileResponse
     r = FileResponse("app/static/sw.js", media_type="application/javascript")
     r.headers["Service-Worker-Allowed"] = "/"
     return r
+
+
+@app.get("/sw.js")
+async def service_worker_root():
+    """Serve SW from root - default scope is /, no special header needed."""
+    from fastapi.responses import FileResponse
+    return FileResponse("app/static/sw.js", media_type="application/javascript")
 
 
 @app.exception_handler(HTTPException)

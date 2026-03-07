@@ -41,8 +41,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const registration = await navigator.serviceWorker.register("/static/sw.js", { scope: "/" });
-            await navigator.serviceWorker.ready;
+            // Unregister any old SWs that might conflict (e.g. /static/sw.js with scope /static/)
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const r of regs) {
+                if (r.scope.includes(location.origin) && r.active?.scriptURL !== location.origin + "/sw.js") {
+                    await r.unregister();
+                }
+            }
+
+            await navigator.serviceWorker.register("/sw.js");
+            const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(publicKey),
