@@ -22,17 +22,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const publicKey = await getPublicKey();
+            const publicKey = (await getPublicKey()).trim();
             if (!publicKey) {
                 alert("الإشعارات غير مفعلة على الخادم (مفاتيح VAPID غير مضبوطة).");
                 return;
             }
 
-            const registration = await navigator.serviceWorker.register("/static/sw.js");
+            const registration = await navigator.serviceWorker.register("/static/sw.js", { scope: "/" });
+            await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: Uint8Array.from(
-                    atob(publicKey.replace(/_/g, "/").replace(/-/g, "+")),
+                    atob(publicKey.replace(/_/g, "/").replace(/-/g, "+").replace(/\s/g, "")),
                     (c) => c.charCodeAt(0)
                 ),
             });
@@ -57,7 +58,8 @@ document.addEventListener("DOMContentLoaded", function () {
             alert("✅ تم تفعيل إشعارات الدوري بنجاح.");
         } catch (err) {
             console.error("Notification subscription error", err);
-            alert("❌ حدث خطأ أثناء تفعيل الإشعارات.");
+            const msg = err?.message || String(err);
+            alert("❌ حدث خطأ أثناء تفعيل الإشعارات.\n\n" + msg);
         }
     }
 

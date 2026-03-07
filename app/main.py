@@ -141,6 +141,16 @@ async def robots_txt():
     from fastapi.responses import FileResponse
     return FileResponse("app/static/robots.txt")
 
+
+@app.get("/static/sw.js")
+async def service_worker():
+    """Serve SW with Service-Worker-Allowed so scope '/' works from /static/sw.js."""
+    from fastapi.responses import FileResponse
+    r = FileResponse("app/static/sw.js", media_type="application/javascript")
+    r.headers["Service-Worker-Allowed"] = "/"
+    return r
+
+
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
     # Check if the client prefers HTML

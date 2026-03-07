@@ -24,6 +24,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         response.headers["Content-Security-Policy"] = CSP
+        if request.url.path == "/static/sw.js":
+            response.headers["Service-Worker-Allowed"] = "/"
 
         # HSTS only when production and HTTPS (avoid breaking local HTTP)
         if settings.env.lower() == "production" and request.url.scheme == "https":

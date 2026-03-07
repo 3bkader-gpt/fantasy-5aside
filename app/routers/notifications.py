@@ -12,7 +12,8 @@ router = APIRouter(tags=["notifications"])
 
 @router.get("/api/notifications/public-key", response_model=schemas.PushPublicKeyResponse)
 def get_public_key():
-    return schemas.PushPublicKeyResponse(public_key=settings.vapid_public_key or "")
+    key = (settings.vapid_public_key or "").strip().replace("\n", "").replace("\r", "")
+    return schemas.PushPublicKeyResponse(public_key=key)
 
 
 @router.post("/api/notifications/subscribe")
