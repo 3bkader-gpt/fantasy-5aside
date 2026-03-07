@@ -7,6 +7,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const leagueSlug = btn.getAttribute("data-league-slug") || "";
     if (!leagueSlug) return;
 
+    function urlBase64ToUint8Array(base64String) {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+        const rawData = atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; i++) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
     async function getPublicKey() {
         const resp = await fetch("/api/notifications/public-key");
         if (!resp.ok) return "";
@@ -32,10 +45,7 @@ document.addEventListener("DOMContentLoaded", function () {
             await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: Uint8Array.from(
-                    atob(publicKey.replace(/_/g, "/").replace(/-/g, "+").replace(/\s/g, "")),
-                    (c) => c.charCodeAt(0)
-                ),
+                applicationServerKey: urlBase64ToUint8Array(publicKey),
             });
 
             const payload = {
