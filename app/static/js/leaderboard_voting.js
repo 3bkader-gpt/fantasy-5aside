@@ -211,7 +211,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!currentVoterId || !currentCandidateId || !currentMatchId || !submitBtn) return;
 
         submitBtn.disabled = true;
-        submitBtn.textContent = "جاري الإرسال... ⏳";
+        submitBtn.classList.add("btn-loading");
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = "جاري الإرسال...";
 
         try {
             const fp = await generateFingerprint();
@@ -246,6 +248,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert(result.detail || "حدث خطأ.");
             }
             submitBtn.disabled = false;
+            submitBtn.classList.remove("btn-loading");
             submitBtn.textContent = "إرسال التصويت 🚀";
         } catch (error) {
             console.error("Error:", error);
@@ -253,6 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 showToast("حدث خطأ في الاتصال.", "error");
             }
             submitBtn.disabled = false;
+            submitBtn.classList.remove("btn-loading");
             submitBtn.textContent = "إرسال التصويت 🚀";
         }
     }

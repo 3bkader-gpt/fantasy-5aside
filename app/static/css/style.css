@@ -31,23 +31,23 @@
 
     /* --- 2. Semantic Tokens (Light Mode - Default) --- */
     /* Surfaces */
-    --bg-color: #0f172a;
-    --surface-color: #020617;
-    --card-bg: #0b1120;
-    --input-bg: #020617;
-    --nav-bg: #020617;
-    --hover-bg: rgba(148, 163, 184, 0.12);
+    --bg-color: #f8fafc;
+    --surface-color: #ffffff;
+    --card-bg: #ffffff;
+    --input-bg: #f8fafc;
+    --nav-bg: #0f172a;
+    --hover-bg: rgba(15, 23, 42, 0.06);
 
     /* Text */
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
     --text-color: var(--text-primary);
-    --heading-color: #e5e7eb;
+    --heading-color: #0f172a;
 
     /* Borders */
-    --border-subtle: rgba(148, 163, 184, 0.25);
-    --border-color: rgba(148, 163, 184, 0.4);
+    --border-subtle: rgba(15, 23, 42, 0.12);
+    --border-color: rgba(15, 23, 42, 0.2);
 
     /* Brand Actions (Primary) */
     --primary-color: var(--color-blue-500);
@@ -88,10 +88,10 @@
     --nav-bg: #020617;
     --hover-bg: rgba(148, 163, 184, 0.18);
 
-    /* Text */
+    /* Text (improved contrast ~5.5:1 and ~4.8:1) */
     --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
+    --text-secondary: #a8b8cc;
+    --text-muted: #8494a7;
     --text-color: var(--text-primary);
     --heading-color: #e5e7eb;
 
@@ -589,10 +589,31 @@ nav ul li a:hover {
     color: var(--accent-color);
 }
 
+/* Nav extra: visible on desktop, hidden on mobile (shown in sheet) */
+.nav-more-wrap {
+    display: none;
+}
+
 /* =========================================
    MOBILE BOTTOM NAV - FIXED & CLEAN
    ========================================= */
 @media (max-width: 768px) {
+    .nav-extra {
+        display: none !important;
+    }
+
+    .nav-more-wrap {
+        display: flex !important;
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    .nav-more-btn {
+        font-size: 1.4rem;
+        padding: 4px 8px;
+        line-height: 1;
+    }
     nav ul {
         position: fixed;
         bottom: 0;
@@ -649,6 +670,77 @@ nav ul li a:hover {
         font-size: 1.2rem;
         padding: 4px 2px;
     }
+}
+
+/* Nav Sheet (Bottom Sheet for Mobile "المزيد") */
+.nav-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.3s, opacity 0.3s;
+}
+
+.nav-sheet.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+.nav-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.nav-sheet-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface-color);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 1.5rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+}
+
+.nav-sheet.active .nav-sheet-content {
+    transform: translateY(0);
+}
+
+.nav-sheet-title {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.nav-sheet-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-sheet-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--hover-bg);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.nav-sheet-link:hover {
+    background: var(--border-subtle);
+}
+
+.nav-sheet-link .icon {
+    font-size: 1.3rem;
 }
 
 /* Container */
@@ -834,47 +926,6 @@ input[type="checkbox"] {
     margin-inline-end: 8px;
 }
 
-button,
-.btn,
-.btn-primary {
-    display: inline-block;
-    width: 100%;
-    min-height: 44px;
-    padding: 12px;
-    background-color: var(--positive-color);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-top: 0.5rem;
-    font-family: inherit;
-}
-
-@media (min-width: 768px) {
-
-    button,
-    .btn,
-    .btn-primary {
-        width: auto;
-        padding-inline-start: 2rem;
-        padding-inline-end: 2rem;
-    }
-}
-
-button:hover,
-.btn:hover,
-.btn-primary:hover {
-    filter: brightness(1.1);
-}
-
-button.btn-danger {
-    background-color: var(--negative-color);
-}
-
 /* Share Button */
 .btn-share {
     background-color: transparent;
@@ -899,22 +950,6 @@ button.btn-danger {
 .btn-sm {
     padding: 4px 10px;
     font-size: 0.85rem;
-}
-
-/* Cards & Sections */
-.card {
-    background: var(--card-bg);
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1.5rem;
-    transition: background-color 0.3s ease;
-}
-
-@media (max-width: 480px) {
-    .card {
-        padding: 1rem 0.75rem;
-    }
 }
 
 /* Admin Dashboard Specific Layouts */
@@ -1125,6 +1160,45 @@ button.btn-danger {
     margin-bottom: 2rem;
 }
 
+.mb-sm {
+    margin-bottom: var(--space-2);
+}
+
+.m-0 {
+    margin: 0;
+}
+
+/* Typography utilities */
+.text-3xl { font-size: 1.875rem; }
+.text-2xl { font-size: 1.5rem; }
+.text-xl { font-size: 1.25rem; }
+.text-lg { font-size: 1.125rem; }
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+
+/* Color utilities */
+.text-success { color: var(--success-color); }
+.text-danger { color: var(--danger-color); }
+.text-warning { color: var(--warning-color); }
+.text-primary { color: var(--primary-color); }
+.text-accent { color: var(--accent-color); }
+.text-muted { color: var(--text-muted); }
+
+/* Spacing utilities */
+.p-1 { padding: var(--space-1); }
+.p-2 { padding: var(--space-2); }
+
+/* Layout utilities */
+.gradient-hero { background: linear-gradient(135deg, var(--nav-bg), var(--primary-color)); color: #fff; }
+.border-bottom-warning { border-right: 4px solid var(--warning-color); }
+.border-bottom-success { border-right: 4px solid var(--success-color); }
+.border-bottom-accent { border-right: 4px solid var(--primary-color); }
+
+/* Display */
+.opacity-80 { opacity: 0.8; }
+
 /* --- Forms --- */
 .form-control {
     width: 100%;
@@ -1207,7 +1281,14 @@ button.btn-danger {
     padding: 1.5rem;
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border-subtle);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 1.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1rem 0.75rem;
+    }
 }
 
 .card-hover:hover {
@@ -1222,11 +1303,13 @@ button.btn-danger {
 }
 
 /* Buttons */
+button,
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0.5rem 1.25rem;
+    min-height: 44px;
     font-size: 1rem;
     font-weight: 600;
     border-radius: var(--radius-md);
@@ -1235,6 +1318,21 @@ button.btn-danger {
     transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
     text-align: center;
     gap: 0.5rem;
+    font-family: inherit;
+}
+
+@media (max-width: 767px) {
+    button,
+    .btn {
+        width: 100%;
+    }
+}
+
+@media (min-width: 768px) {
+    button,
+    .btn {
+        width: auto;
+    }
 }
 
 .btn:active {
@@ -1269,6 +1367,32 @@ button.btn-danger {
 .btn-danger:hover {
     background-color: #c0392b;
     box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+/* Button Loading State */
+.btn-loading {
+    pointer-events: none;
+    opacity: 0.8;
+    position: relative;
+}
+
+.btn-loading::after {
+    content: "";
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-inline-start: 0.5em;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: btn-spin 0.7s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes btn-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .btn-success {

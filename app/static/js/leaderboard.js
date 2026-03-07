@@ -138,7 +138,11 @@ document.addEventListener("DOMContentLoaded", function () {
     if (shareBtn && captureArea) {
         shareBtn.addEventListener("click", () => {
             const originalDisplay = shareBtn.style.display;
+            const originalText = shareBtn.textContent;
             shareBtn.style.display = "none"; // Hide button from canvas
+            shareBtn.classList.add("btn-loading");
+            shareBtn.disabled = true;
+            shareBtn.textContent = "جاري التقاط الصورة...";
 
             const isDark = document.body.classList.contains("dark-mode");
             const bgColor = isDark ? "#121212" : "#f4f7f6";
@@ -148,7 +152,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 scale: 2,
                 useCORS: true
             }).then(canvas => {
-                shareBtn.style.display = originalDisplay; // Restore button
+                shareBtn.style.display = originalDisplay;
+                shareBtn.classList.remove("btn-loading");
+                shareBtn.disabled = false;
+                shareBtn.textContent = originalText;
 
                 const image = canvas.toDataURL("image/png");
                 const link = document.createElement("a");
@@ -159,6 +166,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.body.removeChild(link);
             }).catch(err => {
                 shareBtn.style.display = originalDisplay;
+                shareBtn.classList.remove("btn-loading");
+                shareBtn.disabled = false;
+                shareBtn.textContent = originalText;
                 console.error("Error generating screenshot: ", err);
                 alert("❌ حدث خطأ أثناء التقاط الصورة.");
             });

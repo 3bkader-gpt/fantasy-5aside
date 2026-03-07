@@ -235,7 +235,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('add-player-a-btn').addEventListener('click', () => addPlayerRow(teamABody));
         document.getElementById('add-player-b-btn').addEventListener('click', () => addPlayerRow(teamBBody));
 
-        document.getElementById('save-match-btn').addEventListener('click', async () => {
+        const saveMatchBtn = document.getElementById('save-match-btn');
+        saveMatchBtn.addEventListener('click', async () => {
             const teamAName = document.getElementById('team_a_name').value.trim() || (window.TEAM_A_LABEL || 'فريق أ');
             const teamBName = document.getElementById('team_b_name').value.trim() || (window.TEAM_B_LABEL || 'فريق ب');
             const stats = [];
@@ -262,6 +263,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('⚠️ يرجى إدخال بيانات لاعب واحد على الأقل.');
                 return;
             }
+
+            saveMatchBtn.classList.add('btn-loading');
+            saveMatchBtn.disabled = true;
+            const origSaveText = saveMatchBtn.textContent;
+            saveMatchBtn.textContent = 'جاري الحفظ...';
 
             const payload = {
                 team_a_name: teamAName,
@@ -300,10 +306,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     const errorData = await response.json();
                     alert('❌ حدث خطأ: ' + (errorData.detail || 'Unknown error'));
+                    saveMatchBtn.classList.remove('btn-loading');
+                    saveMatchBtn.disabled = false;
+                    saveMatchBtn.textContent = origSaveText;
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('❌ تعذر الاتصال بالخادم.');
+                saveMatchBtn.classList.remove('btn-loading');
+                saveMatchBtn.disabled = false;
+                saveMatchBtn.textContent = origSaveText;
             }
         });
     }

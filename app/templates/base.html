@@ -10,7 +10,7 @@
 
     <!-- PWA Setup -->
     <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#1a1a2e">
+    <meta name="theme-color" content="#f8fafc">
     <link rel="apple-touch-icon" href="/static/img/icon-192.png">
     <link rel="icon" type="image/png" href="/static/favicon.png">
 
@@ -19,7 +19,7 @@
     <meta property="og:title"
         content="{% if league %}دوري {{ league.name }} - الفانتازي الرسمي ⚽{% else %}Fantasy 5-a-Side - منصة إدارة الخماسي{% endif %}">
     <meta property="og:description" content="تابع ترتيب الدوري، إحصائيات اللاعبين، والمنافسة لحظة بلحظة!">
-    <meta property="og:image" content="https://yoursite.com/static/img/og-banner.jpg">
+    <meta property="og:image" content="{{ request.url.scheme | default('https') }}://{{ request.url.netloc | default('example.com') }}/static/img/icon-512.png">
     <meta property="og:site_name" content="Fantasy 5-a-Side">
 
     <!-- Twitter Card -->
@@ -37,6 +37,7 @@
 </head>
 
 <body>
+    <a href="#main-content" class="skip-link">تخطي إلى المحتوى</a>
 
     <nav>
         <div class="brand-container flex-between" style="gap: 1rem;">
@@ -49,44 +50,39 @@
         </div>
         <ul>
             {% if league %}
-            <li><a href="/l/{{ league.slug }}" title="جدول الترتيب"><span class="icon">📋</span><span
-                        class="text">الترتيب</span></a></li>
-            <li><a href="/l/{{ league.slug }}/matches" title="قائمة المباريات"><span class="icon">📜</span><span
-                        class="text">المباريات</span></a></li>
-            <li><a href="/l/{{ league.slug }}/cup" title="كأس الدوري"><span class="icon">🏆</span><span
-                        class="text">الكأس</span></a></li>
-            <li><a href="/l/{{ league.slug }}/hall-of-fame" title="قاعة الشرف"><span class="icon">🎖️</span><span
-                        class="text">الشرف</span></a></li>
-            <li><a href="/l/{{ league.slug }}/stats" title="إحصائيات الدوري"><span class="icon">📊</span><span
-                        class="text">الإحصائيات</span></a></li>
-            <li><a href="#" id="open-rules-modal-link" title="شرح نظام النقاط"><span class="icon">📖</span><span
-                        class="text">كيف
-                        تلعب؟</span></a></li>
+            <li><a href="/l/{{ league.slug }}" title="جدول الترتيب" {% if request.url.path.rstrip('/') == '/l/' ~ league.slug %}aria-current="page"{% endif %}><span class="icon" aria-hidden="true">📋</span><span class="text">الترتيب</span></a></li>
+            <li><a href="/l/{{ league.slug }}/matches" title="قائمة المباريات" {% if '/matches' in request.url.path %}aria-current="page"{% endif %}><span class="icon" aria-hidden="true">📜</span><span class="text">المباريات</span></a></li>
+            <li><a href="/l/{{ league.slug }}/cup" title="كأس الدوري" {% if '/cup' in request.url.path %}aria-current="page"{% endif %}><span class="icon" aria-hidden="true">🏆</span><span class="text">الكأس</span></a></li>
+            <li class="nav-extra"><a href="/l/{{ league.slug }}/hall-of-fame" title="قاعة الشرف" {% if '/hall-of-fame' in request.url.path %}aria-current="page"{% endif %}><span class="icon" aria-hidden="true">🎖️</span><span class="text">الشرف</span></a></li>
+            <li class="nav-extra"><a href="/l/{{ league.slug }}/stats" title="إحصائيات الدوري" {% if '/stats' in request.url.path %}aria-current="page"{% endif %}><span class="icon" aria-hidden="true">📊</span><span class="text">الإحصائيات</span></a></li>
+            <li class="nav-extra"><a href="#" id="open-rules-modal-link" title="شرح نظام النقاط"><span class="icon" aria-hidden="true">📖</span><span class="text">كيف تلعب؟</span></a></li>
             {% if is_admin %}
-            <li><a href="/l/{{ league.slug }}/admin" class="admin-link" title="لوحة تحكم الأدمن"><span
-                        class="icon">🛡️</span><span class="text">الإدارة</span></a></li>
+            <li class="nav-extra"><a href="/l/{{ league.slug }}/admin" class="admin-link" title="لوحة تحكم الأدمن" {% if '/admin' in request.url.path %}aria-current="page"{% endif %}><span class="icon" aria-hidden="true">🛡️</span><span class="text">الإدارة</span></a></li>
             {% endif %}
+            <li class="nav-more-wrap"><button id="nav-more-btn" class="icon-btn nav-more-btn" aria-label="المزيد من الخيارات" title="المزيد" aria-expanded="false" aria-haspopup="true"><span aria-hidden="true">⋯</span></button></li>
             {% else %}
-            <li><a href="/" title="الصفحة الرئيسية"><span class="icon">🏠</span><span class="text">الرئيسية</span></a>
-            </li>
+            <li><a href="/" title="الصفحة الرئيسية" {% if request.url.path == '/' %}aria-current="page"{% endif %}><span class="icon" aria-hidden="true">🏠</span><span class="text">الرئيسية</span></a></li>
             {% endif %}
             <li>
-                <button id="theme-toggle" class="icon-btn" aria-label="تبديل الوضع الليلي"
-                    title="تبديل الوضع الليلي">🌙</button>
+                <button id="theme-toggle" class="icon-btn" aria-label="تبديل الوضع الليلي" title="تبديل الوضع الليلي"><span aria-hidden="true">🌙</span></button>
             </li>
             {% if league %}
             <li>
-                <button id="enable-notifications" class="icon-btn" aria-label="تفعيل الإشعارات"
-                    data-league-slug="{{ league.slug }}"
-                    title="تفعيل إشعارات نتائج الدوري">🔔</button>
+                <button id="enable-notifications" class="icon-btn" aria-label="تفعيل الإشعارات" data-league-slug="{{ league.slug }}" title="تفعيل إشعارات نتائج الدوري"><span aria-hidden="true">🔔</span></button>
             </li>
             {% endif %}
         </ul>
     </nav>
 
-    <main class="container">
+    <main id="main-content" class="container">
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="site-footer">
+        <p class="m-0 text-sm text-muted">
+            © 2025 Fantasy 5-a-Side · <a href="#" id="footer-rules-link" class="text-primary">كيف تلعب؟</a> · <a href="/" class="text-primary">الرئيسية</a>
+        </p>
+    </footer>
 
     <!-- Auto-wrap all tables to guarantee mobile responsiveness (horizontal swipe) without editing every child template -->
     <script src="/static/js/main.js"></script>
@@ -129,27 +125,27 @@
                         <tbody>
                             <tr>
                                 <td>📋 مشاركة في المباراة (مجرد الظهور في التشكيلة)</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+2</td>
+                                <td class="text-success font-bold">+2</td>
                             </tr>
                             <tr>
                                 <td>⚽ هدف (لاعب)</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+3</td>
+                                <td class="text-success font-bold">+3</td>
                             </tr>
                             <tr>
                                 <td>⚽ هدف (حارس)</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+6</td>
+                                <td class="text-success font-bold">+6</td>
                             </tr>
                             <tr>
                                 <td>👟 أسيست (لاعب)</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+2</td>
+                                <td class="text-success font-bold">+2</td>
                             </tr>
                             <tr>
                                 <td>👟 أسيست (حارس)</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+4</td>
+                                <td class="text-success font-bold">+4</td>
                             </tr>
                             <tr>
                                 <td>🏆 فوز الفريق</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+2</td>
+                                <td class="text-success font-bold">+2</td>
                             </tr>
                             <tr>
                                 <td>🤝 تعادل الفريق</td>
@@ -157,19 +153,19 @@
                             </tr>
                             <tr>
                                 <td>💔 خسارة الفريق</td>
-                                <td style="color: var(--danger-color); font-weight: bold;">-1</td>
+                                <td class="text-danger font-bold">-1</td>
                             </tr>
                             <tr class="highlight-gk">
                                 <td>🛡️ كلين شيت كامل (حارس يستقبل 0-2 أهداف)</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+10</td>
+                                <td class="text-success font-bold">+10</td>
                             </tr>
                             <tr class="highlight-gk">
                                 <td>🛡️ كلين شيت جزئي (حارس يستقبل 3-6 أهداف)</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+4</td>
+                                <td class="text-success font-bold">+4</td>
                             </tr>
                             <tr>
                                 <td>🛡️ مساهمة دفاعية (مدافع يختاره الحارس)</td>
-                                <td style="color: var(--success-color); font-weight: bold;">+2</td>
+                                <td class="text-success font-bold">+2</td>
                             </tr>
                             <tr class="highlight-gk">
                                 <td>✋ كل 3 تصديات</td>
@@ -177,11 +173,11 @@
                             </tr>
                             <tr class="highlight-gk">
                                 <td>❌ كل 4 أهداف عليه</td>
-                                <td style="color: var(--danger-color); font-weight: bold;">-1</td>
+                                <td class="text-danger font-bold">-1</td>
                             </tr>
                             <tr style="background-color: rgba(243, 156, 18, 0.1);">
                                 <td>⭐ نجم المباراة</td>
-                                <td style="color: var(--warning-color); font-weight: bold;">تلقائي (+1/+2/+3)</td>
+                                <td class="text-warning font-bold">تلقائي (+1/+2/+3)</td>
                             </tr>
                         </tbody>
                     </table>
@@ -220,6 +216,25 @@
 
     <!-- Toast Container -->
     <div id="toast-container"></div>
+
+    <!-- Mobile Nav Bottom Sheet (المزيد) -->
+    {% if league %}
+    <div id="nav-sheet" class="nav-sheet" role="dialog" aria-label="المزيد من الخيارات" aria-modal="true" aria-hidden="true">
+        <div class="nav-sheet-backdrop"></div>
+        <div class="nav-sheet-content">
+            <h3 class="nav-sheet-title">المزيد</h3>
+            <nav class="nav-sheet-links" aria-label="روابط إضافية">
+                <a href="/l/{{ league.slug }}/hall-of-fame" class="nav-sheet-link"><span class="icon" aria-hidden="true">🎖️</span> قاعة الشرف</a>
+                <a href="/l/{{ league.slug }}/stats" class="nav-sheet-link"><span class="icon" aria-hidden="true">📊</span> الإحصائيات</a>
+                <a href="#" class="nav-sheet-link nav-sheet-rules-link"><span class="icon" aria-hidden="true">📖</span> كيف تلعب؟</a>
+                {% if is_admin %}
+                <a href="/l/{{ league.slug }}/admin" class="nav-sheet-link admin-link"><span class="icon" aria-hidden="true">🛡️</span> الإدارة</a>
+                {% endif %}
+            </nav>
+            <button type="button" class="btn btn-secondary close-nav-sheet-btn" style="width: 100%; margin-top: 1rem;">إغلاق</button>
+        </div>
+    </div>
+    {% endif %}
 
     <script src="/static/js/notifications.js"></script>
 </body>

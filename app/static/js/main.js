@@ -7,8 +7,12 @@ document.addEventListener("DOMContentLoaded", function () {
         if (localStorage.getItem(THEME_KEY) === "dark") {
             document.body.classList.add("dark-mode");
             toggleBtn.textContent = "☀️";
+            toggleBtn.setAttribute("aria-label", "تبديل الوضع النهاري");
+            toggleBtn.setAttribute("title", "تبديل الوضع النهاري");
         } else {
             toggleBtn.textContent = "🌙";
+            toggleBtn.setAttribute("aria-label", "تبديل الوضع الليلي");
+            toggleBtn.setAttribute("title", "تبديل الوضع الليلي");
         }
 
         toggleBtn.addEventListener("click", () => {
@@ -16,6 +20,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const isDark = document.body.classList.contains("dark-mode");
             localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
             toggleBtn.textContent = isDark ? "☀️" : "🌙";
+            toggleBtn.setAttribute("aria-label", isDark ? "تبديل الوضع النهاري" : "تبديل الوضع الليلي");
+            toggleBtn.setAttribute("title", isDark ? "تبديل الوضع النهاري" : "تبديل الوضع الليلي");
         });
     }
 
@@ -35,14 +41,37 @@ document.addEventListener("DOMContentLoaded", function () {
         copyLeagueLinkBtn.addEventListener("click", copyLeagueLink);
     }
 
-    const openRulesModalLink = document.getElementById("open-rules-modal-link");
-    if (openRulesModalLink) {
-        openRulesModalLink.addEventListener("click", showRulesModal);
-    }
+    document.querySelectorAll("#open-rules-modal-link, #footer-rules-link").forEach((el) => {
+        el.addEventListener("click", showRulesModal);
+    });
 
     document.querySelectorAll(".close-rules-modal-btn").forEach((btn) => {
         btn.addEventListener("click", closeRulesModal);
     });
+
+    // Mobile Nav "المزيد" sheet
+    const navMoreBtn = document.getElementById("nav-more-btn");
+    const navSheet = document.getElementById("nav-sheet");
+    if (navMoreBtn && navSheet) {
+        const openSheet = () => {
+            navSheet.classList.add("active");
+            navSheet.removeAttribute("aria-hidden");
+            navMoreBtn.setAttribute("aria-expanded", "true");
+        };
+        const closeSheet = () => {
+            navSheet.classList.remove("active");
+            navSheet.setAttribute("aria-hidden", "true");
+            navMoreBtn.setAttribute("aria-expanded", "false");
+        };
+        navMoreBtn.addEventListener("click", openSheet);
+        navSheet.querySelector(".nav-sheet-backdrop")?.addEventListener("click", closeSheet);
+        navSheet.querySelector(".close-nav-sheet-btn")?.addEventListener("click", closeSheet);
+        navSheet.querySelector(".nav-sheet-rules-link")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            closeSheet();
+            showRulesModal(e);
+        });
+    }
 });
 
 // Global UI functions
