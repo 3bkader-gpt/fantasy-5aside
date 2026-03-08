@@ -1255,9 +1255,19 @@ input[type="checkbox"] {
 
 /* Chart helpers */
 .chart-container { height: 300px; width: 100%; }
+.chart-wrapper { width: 100%; max-width: 100%; }
+.chart-wrapper:not(.chart-container) { min-height: 260px; }
 
 /* Display */
 .opacity-80 { opacity: 0.8; }
+
+/* Wrapper for player profile page to prevent horizontal scroll on mobile */
+.player-profile-page {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
 
 /* Player profile & HOF components */
 .player-profile {
@@ -1265,6 +1275,8 @@ input[type="checkbox"] {
     margin-left: auto;
     margin-right: auto;
     overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .stats-cards-grid {
@@ -1329,15 +1341,21 @@ input[type="checkbox"] {
 
 /* Player profile: mobile layout so card and content are not pushed to far left/right */
 @media (max-width: 767px) {
+    .player-profile,
     .player-profile.container-sm {
-        padding: 1rem 0.75rem;
+        width: 100%;
         max-width: 100%;
+        padding: 1rem 0.75rem;
+        min-width: 0;
     }
     .player-profile .gradient-hero {
         padding: 1rem 0.75rem;
     }
     .player-profile .text-2-4 {
         font-size: 1.5rem;
+    }
+    .player-profile .card {
+        min-width: 0;
     }
     .stats-cards-grid {
         grid-template-columns: 1fr;
@@ -1347,8 +1365,16 @@ input[type="checkbox"] {
     .h2h-player-block {
         min-width: 100%;
     }
-    .player-profile .chart-container {
+    .player-profile .chart-container,
+    .player-profile .chart-wrapper {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .player-profile .chart-container canvas,
+    .player-profile .chart-wrapper canvas {
         max-width: 100%;
     }
     .player-profile .streak-card {
@@ -1356,6 +1382,10 @@ input[type="checkbox"] {
     }
     .player-profile .achievements-grid {
         grid-template-columns: 1fr;
+    }
+    .player-profile .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
@@ -1386,13 +1416,14 @@ input[type="checkbox"] {
     padding: 0.75rem 2rem;
 }
 
-/* Player export card - fixed so it does not extend page width (no horizontal scroll on mobile) */
+/* Player export card - fixed so it does not extend page width and never visible until export */
 #player-card-container {
     position: fixed;
     left: -9999px;
     top: 0;
     z-index: -1;
     pointer-events: none;
+    visibility: hidden;
 }
 
 #player-card {

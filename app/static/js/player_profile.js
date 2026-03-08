@@ -16,7 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
         cardContainer.style.position = "fixed";
         cardContainer.style.left = "0";
         cardContainer.style.top = "0";
-        cardContainer.style.zIndex = "-1";
+        cardContainer.style.zIndex = "9999";
+        cardContainer.style.visibility = "visible";
         cardContainer.style.opacity = "1";
 
         html2canvas(card, {
@@ -26,16 +27,20 @@ document.addEventListener("DOMContentLoaded", function () {
             logging: false,
             width: 420,
         }).then(function (canvas) {
+            cardContainer.style.visibility = "hidden";
             cardContainer.style.position = "fixed";
             cardContainer.style.left = "-9999px";
+            cardContainer.style.zIndex = "-1";
 
             const link = document.createElement("a");
             link.download = `player_card_${playerName}.png`;
             link.href = canvas.toDataURL("image/png");
             link.click();
         }).catch(function (err) {
+            cardContainer.style.visibility = "hidden";
             cardContainer.style.position = "fixed";
             cardContainer.style.left = "-9999px";
+            cardContainer.style.zIndex = "-1";
             console.error("Card export failed:", err);
             alert("حدث خطأ أثناء إنشاء البطاقة");
         });

@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".player-card").forEach((c) => c.classList.remove("selected"));
     }
 
-    function selectVoter(cardEl) {
+    async function selectVoter(cardEl) {
         const id = parseInt(cardEl.getAttribute("data-id"), 10);
         if (!id) return;
         currentVoterId = id;
@@ -82,9 +82,23 @@ document.addEventListener("DOMContentLoaded", function () {
         if (step1) step1.style.display = "none";
         if (step2) step2.style.display = "block";
 
+        let excludedIds = [];
+        try {
+            const res = await fetch(`/api/voting/match/${currentMatchId}/status?voter_id=${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                excludedIds = Array.isArray(data.excluded_player_ids) ? data.excluded_player_ids : [];
+            }
+        } catch (e) {
+            console.error("Failed to fetch voting status for excluded players", e);
+        }
+
         document.querySelectorAll(".candidate-card").forEach((card) => {
             const candidateId = parseInt(card.getAttribute("data-id"), 10);
-            card.style.display = candidateId === id ? "none" : "flex";
+            const isSelf = candidateId === id;
+            const isPreviousWinner = excludedIds.indexOf(candidateId) !== -1;
+            card.style.display = isSelf || isPreviousWinner ? "none" : "flex";
+            card.classList.toggle("excluded", isPreviousWinner);
         });
     }
 

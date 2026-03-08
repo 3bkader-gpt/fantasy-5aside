@@ -97,10 +97,10 @@
                         <thead style="background: rgba(52, 152, 219, 0.2);">
                             <tr>
                                 <th>اللاعب</th>
-                                <th>⚽</th>
-                                <th>👟</th>
-                                <th>✋</th>
-                                <th>🛡️ DF</th>
+                                <th title="أهداف">⚽</th>
+                                <th title="أسيست">👟</th>
+                                <th title="تصديات">✋</th>
+                                <th title="مساهمة دفاعية (مدافع يختاره الحارس)">🛡️ DF</th>
                                 <th>النقاط</th>
                             </tr>
                         </thead>
@@ -110,12 +110,12 @@
                             <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
-                                    {% if stat.bonus_points == 3 %}<span title="BPS: 3 Points">🥇</span>
-                                    {% elif stat.bonus_points == 2 %}<span title="BPS: 2 Points">🥈</span>
-                                    {% elif stat.bonus_points == 1 %}<span title="BPS: 1 Point">🥉</span>{% endif %}
-                                    {% if stat.is_captain %}<span title="Captain (Legacy)">©️</span>{% endif %}
-                                    {% if stat.mvp %}<span title="MVP (Legacy)">⭐</span>{% endif %}
-                                    {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
+                                    {% if stat.bonus_points == 3 %}<span title="أفضل لاعب في المباراة (3 نقاط BPS)">🥇</span>
+                                    {% elif stat.bonus_points == 2 %}<span title="ثاني أفضل لاعب (2 نقطة BPS)">🥈</span>
+                                    {% elif stat.bonus_points == 1 %}<span title="ثالث أفضل لاعب (1 نقطة BPS)">🥉</span>{% endif %}
+                                    {% if stat.is_captain %}<span title="كابتن الفريق (Legacy)">©️</span>{% endif %}
+                                    {% if stat.mvp %}<span title="أفضل لاعب في المباراة (Legacy)">⭐</span>{% endif %}
+                                    {% if stat.clean_sheet %}<span title="شباك نظيفة">🛡️</span>{% endif %}
                                     {% if stat.defensive_contribution|default(false) %}
                                         <span title="مساهمة دفاعية يختارها الحارس">🛡️+</span>
                                     {% endif %}
@@ -123,7 +123,7 @@
                                 <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
-                                <td>{% if stat.defensive_contribution|default(false) %}✅{% else %}-{% endif %}</td>
+                                <td>{% if stat.defensive_contribution|default(false) %}<span title="مساهمة دفاعية">✅</span>{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
                                 <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
                                 </td>
@@ -147,10 +147,10 @@
                         <thead style="background: rgba(230, 126, 34, 0.2);">
                             <tr>
                                 <th>اللاعب</th>
-                                <th>⚽</th>
-                                <th>👟</th>
-                                <th>✋</th>
-                                <th>🛡️ DF</th>
+                                <th title="أهداف">⚽</th>
+                                <th title="أسيست">👟</th>
+                                <th title="تصديات">✋</th>
+                                <th title="مساهمة دفاعية (مدافع يختاره الحارس)">🛡️ DF</th>
                                 <th>النقاط</th>
                             </tr>
                         </thead>
@@ -160,12 +160,12 @@
                             <tr style="border-bottom: 1px solid var(--border-color);">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
-                                    {% if stat.bonus_points == 3 %}<span title="BPS: 3 Points">🥇</span>
-                                    {% elif stat.bonus_points == 2 %}<span title="BPS: 2 Points">🥈</span>
-                                    {% elif stat.bonus_points == 1 %}<span title="BPS: 1 Point">🥉</span>{% endif %}
-                                    {% if stat.is_captain %}<span title="Captain (Legacy)">©️</span>{% endif %}
-                                    {% if stat.mvp %}<span title="MVP (Legacy)">⭐</span>{% endif %}
-                                    {% if stat.clean_sheet %}<span title="Clean Sheet">🛡️</span>{% endif %}
+                                    {% if stat.bonus_points == 3 %}<span title="أفضل لاعب في المباراة (3 نقاط BPS)">🥇</span>
+                                    {% elif stat.bonus_points == 2 %}<span title="ثاني أفضل لاعب (2 نقطة BPS)">🥈</span>
+                                    {% elif stat.bonus_points == 1 %}<span title="ثالث أفضل لاعب (1 نقطة BPS)">🥉</span>{% endif %}
+                                    {% if stat.is_captain %}<span title="كابتن الفريق (Legacy)">©️</span>{% endif %}
+                                    {% if stat.mvp %}<span title="أفضل لاعب في المباراة (Legacy)">⭐</span>{% endif %}
+                                    {% if stat.clean_sheet %}<span title="شباك نظيفة">🛡️</span>{% endif %}
                                     {% if stat.defensive_contribution|default(false) %}
                                         <span title="مساهمة دفاعية يختارها الحارس">🛡️+</span>
                                     {% endif %}
@@ -173,7 +173,7 @@
                                 <td>{% if stat.goals > 0 %}{{ stat.goals }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.assists > 0 %}{{ stat.assists }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
-                                <td>{% if stat.defensive_contribution|default(false) %}✅{% else %}-{% endif %}</td>
+                                <td>{% if stat.defensive_contribution|default(false) %}<span title="مساهمة دفاعية">✅</span>{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
                                 <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
                                 </td>
@@ -192,7 +192,7 @@
 
         <!-- Match Timeline (Per-Match Event Summary) -->
         <details class="match-timeline">
-            <summary class="match-timeline-summary">
+            <summary class="match-timeline-summary" title="عرض ملخص أحداث المباراة (أهداف، أسيست، تصديات، إلخ)">
                 عرض التفاصيل 📋
             </summary>
             <div class="match-timeline-body">
@@ -219,22 +219,22 @@
                         </span>
                         <span class="match-timeline-events">
                             {% if (stat.goals or 0) > 0 %}
-                            <span class="event-chip goal-chip">⚽ x{{ stat.goals }}</span>
+                            <span class="event-chip goal-chip" title="أهداف">⚽ x{{ stat.goals }}</span>
                             {% endif %}
                             {% if (stat.assists or 0) > 0 %}
-                            <span class="event-chip assist-chip">👟 x{{ stat.assists }}</span>
+                            <span class="event-chip assist-chip" title="أسيست">👟 x{{ stat.assists }}</span>
                             {% endif %}
                             {% if (stat.saves or 0) > 0 %}
-                            <span class="event-chip save-chip">🧤 {{ stat.saves }} تصدي</span>
+                            <span class="event-chip save-chip" title="تصديات">🧤 {{ stat.saves }} تصدي</span>
                             {% endif %}
                             {% if stat.clean_sheet %}
-                            <span class="event-chip cs-chip">🛡️ كلين شيت</span>
+                            <span class="event-chip cs-chip" title="شباك نظيفة (لم يستقبل أهداف)">🛡️ كلين شيت</span>
                             {% endif %}
                             {% if stat.defensive_contribution|default(false) %}
-                            <span class="event-chip def-chip">🛡️+ مساهمة دفاعية</span>
+                            <span class="event-chip def-chip" title="مساهمة دفاعية (مدافع يختاره الحارس)">🛡️+ مساهمة دفاعية</span>
                             {% endif %}
                             {% if (stat.bonus_points or 0) > 0 %}
-                            <span class="event-chip bonus-chip">⭐ +{{ stat.bonus_points }} بونص</span>
+                            <span class="event-chip bonus-chip" title="نقاط بونص أفضل لاعب في المباراة">⭐ +{{ stat.bonus_points }} بونص</span>
                             {% endif %}
                         </span>
                     </li>
@@ -246,14 +246,14 @@
         <!-- Match Media Gallery -->
         <div class="match-media-section">
             <div class="flex-between" style="align-items:center; gap:0.75rem; margin-top:0.75rem;">
-                <h4 class="mb-0" style="font-size:0.95rem; color:var(--text-color);">📷 صور المباراة</h4>
+                <h4 class="mb-0" style="font-size:0.95rem; color:var(--text-color);" title="معرض صور المباراة">📷 صور المباراة</h4>
                 {% if is_admin %}
                 <div class="flex-center" style="gap:0.5rem;">
                     <input type="file" accept="image/png,image/jpeg,image/webp" multiple
                         class="match-media-input" data-match-id="{{ match.id }}"
                         style="display:none;">
                     <button type="button" class="btn btn-sm btn-secondary upload-media-btn"
-                        data-match-id="{{ match.id }}">
+                        data-match-id="{{ match.id }}" title="رفع صور للمباراة">
                         إضافة صور 📷
                     </button>
                 </div>

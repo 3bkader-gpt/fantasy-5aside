@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="player-profile-page" style="width: 100%; max-width: 100%; overflow-x: hidden;">
 <div class="player-profile container-sm">
     <div class="card text-center mb-2 gradient-hero">
         <h1 class="mb-0 text-2-4">
             {{ player.name }}
             {% if player.team_id %}
-            <span class="badge badge-team"
+            <span class="badge badge-team" title="فريق: {{ player.team.name if player.team else '—' }}"
                 style="--team-color: {{ player.team.color if player.team else '#888' }};">
                 {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
             </span>
@@ -182,7 +183,7 @@
                 </table>
             </div>
         </div>
-        <div class="mt-1">
+        <div class="mt-1 chart-wrapper" style="max-width: 100%;">
             <canvas id="playerRadarChart"></canvas>
         </div>
     </div>
@@ -191,7 +192,7 @@
     {% if history and history|length >= 1 %}
     <div class="card mb-2">
         <h3 class="mb-2 text-xl">📈 تحليل الأداء والنقاط</h3>
-        <div class="chart-container">
+        <div class="chart-wrapper chart-container">
             <canvas id="performanceChart" data-labels="{{ chart_labels|join(',') }}"
                 data-points="{{ chart_data|join(',') }}" data-point-colors="{{ point_colors|join(',') }}"
                 data-goals="{% for stat in history|reverse %}{{ stat.goals }}{% if not loop.last %},{% endif %}{% endfor %}"
@@ -399,13 +400,13 @@
                             class="text-secondary">خسارة</span>{% endif %}</td>
                     <td data-label="أهداف">{{ stat.goals }}</td>
                     <td data-label="أسيست">{{ stat.assists }}</td>
-                    <td data-label="شباك نظيفة">{% if stat.clean_sheet %}🛡️{% else %}-{% endif %}</td>
+                    <td data-label="شباك نظيفة">{% if stat.clean_sheet %}<span title="شباك نظيفة (لم يستقبل أهداف)">🛡️</span>{% else %}-{% endif %}</td>
                     <td data-label="جوائز">
-                        {% if stat.bonus_points == 3 %}<span title="BPS: 3 Points">🥇</span>
-                        {% elif stat.bonus_points == 2 %}<span title="BPS: 2 Points">🥈</span>
-                        {% elif stat.bonus_points == 1 %}<span title="BPS: 1 Point">🥉</span>{% endif %}
-                        {% if stat.mvp %}🌟 MVP (Legacy){% endif %}
-                        {% if stat.is_captain %}👑 كابتن (Legacy){% endif %}
+                        {% if stat.bonus_points == 3 %}<span title="أفضل لاعب في المباراة (3 نقاط BPS)">🥇</span>
+                        {% elif stat.bonus_points == 2 %}<span title="ثاني أفضل لاعب (2 نقطة BPS)">🥈</span>
+                        {% elif stat.bonus_points == 1 %}<span title="ثالث أفضل لاعب (1 نقطة BPS)">🥉</span>{% endif %}
+                        {% if stat.mvp %}<span title="أفضل لاعب في المباراة (Legacy)">🌟 MVP (Legacy)</span>{% endif %}
+                        {% if stat.is_captain %}<span title="كابتن الفريق (Legacy)">👑 كابتن (Legacy)</span>{% endif %}
                         {% if not stat.mvp and not stat.is_captain and (stat.bonus_points is none or stat.bonus_points
                         == 0) %}-{% endif %}
                     </td>
@@ -502,7 +503,7 @@
             <div class="player-card-badges">
                 <div class="player-card-badge-list">
                     {% for badge in badges %}
-                    <span class="player-card-badge">{{ badge.icon }} {{ badge.name }}</span>
+                    <span class="player-card-badge" title="{{ badge.name }}: {{ badge.description }}">{{ badge.icon }} {{ badge.name }}</span>
                     {% endfor %}
                 </div>
             </div>
@@ -513,6 +514,7 @@
         </div>
     </div>
 
+</div>
 </div>
 
 <div id="player-page-config" data-player-id="{{ player.id }}" data-player-name="{{ player.name }}"
