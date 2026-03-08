@@ -13,32 +13,48 @@ document.addEventListener("DOMContentLoaded", function () {
         const card = document.getElementById("player-card");
         if (!cardContainer || !card) return;
 
+        function hideCard() {
+            cardContainer.style.visibility = "hidden";
+            cardContainer.style.position = "fixed";
+            cardContainer.style.left = "-9999px";
+            cardContainer.style.zIndex = "-1";
+        }
+
+        if (typeof html2canvas === "undefined") {
+            alert("حدث خطأ أثناء إنشاء البطاقة");
+            return;
+        }
+
         cardContainer.style.position = "fixed";
         cardContainer.style.left = "0";
         cardContainer.style.top = "0";
-        cardContainer.style.zIndex = "-1";
+        cardContainer.style.zIndex = "9999";
+        cardContainer.style.visibility = "visible";
         cardContainer.style.opacity = "1";
 
-        html2canvas(card, {
-            backgroundColor: null,
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            width: 420,
-        }).then(function (canvas) {
-            cardContainer.style.position = "absolute";
-            cardContainer.style.left = "-9999px";
-
-            const link = document.createElement("a");
-            link.download = `player_card_${playerName}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        }).catch(function (err) {
-            cardContainer.style.position = "absolute";
-            cardContainer.style.left = "-9999px";
+        try {
+            html2canvas(card, {
+                backgroundColor: null,
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                width: Math.min(420, window.innerWidth),
+            }).then(function (canvas) {
+                hideCard();
+                const link = document.createElement("a");
+                link.download = `player_card_${playerName}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            }).catch(function (err) {
+                hideCard();
+                console.error("Card export failed:", err);
+                alert("حدث خطأ أثناء إنشاء البطاقة");
+            });
+        } catch (err) {
+            hideCard();
             console.error("Card export failed:", err);
             alert("حدث خطأ أثناء إنشاء البطاقة");
-        });
+        }
     });
 
     const deletePlayerBtn = document.getElementById("delete-player-btn");

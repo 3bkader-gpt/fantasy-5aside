@@ -38,7 +38,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const copyLeagueLinkBtn = document.getElementById("copy-league-link-btn");
     if (copyLeagueLinkBtn) {
-        copyLeagueLinkBtn.addEventListener("click", copyLeagueLink);
+        copyLeagueLinkBtn.addEventListener("click", (e) => {
+            if (window.FantasyMotion) window.FantasyMotion.buttonTap(copyLeagueLinkBtn);
+            copyLeagueLink();
+        });
     }
 
     document.querySelectorAll("#open-rules-modal-link, #footer-rules-link").forEach((el) => {
@@ -53,15 +56,26 @@ document.addEventListener("DOMContentLoaded", function () {
     const navMoreBtn = document.getElementById("nav-more-btn");
     const navSheet = document.getElementById("nav-sheet");
     if (navMoreBtn && navSheet) {
+        const sheetContent = navSheet.querySelector(".nav-sheet-content");
         const openSheet = () => {
             navSheet.classList.add("active");
             navSheet.removeAttribute("aria-hidden");
             navMoreBtn.setAttribute("aria-expanded", "true");
+            if (window.FantasyMotion && sheetContent) window.FantasyMotion.navSheetOpen(sheetContent);
         };
         const closeSheet = () => {
-            navSheet.classList.remove("active");
-            navSheet.setAttribute("aria-hidden", "true");
-            navMoreBtn.setAttribute("aria-expanded", "false");
+            if (window.FantasyMotion && sheetContent) {
+                window.FantasyMotion.navSheetClose(sheetContent);
+                setTimeout(() => {
+                    navSheet.classList.remove("active");
+                    navSheet.setAttribute("aria-hidden", "true");
+                    navMoreBtn.setAttribute("aria-expanded", "false");
+                }, 200);
+            } else {
+                navSheet.classList.remove("active");
+                navSheet.setAttribute("aria-hidden", "true");
+                navMoreBtn.setAttribute("aria-expanded", "false");
+            }
         };
         navMoreBtn.addEventListener("click", openSheet);
         navSheet.querySelector(".nav-sheet-backdrop")?.addEventListener("click", closeSheet);
@@ -104,6 +118,8 @@ function showPromptModal(title, message) {
         titleEl.textContent = title;
         bodyEl.innerHTML = `<p class="mb-1">${message}</p><input type="password" id="modal-input" class="form-control">`;
         modal.classList.add('active');
+        const modalContent = modal.querySelector('.modal-content');
+        if (window.FantasyMotion && modalContent) window.FantasyMotion.modalOpen(modalContent);
 
         setTimeout(() => {
             const input = document.getElementById('modal-input');
@@ -111,9 +127,18 @@ function showPromptModal(title, message) {
         }, 100);
 
         const cleanup = () => {
-            modal.classList.remove('active');
-            confirmBtn.onclick = null;
-            cancelBtn.onclick = null;
+            const mc = modal.querySelector('.modal-content');
+            if (window.FantasyMotion && mc) {
+                window.FantasyMotion.modalClose(mc, () => {
+                    modal.classList.remove('active');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                });
+            } else {
+                modal.classList.remove('active');
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+            }
         };
 
         confirmBtn.onclick = () => {
@@ -136,13 +161,22 @@ function showRulesModal(event) {
     const modal = document.getElementById('rules-modal');
     if (modal) {
         modal.classList.add('active');
+        const content = modal.querySelector('.modal-content');
+        if (window.FantasyMotion && content) window.FantasyMotion.modalOpen(content);
     }
 }
 
 function closeRulesModal() {
     const modal = document.getElementById('rules-modal');
     if (modal) {
-        modal.classList.remove('active');
+        const content = modal.querySelector('.modal-content');
+        if (window.FantasyMotion && content) {
+            window.FantasyMotion.modalClose(content, () => {
+                modal.classList.remove('active');
+            });
+        } else {
+            modal.classList.remove('active');
+        }
     }
 }
 
@@ -151,7 +185,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const overlays = document.querySelectorAll('.modal-overlay');
     overlays.forEach(overlay => {
         overlay.addEventListener('click', function (e) {
-            if (e.target === this) {
+            if (e.target !== this) return;
+            const id = this.id;
+            if (id === 'rules-modal') {
+                closeRulesModal();
+            } else if (id === 'global-modal') {
+                const cancelBtn = document.getElementById('modal-cancel-btn');
+                if (cancelBtn && typeof cancelBtn.onclick === 'function') cancelBtn.onclick();
+            } else {
                 this.classList.remove('active');
             }
         });

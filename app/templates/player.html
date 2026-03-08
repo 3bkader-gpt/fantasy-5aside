@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="player-profile-page">
 <div class="player-profile container-sm">
     <div class="card text-center mb-2 gradient-hero">
         <h1 class="mb-0 text-2-4">
             {{ player.name }}
             {% if player.team_id %}
-            <span class="badge badge-team"
+            <span class="badge badge-team" title="فريق: {{ player.team.name if player.team else '—' }}"
                 style="--team-color: {{ player.team.color if player.team else '#888' }};">
                 {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
             </span>
@@ -182,7 +183,7 @@
                 </table>
             </div>
         </div>
-        <div class="mt-1">
+        <div class="mt-1 chart-wrapper" style="max-width: 100%;">
             <canvas id="playerRadarChart"></canvas>
         </div>
     </div>
@@ -191,7 +192,7 @@
     {% if history and history|length >= 1 %}
     <div class="card mb-2">
         <h3 class="mb-2 text-xl">📈 تحليل الأداء والنقاط</h3>
-        <div class="chart-container">
+        <div class="chart-wrapper chart-container">
             <canvas id="performanceChart" data-labels="{{ chart_labels|join(',') }}"
                 data-points="{{ chart_data|join(',') }}" data-point-colors="{{ point_colors|join(',') }}"
                 data-goals="{% for stat in history|reverse %}{{ stat.goals }}{% if not loop.last %},{% endif %}{% endfor %}"
@@ -221,128 +222,6 @@
         {% endfor %}
     </div>
 
-    <style>
-        .achievements-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .achievement-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            transition: all 0.3s ease;
-            cursor: help;
-        }
-
-        .achievement-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--primary-color);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .achievement-icon {
-            font-size: 2rem;
-            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
-        }
-
-        .achievement-name {
-            font-weight: bold;
-            color: var(--text-color);
-            font-size: 1.1rem;
-        }
-
-        .achievement-desc {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-        }
-
-        /* Streak cards */
-        .streak-card {
-            min-width: 200px;
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(16,185,129,0.08));
-            border: 1px solid rgba(148,163,184,0.4);
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-        }
-
-        .streak-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-color);
-        }
-
-        .streak-values {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.75rem;
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-        }
-
-        /* Form Badges */
-        .form-badge {
-            display: inline-block;
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            line-height: 28px;
-            font-weight: bold;
-            text-align: center;
-            color: white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        .form-badge.win {
-            background: #27ae60;
-        }
-
-        .form-badge.loss {
-            background: #e74c3c;
-        }
-
-        .form-badge.draw {
-            background: #f39c12;
-        }
-
-        /* Mini Form Badges for Card Export */
-        .form-badge-mini {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border-radius: 5px;
-            font-size: 0.65rem;
-            line-height: 24px;
-            font-weight: bold;
-            text-align: center;
-            color: white;
-        }
-
-        .form-badge-mini.win {
-            background: #27ae60;
-        }
-
-        .form-badge-mini.loss {
-            background: #e74c3c;
-        }
-
-        .form-badge-mini.draw {
-            background: #f39c12;
-        }
-    </style>
     {% endif %}
 
     {% if transfers %}
@@ -401,13 +280,13 @@
                             class="text-secondary">خسارة</span>{% endif %}</td>
                     <td data-label="أهداف">{{ stat.goals }}</td>
                     <td data-label="أسيست">{{ stat.assists }}</td>
-                    <td data-label="شباك نظيفة">{% if stat.clean_sheet %}🛡️{% else %}-{% endif %}</td>
+                    <td data-label="شباك نظيفة">{% if stat.clean_sheet %}<span title="شباك نظيفة (لم يستقبل أهداف)">🛡️</span>{% else %}-{% endif %}</td>
                     <td data-label="جوائز">
-                        {% if stat.bonus_points == 3 %}<span title="BPS: 3 Points">🥇</span>
-                        {% elif stat.bonus_points == 2 %}<span title="BPS: 2 Points">🥈</span>
-                        {% elif stat.bonus_points == 1 %}<span title="BPS: 1 Point">🥉</span>{% endif %}
-                        {% if stat.mvp %}🌟 MVP (Legacy){% endif %}
-                        {% if stat.is_captain %}👑 كابتن (Legacy){% endif %}
+                        {% if stat.bonus_points == 3 %}<span title="أفضل لاعب في المباراة (3 نقاط BPS)">🥇</span>
+                        {% elif stat.bonus_points == 2 %}<span title="ثاني أفضل لاعب (2 نقطة BPS)">🥈</span>
+                        {% elif stat.bonus_points == 1 %}<span title="ثالث أفضل لاعب (1 نقطة BPS)">🥉</span>{% endif %}
+                        {% if stat.mvp %}<span title="أفضل لاعب في المباراة (Legacy)">🌟 MVP (Legacy)</span>{% endif %}
+                        {% if stat.is_captain %}<span title="كابتن الفريق (Legacy)">👑 كابتن (Legacy)</span>{% endif %}
                         {% if not stat.mvp and not stat.is_captain and (stat.bonus_points is none or stat.bonus_points
                         == 0) %}-{% endif %}
                     </td>
@@ -504,7 +383,7 @@
             <div class="player-card-badges">
                 <div class="player-card-badge-list">
                     {% for badge in badges %}
-                    <span class="player-card-badge">{{ badge.icon }} {{ badge.name }}</span>
+                    <span class="player-card-badge" title="{{ badge.name }}: {{ badge.description }}">{{ badge.icon }} {{ badge.name }}</span>
                     {% endfor %}
                 </div>
             </div>
@@ -515,6 +394,7 @@
         </div>
     </div>
 
+</div>
 </div>
 
 <div id="player-page-config" data-player-id="{{ player.id }}" data-player-name="{{ player.name }}"

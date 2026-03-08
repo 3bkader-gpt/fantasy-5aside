@@ -69,8 +69,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 row.style.display = "";
 
                 const rankText = visibleRank;
+                const rankTitles = { 1: "المركز الأول", 2: "المركز الثاني", 3: "المركز الثالث" };
                 const rankPrefix =
-                    rankText === 1 ? "🥇" : rankText === 2 ? "🥈" : rankText === 3 ? "🥉" : "";
+                    rankText === 1 ? '<span title="' + rankTitles[1] + '">🥇</span>' : rankText === 2 ? '<span title="' + rankTitles[2] + '">🥈</span>' : rankText === 3 ? '<span title="' + rankTitles[3] + '">🥉</span>' : "";
 
                 const rankCell = row.querySelector(".rank-col");
                 if (rankCell) {
@@ -84,7 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const existingCrown = nameCell.querySelector(".crown");
                     if (existingCrown) existingCrown.remove();
                     if (rankText === 1 && sortMetric === "points" && scope === "current") {
-                        nameCell.insertAdjacentHTML("beforeend", '<span class="crown">👑</span>');
+                        nameCell.insertAdjacentHTML("beforeend", '<span class="crown" title="صاحب المركز الأول (بطل الترتيب)">👑</span>');
                     }
                 }
             } else {
@@ -173,5 +174,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert("❌ حدث خطأ أثناء التقاط الصورة.");
             });
         });
+    }
+
+    // Card stagger animations (banners + table rows)
+    if (window.FantasyMotion) {
+        window.FantasyMotion.cardStaggerIn(".banner-card", 0.05);
+        window.FantasyMotion.cardStaggerIn("#leaderboard-body tr", 0.02);
     }
 });

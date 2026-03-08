@@ -9,7 +9,7 @@
     <div class="leagues-grid hof-grid">
         {% for record in hof_records %}
         <div class="card hof-card">
-            <div class="hof-card-trophy-deco">🏆</div>
+            <div class="hof-card-trophy-deco" title="كأس بطل الشهر">🏆</div>
 
             <h3 class="text-warning m-0 text-xl">{{ record.month_year }}</h3>
 
@@ -20,7 +20,7 @@
             </div>
 
             <div class="flex-center gap-2 text-secondary mb-1">
-                <span class="text-xl">🔥</span>
+                <span class="text-xl" title="نقاط البطل">🔥</span>
                 <span class="font-bold text-lg text-danger">
                     {{ record.points_scored }}</span>
                 نقطة
@@ -32,7 +32,7 @@
                 </div>
                 <ul class="list-none text-sm hof-awards-list">
                     <li>
-                        <span>⚽ هداف الشهر:</span>
+                        <span title="أكثر لاعب تسجيلاً للأهداف في الشهر">⚽ هداف الشهر:</span>
                         {% if record.top_scorer %}
                         <a href="/l/{{ league.slug }}/player/{{ record.top_scorer.id }}" class="font-bold ms-1">
                             {{ record.top_scorer.name }}

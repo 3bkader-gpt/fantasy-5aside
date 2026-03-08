@@ -5,7 +5,7 @@
 <h1>🏆 ترتيب دوري الأبطال</h1>
 
 <div class="text-center mb-1">
-    <button id="share-leaderboard" class="btn btn-primary">مشاركة الترتيب 📤📸</button>
+    <button id="share-leaderboard" class="btn btn-primary" title="مشاركة صورة الترتيب أو نسخ الرابط">مشاركة الترتيب 📤📸</button>
 </div>
 
 <div id="capture-area" style="padding: 1rem;">
@@ -165,7 +165,7 @@
                         </span>
                         {{ loop.index }}
                         {% if player.total_points > 0 %}
-                        {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% endif %}
+                        {% if loop.index == 1 %}<span title="المركز الأول">🥇</span>{% elif loop.index == 2 %}<span title="المركز الثاني">🥈</span>{% elif loop.index == 3 %}<span title="المركز الثالث">🥉</span>{% endif %}
                         {% endif %}
                     </td>
                     <td data-label="اللاعب">
@@ -173,12 +173,12 @@
                             <a href="/l/{{ league.slug }}/player/{{ player.id }}" style="font-weight: bold;">{{
                                 player.name }}</a>
                             {% if player.team_id %}
-                            <span class="badge"
+                            <span class="badge" title="فريق: {{ player.team.name if player.team else '—' }}"
                                 style="--badge-color: {{ player.team.color if player.team else '#888' }}; background-color: var(--badge-color); color: white; font-size: 0.7rem; padding: 2px 6px;">
                                 {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
                             </span>
                             {% endif %}
-                            {% if player.total_points > 0 and loop.index == 1 %}<span class="crown">👑</span>{% endif %}
+                            {% if player.total_points > 0 and loop.index == 1 %}<span class="crown" title="صاحب المركز الأول (بطل الترتيب)">👑</span>{% endif %}
                             <div class="player-badges-mini" style="display: flex; gap: 2px;">
                                 {% for badge in player.badges %}
                                 <span title="{{ badge.name }}: {{ badge.description }}"
