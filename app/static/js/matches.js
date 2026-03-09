@@ -75,11 +75,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 const isDark = document.body.classList.contains("dark-mode");
                 const bgColor = isDark ? "#2a2a2a" : "#ffffff";
 
-                html2canvas(captureArea, {
+                const doCapture = () => html2canvas(captureArea, {
                     backgroundColor: bgColor,
                     scale: 2,
-                    useCORS: true
-                }).then(canvas => {
+                    useCORS: true,
+                    logging: false
+                });
+
+                Promise.resolve()
+                    .then(() => document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+                    .then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))
+                    .then(doCapture)
+                    .then(canvas => {
                     if (deleteBtn) deleteBtn.style.display = '';
                     if (shareBtn) shareBtn.style.display = '';
                     if (editBtn) editBtn.style.display = '';

@@ -72,4 +72,11 @@ This repository includes a `render.yaml` Blueprint for 1-click deployments to [R
 - Set `CORS_ORIGINS` to a comma-separated list of allowed origins (e.g. `https://fantasy-5aside.onrender.com`). Use `*` only for development.
 - Run `pip-audit -r requirements.txt` (or rely on CI) to check for known dependency vulnerabilities.
 
+**Match photos (Supabase Storage, optional):**  
+To persist uploaded match photos across deploys (e.g. on Render), use Supabase Storage. In Supabase Dashboard: Storage → New bucket → name it `match-media` and set it to **Public**. Then set in your environment:
+- `SUPABASE_PROJECT_URL` = `https://<your-project-ref>.supabase.co`
+- `SUPABASE_SERVICE_ROLE_KEY` = your project’s service_role key (Settings → API)
+
+New uploads will be stored in Supabase; existing local uploads keep working via `/media/`.
+
 Render will automatically build and deploy your Fantasy SaaS! 🚀

@@ -148,11 +148,24 @@ document.addEventListener("DOMContentLoaded", function () {
             const isDark = document.body.classList.contains("dark-mode");
             const bgColor = isDark ? "#121212" : "#f4f7f6";
 
-            html2canvas(captureArea, {
-                backgroundColor: bgColor,
-                scale: 2,
-                useCORS: true
-            }).then(canvas => {
+            const doCapture = () => {
+                captureArea.scrollIntoView({ behavior: "instant", block: "start" });
+                return html2canvas(captureArea, {
+                    backgroundColor: bgColor,
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: captureArea.scrollWidth,
+                    windowHeight: captureArea.scrollHeight
+                });
+            };
+
+            Promise.resolve()
+                .then(() => document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+                .then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))
+                .then(() => new Promise(r => setTimeout(r, 150)))
+                .then(doCapture)
+                .then(canvas => {
                 shareBtn.style.display = originalDisplay;
                 shareBtn.classList.remove("btn-loading");
                 shareBtn.disabled = false;

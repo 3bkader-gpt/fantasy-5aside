@@ -88,6 +88,7 @@ async def lifespan(app: FastAPI):
             # Voting anti-cheat columns (IP + fingerprint)
             ("votes", "ip_address", "VARCHAR(64) DEFAULT NULL"),
             ("votes", "device_fingerprint", "VARCHAR(255) DEFAULT NULL"),
+            ("match_media", "file_url", "VARCHAR(512) DEFAULT NULL"),
             ("cup_matchups", "league_id", "INDEX"),
             ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL"),
         ]

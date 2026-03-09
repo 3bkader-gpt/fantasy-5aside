@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     database_url: str = SQLITE_URL
     # Optional: use Supabase pooler URL when available (more reliable on some networks)
     supabase_url: str | None = None
+    # Supabase Storage: project URL (e.g. https://xxx.supabase.co) and service_role key for server uploads
+    supabase_project_url: str | None = None
+    supabase_service_role_key: str | None = None
     # URL مخصص لقاعدة بيانات الاختبار (PostgreSQL)
     test_database_url: str | None = None
     # إذا True نعتبر أنفسنا في وضع الاختبار (pytest أو سكربتات اختبارية)

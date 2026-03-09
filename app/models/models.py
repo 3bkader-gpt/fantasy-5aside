@@ -255,6 +255,8 @@ class MatchMedia(Base):
     mime_type = Column(String(100), nullable=True)
     size_bytes = Column(Integer, default=0)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+    # When set, image is served from Supabase Storage (persists across deploys)
+    file_url = Column(String(512), nullable=True)
 
     match = relationship("Match", back_populates="media")
 

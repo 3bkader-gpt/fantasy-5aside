@@ -264,9 +264,11 @@
             {% if match.media %}
             <div class="match-media-grid">
                 {% for media in match.media %}
+                {% set media_src = media.file_url or (('/media/' ~ media.filename)) %}
                 <div class="match-media-item">
-                    <a href="/media/{{ media.filename }}" target="_blank">
-                        <img src="/media/{{ media.filename }}" alt="{{ media.original_name or 'match photo' }}">
+                    <a href="{{ media_src }}" target="_blank">
+                        <img src="{{ media_src }}" alt="{{ media.original_name or 'match photo' }}" loading="lazy"
+                            onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%221.5%22%3E%3Crect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22/%3E%3Cpath d=%22M3 16l5-5 4 4 5-5 3 3%22/%3E%3C/svg%3E'; this.alt='الصورة غير متوفرة (الملف قد يكون محذوفاً أو غير متاح)';">
                     </a>
                     {% if is_admin %}
                     <button type="button" class="delete-media-btn" data-media-id="{{ media.id }}">
