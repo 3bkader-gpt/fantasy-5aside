@@ -11,12 +11,26 @@ document.addEventListener('DOMContentLoaded', function () {
     function openPointsBreakdown(playerName, breakdown) {
         if (!pointsPopover || !pointsPopoverList || !pointsPopoverTitle) return;
         pointsPopoverTitle.textContent = playerName || 'اللاعب';
+        pointsPopoverTitle.setAttribute('dir', 'rtl');
         pointsPopoverList.innerHTML = '';
+        var raw = breakdown;
+        if (raw == null || raw === '') {
+            pointsPopoverList.innerHTML = '<li class="text-secondary">تعذر تحميل التفاصيل.</li>';
+            pointsPopover.setAttribute('aria-hidden', 'false');
+            pointsPopover.classList.add('active');
+            return;
+        }
+        if (typeof raw === 'string' && raw.indexOf('&') !== -1) {
+            var txt = document.createElement('textarea');
+            txt.innerHTML = raw;
+            raw = txt.value;
+        }
         try {
-            const items = typeof breakdown === 'string' ? JSON.parse(breakdown) : breakdown;
-            (items || []).forEach(function (item) {
-                const li = document.createElement('li');
-                const sign = (item.points >= 0) ? '+' : '';
+            var items = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            if (!Array.isArray(items)) items = [];
+            items.forEach(function (item) {
+                var li = document.createElement('li');
+                var sign = (item.points >= 0) ? '+' : '';
                 li.textContent = item.label + ': ' + sign + item.points;
                 li.classList.add(item.points < 0 ? 'points-breakdown-negative' : 'points-breakdown-positive');
                 pointsPopoverList.appendChild(li);

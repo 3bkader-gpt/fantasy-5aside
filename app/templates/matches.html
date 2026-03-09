@@ -129,12 +129,12 @@
                                 {% if stat.is_winner %}
                                 <td style="font-weight: bold; color: var(--success-color);" class="points-cell-with-detail">
                                     <span>{{ stat.points_earned }}</span>
-                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown="{{ (stat | points_breakdown(match)) | tojson | e }}">ℹ️</button>
+                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown='{{ (stat | points_breakdown(match)) | tojson }}'>ℹ️</button>
                                 </td>
                                 {% else %}
                                 <td class="text-secondary points-cell-with-detail" style="font-weight: bold;">
                                     <span>{{ stat.points_earned }}</span>
-                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown="{{ (stat | points_breakdown(match)) | tojson | e }}">ℹ️</button>
+                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown='{{ (stat | points_breakdown(match)) | tojson }}'>ℹ️</button>
                                 </td>
                                 {% endif %}
                             </tr>
@@ -184,12 +184,12 @@
                                 {% if stat.is_winner %}
                                 <td style="font-weight: bold; color: var(--success-color);" class="points-cell-with-detail">
                                     <span>{{ stat.points_earned }}</span>
-                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown="{{ (stat | points_breakdown(match)) | tojson | e }}">ℹ️</button>
+                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown='{{ (stat | points_breakdown(match)) | tojson }}'>ℹ️</button>
                                 </td>
                                 {% else %}
                                 <td class="text-secondary points-cell-with-detail" style="font-weight: bold;">
                                     <span>{{ stat.points_earned }}</span>
-                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown="{{ (stat | points_breakdown(match)) | tojson | e }}">ℹ️</button>
+                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown='{{ (stat | points_breakdown(match)) | tojson }}'>ℹ️</button>
                                 </td>
                                 {% endif %}
                             </tr>

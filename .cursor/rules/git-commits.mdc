@@ -1,0 +1,11 @@
+---
+description: Git commit messages must be in English for deploy systems and tooling
+alwaysApply: true
+---
+
+# Git commit messages
+
+- **Always use English** for commit message title and body.
+- Do not use Arabic or other non-Latin scripts in commit messages.
+- Use clear, short imperative style (e.g. "Add points breakdown popup", "Fix share image capture").
+- This avoids issues with deployment pipelines, CI, and "Made-with" metadata that expect ASCII/English.
