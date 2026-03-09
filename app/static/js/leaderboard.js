@@ -137,6 +137,25 @@ document.addEventListener("DOMContentLoaded", function () {
     const captureArea = document.getElementById("capture-area");
 
     if (shareBtn && captureArea) {
+        // Recursively inline computed styles so html2canvas can render CSS variable colors
+        function inlineComputedStyles(source, clone) {
+            if (!source || !clone) return;
+            var cs = window.getComputedStyle(source);
+            clone.style.backgroundColor = cs.backgroundColor;
+            clone.style.color = cs.color;
+            clone.style.borderColor = cs.borderColor;
+            var bgImage = cs.backgroundImage;
+            if (bgImage && bgImage !== 'none') {
+                clone.style.backgroundImage = bgImage;
+                clone.style.backgroundSize = cs.backgroundSize;
+                clone.style.backgroundPosition = cs.backgroundPosition;
+            }
+            var children = source.children;
+            for (var i = 0; i < children.length; i++) {
+                if (clone.children[i]) inlineComputedStyles(children[i], clone.children[i]);
+            }
+        }
+
         shareBtn.addEventListener("click", () => {
             const originalDisplay = shareBtn.style.display;
             const originalText = shareBtn.textContent;
@@ -146,7 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
             shareBtn.textContent = "جاري التقاط الصورة...";
 
             const isDark = document.body.classList.contains("dark-mode");
-            const bgColor = isDark ? "#121212" : "#f4f7f6";
+            const bgColor = isDark ? "#020617" : "#f8fafc";
 
             const doCapture = () => {
                 captureArea.scrollIntoView({ behavior: "instant", block: "start" });
@@ -156,7 +175,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     useCORS: true,
                     logging: false,
                     windowWidth: captureArea.scrollWidth,
-                    windowHeight: captureArea.scrollHeight
+                    windowHeight: captureArea.scrollHeight,
+                    onclone: function (clonedDoc) {
+                        var clonedEl = clonedDoc.getElementById('capture-area');
+                        if (clonedEl) inlineComputedStyles(captureArea, clonedEl);
+                    }
                 });
             };
 

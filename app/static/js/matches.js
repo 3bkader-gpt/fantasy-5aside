@@ -144,37 +144,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (editBtn) editBtn.style.display = 'none';
 
                 const isDark = document.body.classList.contains("dark-mode");
-                const bgColor = isDark ? "#2a2a2a" : "#ffffff";
 
                 // Apply computed styles to clone so html2canvas gets real colors (fixes black image with CSS variables)
                 function inlineComputedStyles(source, clone) {
                     if (!source || !clone) return;
-                    const cs = window.getComputedStyle(source);
+                    var cs = window.getComputedStyle(source);
                     clone.style.backgroundColor = cs.backgroundColor;
                     clone.style.color = cs.color;
-                    const bgImage = cs.backgroundImage;
+                    clone.style.borderColor = cs.borderColor;
+                    var bgImage = cs.backgroundImage;
                     if (bgImage && bgImage !== 'none') {
                         clone.style.backgroundImage = bgImage;
                         clone.style.backgroundSize = cs.backgroundSize;
                         clone.style.backgroundPosition = cs.backgroundPosition;
                     }
-                    const children = source.children;
-                    for (let i = 0; i < children.length; i++) {
+                    var children = source.children;
+                    for (var i = 0; i < children.length; i++) {
                         if (clone.children[i]) inlineComputedStyles(children[i], clone.children[i]);
                     }
                 }
 
                 const doCapture = () => {
                     captureArea.scrollIntoView({ behavior: 'instant', block: 'center' });
+                    var bgColorResolved = isDark ? '#020617' : '#f8fafc';
                     return html2canvas(captureArea, {
-                        backgroundColor: bgColor,
+                        backgroundColor: bgColorResolved,
                         scale: 2,
                         useCORS: true,
                         logging: false,
                         windowWidth: captureArea.scrollWidth,
                         windowHeight: captureArea.scrollHeight,
                         onclone: function (clonedDoc) {
-                            const clonedCard = captureArea.id ? clonedDoc.getElementById(captureArea.id) : clonedDoc.body.firstElementChild;
+                            var clonedCard = captureArea.id ? clonedDoc.getElementById(captureArea.id) : clonedDoc.body.firstElementChild;
                             if (clonedCard) inlineComputedStyles(captureArea, clonedCard);
                         }
                     });
