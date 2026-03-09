@@ -635,9 +635,17 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!matchId || !bodyEl) return;
 
     async function refreshVotesDetail() {
-        if (!votesDetailEl || !window.LEAGUE_SLUG) return;
+        if (!votesDetailEl) return;
+        const leagueSlug = window.LEAGUE_SLUG || (function () {
+            const m = window.location.pathname.match(/\/l\/([^/]+)\/admin/);
+            return m ? m[1] : '';
+        })();
+        if (!leagueSlug) {
+            votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">لا يمكن تحديد الدوري.</p>';
+            return;
+        }
         try {
-            const resp = await fetch(`/l/${window.LEAGUE_SLUG}/admin/voting/match/${matchId}/votes-detail`);
+            const resp = await fetch(`/l/${leagueSlug}/admin/voting/match/${matchId}/votes-detail`);
             if (!resp.ok) {
                 votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">لا يمكن تحميل تفاصيل التصويت.</p>';
                 return;

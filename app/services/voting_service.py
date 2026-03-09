@@ -22,7 +22,7 @@ class VotingService(IVotingService):
         if not match:
             return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[])
 
-        if match.voting_round == 0:
+        if match.voting_round == 0 or match.voting_round == 4:
             return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[])
         
         # Check if already voted in current round
@@ -55,7 +55,7 @@ class VotingService(IVotingService):
         from fastapi import HTTPException
 
         match = self.match_repo.get_by_id(match_id)
-        if not match or match.voting_round == 0:
+        if not match or match.voting_round == 0 or match.voting_round == 4:
             raise HTTPException(status_code=400, detail="التصويت مغلق حالياً")
 
         if vote_in.round_number != match.voting_round:
@@ -112,7 +112,7 @@ class VotingService(IVotingService):
         Does not reveal who voted for whom, only counts and percentages.
         """
         match = self.match_repo.get_by_id(match_id)
-        if not match or match.voting_round == 0:
+        if not match or match.voting_round == 0 or match.voting_round == 4:
             return schemas.LiveVotingStatsResponse(
                 is_open=False,
                 round_number=0,
@@ -152,7 +152,7 @@ class VotingService(IVotingService):
         if not match:
             return schemas.ClosedResultsResponse(closed_rounds=[])
         current = match.voting_round
-        if current == 0:
+        if current == 0 or current == 4:
             closed_round_numbers = [1, 2, 3]
         elif current == 1:
             closed_round_numbers = []
@@ -204,7 +204,7 @@ class VotingService(IVotingService):
 
     def close_round(self, match_id: int) -> dict:
         match = self.match_repo.get_by_id(match_id)
-        if not match or match.voting_round == 0:
+        if not match or match.voting_round == 0 or match.voting_round == 4:
             return {"status": "error", "message": "التصويت غير مفتوح"}
             
         round_results = self.voting_repo.get_round_results(match_id, match.voting_round)
@@ -215,7 +215,7 @@ class VotingService(IVotingService):
                 self.match_repo.save(match)
                 return {"status": "next_round", "round": match.voting_round}
             else:
-                match.voting_round = 0
+                match.voting_round = 4
                 self.match_repo.save(match)
                 return {"status": "closed"}
 
@@ -243,7 +243,7 @@ class VotingService(IVotingService):
             self.match_repo.save(match)
             return {"status": "next_round", "round": match.voting_round, "winner": winner.name if winner else "Unknown"}
         else:
-            match.voting_round = 0
+            match.voting_round = 4
             self.match_repo.save(match)
             return {"status": "closed", "winner": winner.name if winner else "Unknown"}
 
@@ -251,6 +251,8 @@ class VotingService(IVotingService):
         match = self.match_repo.get_by_id(match_id)
         if not match:
             return {"status": "error", "message": "الماتش غير موجود"}
+        if match.voting_round == 4:
+            return {"status": "error", "message": "التصويت انتهى لهذه المباراة"}
         
         match.voting_round = 1
         self.match_repo.save(match)
@@ -264,7 +266,7 @@ class VotingService(IVotingService):
         from fastapi import HTTPException
 
         match = self.match_repo.get_by_id(match_id)
-        if not match or match.voting_round == 0:
+        if not match or match.voting_round == 0 or match.voting_round == 4:
             raise HTTPException(status_code=400, detail="لا يوجد تصويت مفتوح لهذه المباراة حالياً")
 
         deleted = self.voting_repo.delete_votes_for_round(match_id, match.voting_round)

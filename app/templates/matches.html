@@ -57,14 +57,14 @@
                     style="font-size: 0.8rem; color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.4); padding: 4px 10px; min-height: auto; width: auto; margin: 0;">
                     مشاركة 📤
                 </button>
-                {% if match.voting_round > 0 %}
+                {% if match.voting_round >= 1 and match.voting_round <= 3 %}
                 <a href="/l/{{ league.slug }}#voting-banner" class="btn btn-outline btn-sm"
                     title="الانتقال للتصويت على هذه المباراة"
                     style="font-size: 0.8rem; color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.4); padding: 4px 10px; min-height: auto; width: auto; margin: 0;">
                     التصويت 🗳️
                 </a>
                 {% endif %}
-                {% if is_admin %}
+                {% if is_admin and match.voting_round != 4 %}
                 <button class="btn btn-outline btn-sm voting-btn" data-match-id="{{ match.id }}"
                     data-round="{{ match.voting_round }}"
                     data-is-open="{{ 'true' if match.voting_round > 0 else 'false' }}"

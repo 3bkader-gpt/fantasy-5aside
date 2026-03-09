@@ -318,6 +318,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         renderClosedResults(closedResultsEl, data);
                     }
                 }
+                submitBtn.disabled = false;
+                submitBtn.classList.remove("btn-loading");
+                submitBtn.textContent = originalText;
                 return;
             }
 

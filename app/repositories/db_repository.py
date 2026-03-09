@@ -194,7 +194,11 @@ class MatchRepository(IMatchRepository):
             joinedload(models.MatchStat.match).joinedload(models.Match.stats)
         ).filter(models.MatchStat.player_id == player_id).order_by(models.MatchStat.match_id.desc()).all()
     def get_active_voting_match(self, league_id: int) -> Optional[models.Match]:
-        return self.db.query(models.Match).filter(models.Match.league_id == league_id, models.Match.voting_round > 0).first()
+        return self.db.query(models.Match).filter(
+            models.Match.league_id == league_id,
+            models.Match.voting_round >= 1,
+            models.Match.voting_round <= 3
+        ).first()
 
 class CupRepository(ICupRepository):
     def __init__(self, db: Session): self.db = db

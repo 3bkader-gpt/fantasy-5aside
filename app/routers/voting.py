@@ -84,6 +84,8 @@ def open_voting(
     if not match or match.league_id != league.id:
         raise HTTPException(status_code=404, detail="Match not found")
     result = voting_service.open_voting(match_id)
+    if result.get("status") == "error":
+        raise HTTPException(status_code=400, detail=result.get("message", "التصويت انتهى لهذه المباراة"))
 
     try:
         notification_service.notify_league(
