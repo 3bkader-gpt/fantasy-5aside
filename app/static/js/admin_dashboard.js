@@ -631,7 +631,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const matchId = card.getAttribute('data-match-id');
     const bodyEl = document.getElementById('live-voting-body');
+    const votesDetailEl = document.getElementById('votes-detail-body');
     if (!matchId || !bodyEl) return;
+
+    async function refreshVotesDetail() {
+        if (!votesDetailEl || !window.LEAGUE_SLUG) return;
+        try {
+            const resp = await fetch(`/l/${window.LEAGUE_SLUG}/admin/voting/match/${matchId}/votes-detail`);
+            if (!resp.ok) {
+                votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">لا يمكن تحميل تفاصيل التصويت.</p>';
+                return;
+            }
+            const data = await resp.json();
+            const votes = data.votes || [];
+            if (votes.length === 0) {
+                votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">لا توجد تصويتات في هذه الجولة بعد.</p>';
+                return;
+            }
+            const ul = document.createElement('ul');
+            ul.style.listStyle = 'none';
+            ul.style.padding = '0';
+            ul.style.margin = '0';
+            ul.style.fontSize = '0.95rem';
+            votes.forEach(function (v) {
+                const li = document.createElement('li');
+                li.style.padding = '4px 0';
+                li.style.borderBottom = '1px solid var(--border-color, #eee)';
+                li.textContent = (v.voter_name || '—') + ' → ' + (v.candidate_name || '—');
+                ul.appendChild(li);
+            });
+            votesDetailEl.innerHTML = '';
+            votesDetailEl.appendChild(ul);
+        } catch (err) {
+            console.error('Error fetching votes detail', err);
+            if (votesDetailEl) votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">حدث خطأ أثناء تحميل التفاصيل.</p>';
+        }
+    }
 
     async function refreshLiveVoting() {
         try {
@@ -710,6 +745,7 @@ document.addEventListener('DOMContentLoaded', function () {
             p.style.fontWeight = '700';
             p.innerHTML = `إجمالي الأصوات في هذه الجولة: <strong>${data.total_votes}</strong>`;
             bodyEl.appendChild(p);
+            refreshVotesDetail();
         } catch (err) {
             console.error('Error fetching live voting stats', err);
         }
@@ -717,8 +753,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // أول تحميل
     refreshLiveVoting();
+    refreshVotesDetail();
     // تحديث دوري كل 5 ثواني
     setInterval(refreshLiveVoting, 5000);
+    setInterval(refreshVotesDetail, 5000);
 
     // زر إعادة ضبط تصويت الجولة الحالية
     const resetBtn = document.getElementById('reset-voting-round-btn');
@@ -740,6 +778,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 alert(`✅ تم مسح ${data.deleted_votes || 0} صوت من هذه الجولة. يمكن للّاعبين إعادة التصويت الآن.`);
                 refreshLiveVoting();
+                refreshVotesDetail();
             } catch (err) {
                 console.error('Error resetting voting round', err);
                 alert('❌ حدث خطأ أثناء الاتصال بالخادم.');

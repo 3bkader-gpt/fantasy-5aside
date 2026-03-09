@@ -146,6 +146,62 @@ class VotingService(IVotingService):
             candidates=candidates,
         )
 
+    def get_closed_results(self, match_id: int) -> schemas.ClosedResultsResponse:
+        """Return results for rounds that have already been closed (for players to see after admin closes)."""
+        match = self.match_repo.get_by_id(match_id)
+        if not match:
+            return schemas.ClosedResultsResponse(closed_rounds=[])
+        current = match.voting_round
+        if current == 0:
+            closed_round_numbers = [1, 2, 3]
+        elif current == 1:
+            closed_round_numbers = []
+        elif current == 2:
+            closed_round_numbers = [1]
+        else:
+            closed_round_numbers = [1, 2]
+        closed_rounds: List[schemas.ClosedRoundResult] = []
+        for r in closed_round_numbers:
+            results = self.voting_repo.get_round_results(match_id, r)
+            total_votes = sum(row["count"] for row in results) if results else 0
+            candidates: List[schemas.LiveVotingCandidate] = []
+            for row in results:
+                player = self.player_repo.get_by_id(row["candidate_id"])
+                name = player.name if player else "مجهول"
+                votes = row["count"]
+                percent = (votes / total_votes * 100.0) if total_votes > 0 else 0.0
+                candidates.append(
+                    schemas.LiveVotingCandidate(
+                        player_id=row["candidate_id"],
+                        name=name,
+                        votes=votes,
+                        percent=round(percent, 2),
+                    )
+                )
+            closed_rounds.append(
+                schemas.ClosedRoundResult(
+                    round_number=r,
+                    total_votes=total_votes,
+                    candidates=candidates,
+                )
+            )
+        return schemas.ClosedResultsResponse(closed_rounds=closed_rounds)
+
+    def get_votes_detail(self, match_id: int, round_number: int) -> schemas.VotesDetailResponse:
+        """Admin-only: list who voted for whom in a given round."""
+        votes = self.voting_repo.get_votes_for_match(match_id, round_number)
+        items: List[schemas.VoteDetailItem] = []
+        for v in votes:
+            voter = self.player_repo.get_by_id(v.voter_id) if v.voter_id else None
+            candidate = self.player_repo.get_by_id(v.candidate_id) if v.candidate_id else None
+            items.append(
+                schemas.VoteDetailItem(
+                    voter_name=voter.name if voter else "—",
+                    candidate_name=candidate.name if candidate else "—",
+                )
+            )
+        return schemas.VotesDetailResponse(round_number=round_number, votes=items)
+
     def close_round(self, match_id: int) -> dict:
         match = self.match_repo.get_by_id(match_id)
         if not match or match.voting_round == 0:

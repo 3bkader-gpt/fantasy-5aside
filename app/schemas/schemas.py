@@ -205,6 +205,26 @@ class LiveVotingStatsResponse(BaseModel):
     candidates: List[LiveVotingCandidate] = []
 
 
+class ClosedRoundResult(BaseModel):
+    round_number: int
+    total_votes: int
+    candidates: List[LiveVotingCandidate] = []
+
+
+class ClosedResultsResponse(BaseModel):
+    closed_rounds: List[ClosedRoundResult] = []
+
+
+class VoteDetailItem(BaseModel):
+    voter_name: str
+    candidate_name: str
+
+
+class VotesDetailResponse(BaseModel):
+    round_number: int
+    votes: List[VoteDetailItem] = []
+
+
 # --- Backup Import Schemas ---
 
 class BackupPlayerPayload(BaseModel):

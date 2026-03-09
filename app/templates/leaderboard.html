@@ -61,7 +61,8 @@
                     {% endfor %}
                 </div>
             </div>
-            <!-- Live Results Section -->
+            {% if is_admin %}
+            <!-- Live Results Section (admin only) -->
             <div id="voting-live-results" class="mt-2" style="margin-top: 1.25rem; text-align: right; display: none;">
                 <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">📊 النتائج الحالية</h3>
                 <div id="voting-live-meta" class="text-secondary" style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;"></div>
@@ -79,6 +80,10 @@
                     </table>
                 </div>
             </div>
+            {% else %}
+            <!-- Closed results for players (shown after admin closes a round) -->
+            <div id="voting-closed-results" class="mt-2" style="margin-top: 1.25rem; text-align: right;"></div>
+            {% endif %}
             <div class="modal-actions mt-2">
                 <button class="btn btn-secondary" id="close-voting-modal-btn">إغلاق</button>
                 <button class="btn btn-primary" id="submit-vote-btn" style="display: none;">إرسال
@@ -203,7 +208,8 @@
 
     <div id="voting-config" data-active="{{ (active_voting_match is not none) | tojson }}"
         data-match-id="{{ (active_voting_match.id if active_voting_match else None) | tojson }}"
-        data-round="{{ (active_voting_match.voting_round if active_voting_match else 0) | tojson }}">
+        data-round="{{ (active_voting_match.voting_round if active_voting_match else 0) | tojson }}"
+        data-is-admin="{{ is_admin | tojson }}">
     </div>
 </div> <!-- End capture-area -->
 

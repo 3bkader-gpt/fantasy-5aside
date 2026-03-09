@@ -40,6 +40,18 @@ def get_live_voting_stats(
     """
     return voting_service.get_live_stats(match_id)
 
+
+@router.get("/match/{match_id}/closed-results", response_model=schemas.ClosedResultsResponse)
+def get_closed_results(
+    match_id: int,
+    voting_service: IVotingService = Depends(get_voting_service),
+):
+    """
+    Get results for rounds that have already been closed. For players to see
+    after admin closes a round; no individual voter/candidate detail.
+    """
+    return voting_service.get_closed_results(match_id)
+
 @router.post("/vote", response_model=schemas.VoteResponse)
 @limiter.limit("20/minute")
 def submit_vote(

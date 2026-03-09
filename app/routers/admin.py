@@ -1,5 +1,6 @@
 import json
 import re
+from typing import Optional
 from fastapi import APIRouter, Depends, Request, HTTPException, Form, Response, UploadFile, File
 
 SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
@@ -878,3 +879,26 @@ def reset_voting_round(
     result = voting_service.reset_current_round_votes(match_id)
     audit(league.id, "reset_voting", league.slug, {"match_id": match_id})
     return result
+
+
+@router.get("/voting/match/{match_id}/votes-detail", response_model=schemas.VotesDetailResponse)
+def get_votes_detail(
+    match_id: int,
+    slug: str,
+    round_number: Optional[int] = None,
+    league: models.League = Depends(get_current_admin_league),
+    voting_service: IVotingService = Depends(get_voting_service),
+    match_repo: IMatchRepository = Depends(get_match_repository),
+):
+    """
+    Admin-only: list who voted for whom in a given round (or current round if not specified).
+    """
+    if league.slug != slug:
+        raise HTTPException(status_code=400, detail="Slug mismatch for league")
+    match = match_repo.get_by_id(match_id)
+    if not match or match.league_id != league.id:
+        raise HTTPException(status_code=404, detail="Match not found")
+    r = round_number if round_number is not None else match.voting_round
+    if r == 0:
+        return schemas.VotesDetailResponse(round_number=0, votes=[])
+    return voting_service.get_votes_detail(match_id, r)

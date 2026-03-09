@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!configElement || !modal) return;
 
     const config = configElement.dataset;
+    const isAdmin = configElement.getAttribute("data-is-admin") === "true";
     let currentMatchId = config.matchId !== "null" ? parseInt(config.matchId, 10) : null;
     let currentRound = parseInt(config.round, 10) || 0;
     let currentVoterId = null;
@@ -11,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let livePollingInterval = null;
 
     const liveSection = document.getElementById("voting-live-results");
+    const closedResultsEl = document.getElementById("voting-closed-results");
     const liveBody = document.getElementById("voting-live-body");
     const liveMeta = document.getElementById("voting-live-meta");
     const step1 = document.getElementById("voting-step-1");
@@ -130,37 +132,92 @@ document.addEventListener("DOMContentLoaded", function () {
 
         currentMatchId = parseInt(effectiveMatchId, 10);
 
-        try {
-            const res = await fetch(`/api/voting/match/${currentMatchId}/live`);
-            if (res.ok) {
-                const data = await res.json();
-                const serverRound = parseInt(data.round_number, 10) || 0;
-                currentRound = serverRound;
-                const roundNumEl = document.getElementById("round-num");
-                if (roundNumEl) roundNumEl.textContent = String(currentRound);
+        if (isAdmin) {
+            try {
+                const res = await fetch(`/api/voting/match/${currentMatchId}/live`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const serverRound = parseInt(data.round_number, 10) || 0;
+                    currentRound = serverRound;
+                    const roundNumEl = document.getElementById("round-num");
+                    if (roundNumEl) roundNumEl.textContent = String(currentRound);
 
-                const key = voteStorageKey();
-                const existingVote = typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
-                if (existingVote) {
-                    if (typeof showToast !== "undefined") {
-                        showToast("يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.", "error");
-                    } else {
-                        alert("يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.");
+                    const key = voteStorageKey();
+                    const existingVote = typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
+                    if (existingVote) {
+                        if (typeof showToast !== "undefined") {
+                            showToast("يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.", "error");
+                        } else {
+                            alert("يا غشاش يا حرامي يا وسخ! 🤡 شكلك كنت صوّت قبل كده – السيرفر هيقرر.");
+                        }
                     }
                 }
+            } catch (e) {
+                console.error("Failed to fetch voting round or check vote:", e);
             }
-        } catch (e) {
-            console.error("Failed to fetch voting round or check vote:", e);
+        } else {
+            try {
+                const res = await fetch(`/api/voting/match/${currentMatchId}/status?voter_id=0`);
+                if (res.ok) {
+                    const data = await res.json();
+                    currentRound = data.current_round || 0;
+                    const roundNumEl = document.getElementById("round-num");
+                    if (roundNumEl) roundNumEl.textContent = String(currentRound);
+                }
+            } catch (e) {
+                console.error("Failed to fetch voting status", e);
+            }
+            const closedRes = await fetch(`/api/voting/match/${currentMatchId}/closed-results`);
+            if (closedRes.ok && closedResultsEl) {
+                const data = await closedRes.json();
+                renderClosedResults(closedResultsEl, data);
+            }
         }
 
         modal.style.display = "flex";
         modal.classList.add("active");
         resetVotingSteps();
-        startLivePolling();
+        if (isAdmin && liveSection) {
+            startLivePolling();
+        }
+    }
+
+    function renderClosedResults(container, data) {
+        if (!container) return;
+        const rounds = Array.isArray(data.closed_rounds) ? data.closed_rounds : [];
+        if (rounds.length === 0) {
+            container.innerHTML = "<p class=\"text-secondary\" style=\"font-size: 1rem;\">ستظهر نتيجة التصويت بعد إغلاق الجولة من لوحة التحكم.</p>";
+            container.style.display = "block";
+            return;
+        }
+        let html = "";
+        rounds.forEach((round) => {
+            const totalVotes = round.total_votes || 0;
+            const candidates = Array.isArray(round.candidates) ? round.candidates : [];
+            html += `<h3 style="font-size: 1rem; margin-bottom: 0.5rem;">نتيجة الجولة ${round.round_number}</h3>`;
+            if (totalVotes === 0) {
+                html += "<p class=\"text-secondary\" style=\"font-size: 0.95rem;\">لا توجد أصوات.</p>";
+            } else {
+                html += `<div class="table-responsive" style="margin-bottom: 1rem;"><table style="min-width: 0; font-size: 1rem; font-weight: 700;"><thead><tr><th>اللاعب</th><th>الأصوات</th><th>النسبة</th></tr></thead><tbody>`;
+                candidates.forEach((row) => {
+                    const percent = typeof row.percent === "number" ? row.percent.toFixed(1) : "0.0";
+                    html += `<tr><td>${escapeHtml(row.name)}</td><td>${row.votes}</td><td>${percent}%</td></tr>`;
+                });
+                html += "</tbody></table></div>";
+            }
+        });
+        container.innerHTML = html;
+        container.style.display = "block";
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     function startLivePolling() {
-        if (!currentMatchId || !liveSection || !liveBody || !liveMeta) return;
+        if (!currentMatchId || !liveSection || !liveBody || !liveMeta || !isAdmin) return;
         liveSection.style.display = "block";
 
         const fetchLive = async () => {
@@ -252,7 +309,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     alert("تم تسجيل تصويتك بنجاح!");
                 }
-                startLivePolling();
+                if (isAdmin) {
+                    startLivePolling();
+                } else if (closedResultsEl) {
+                    const closedRes = await fetch(`/api/voting/match/${currentMatchId}/closed-results`);
+                    if (closedRes.ok) {
+                        const data = await closedRes.json();
+                        renderClosedResults(closedResultsEl, data);
+                    }
+                }
                 return;
             }
 
