@@ -893,8 +893,6 @@ def get_votes_detail(
     """
     Admin-only: list who voted for whom in a given round (or current round if not specified).
     """
-    if league.slug != slug:
-        raise HTTPException(status_code=400, detail="Slug mismatch for league")
     match = match_repo.get_by_id(match_id)
     if not match or match.league_id != league.id:
         raise HTTPException(status_code=404, detail="Match not found")

@@ -644,12 +644,9 @@ document.addEventListener('DOMContentLoaded', function () {
             votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">لا يمكن تحديد الدوري.</p>';
             return;
         }
-        const url = `/l/${leagueSlug}/admin/voting/match/${matchId}/votes-detail`;
+        const url = `/l/${encodeURIComponent(leagueSlug)}/admin/voting/match/${matchId}/votes-detail`;
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(function () { controller.abort(); }, 12000);
-            const resp = await fetch(url, { credentials: 'same-origin', signal: controller.signal });
-            clearTimeout(timeoutId);
+            const resp = await fetch(url, { credentials: 'same-origin' });
             if (!resp.ok) {
                 votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">لا يمكن تحميل تفاصيل التصويت (خطأ ' + resp.status + '). حدّث الصفحة وحاول مرة أخرى.</p>';
                 return;
@@ -669,17 +666,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const li = document.createElement('li');
                 li.style.padding = '4px 0';
                 li.style.borderBottom = '1px solid var(--border-color, #eee)';
-                li.textContent = (v.voter_name || '—') + ' → ' + (v.candidate_name || '—');
+                li.textContent = (v.voter_name || '—') + ' ← ' + (v.candidate_name || '—');
                 ul.appendChild(li);
             });
             votesDetailEl.innerHTML = '';
             votesDetailEl.appendChild(ul);
         } catch (err) {
             console.error('Error fetching votes detail', err);
-            if (votesDetailEl) {
-                var msg = err.name === 'AbortError' ? 'انتهت مهلة الطلب. حدّث الصفحة وحاول مرة أخرى.' : 'حدث خطأ أثناء تحميل التفاصيل. حدّث الصفحة وحاول مرة أخرى.';
-                votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">' + msg + '</p>';
-            }
+            votesDetailEl.innerHTML = '<p class="text-muted" style="font-size: 0.95rem;">حدث خطأ أثناء تحميل التفاصيل. حدّث الصفحة وحاول مرة أخرى.</p>';
         }
     }
 
