@@ -1,4 +1,61 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // =========================================
+    // Points breakdown popover
+    // =========================================
+    const pointsPopover = document.getElementById('points-breakdown-popover');
+    const pointsPopoverList = document.getElementById('points-breakdown-list');
+    const pointsPopoverTitle = document.querySelector('.points-breakdown-player-name');
+    const pointsCloseBtn = document.querySelector('.points-breakdown-close-btn');
+    const pointsBackdrop = document.querySelector('.points-breakdown-backdrop');
+
+    function openPointsBreakdown(playerName, breakdown) {
+        if (!pointsPopover || !pointsPopoverList || !pointsPopoverTitle) return;
+        pointsPopoverTitle.textContent = playerName || 'اللاعب';
+        pointsPopoverList.innerHTML = '';
+        try {
+            const items = typeof breakdown === 'string' ? JSON.parse(breakdown) : breakdown;
+            (items || []).forEach(function (item) {
+                const li = document.createElement('li');
+                const sign = (item.points >= 0) ? '+' : '';
+                li.textContent = item.label + ': ' + sign + item.points;
+                li.classList.add(item.points < 0 ? 'points-breakdown-negative' : 'points-breakdown-positive');
+                pointsPopoverList.appendChild(li);
+            });
+        } catch (e) {
+            pointsPopoverList.innerHTML = '<li class="text-secondary">تعذر تحميل التفاصيل.</li>';
+        }
+        pointsPopover.setAttribute('aria-hidden', 'false');
+        pointsPopover.classList.add('active');
+    }
+
+    function closePointsBreakdown() {
+        if (pointsPopover) {
+            pointsPopover.classList.remove('active');
+            pointsPopover.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.points-breakdown-btn');
+        if (btn) {
+            e.preventDefault();
+            const playerName = btn.getAttribute('data-player-name');
+            const breakdown = btn.getAttribute('data-breakdown');
+            openPointsBreakdown(playerName, breakdown);
+            return;
+        }
+        if (e.target === pointsBackdrop || e.target.closest('.points-breakdown-close-btn')) {
+            closePointsBreakdown();
+        }
+    });
+
+    if (pointsBackdrop) {
+        pointsBackdrop.addEventListener('click', closePointsBreakdown);
+    }
+    if (pointsCloseBtn) {
+        pointsCloseBtn.addEventListener('click', closePointsBreakdown);
+    }
+
     const matchesConfig = document.getElementById('matches-config');
     if (matchesConfig) {
         const config = matchesConfig.dataset;
@@ -75,16 +132,44 @@ document.addEventListener('DOMContentLoaded', function () {
                 const isDark = document.body.classList.contains("dark-mode");
                 const bgColor = isDark ? "#2a2a2a" : "#ffffff";
 
-                const doCapture = () => html2canvas(captureArea, {
-                    backgroundColor: bgColor,
-                    scale: 2,
-                    useCORS: true,
-                    logging: false
-                });
+                // Apply computed styles to clone so html2canvas gets real colors (fixes black image with CSS variables)
+                function inlineComputedStyles(source, clone) {
+                    if (!source || !clone) return;
+                    const cs = window.getComputedStyle(source);
+                    clone.style.backgroundColor = cs.backgroundColor;
+                    clone.style.color = cs.color;
+                    const bgImage = cs.backgroundImage;
+                    if (bgImage && bgImage !== 'none') {
+                        clone.style.backgroundImage = bgImage;
+                        clone.style.backgroundSize = cs.backgroundSize;
+                        clone.style.backgroundPosition = cs.backgroundPosition;
+                    }
+                    const children = source.children;
+                    for (let i = 0; i < children.length; i++) {
+                        if (clone.children[i]) inlineComputedStyles(children[i], clone.children[i]);
+                    }
+                }
+
+                const doCapture = () => {
+                    captureArea.scrollIntoView({ behavior: 'instant', block: 'center' });
+                    return html2canvas(captureArea, {
+                        backgroundColor: bgColor,
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        windowWidth: captureArea.scrollWidth,
+                        windowHeight: captureArea.scrollHeight,
+                        onclone: function (clonedDoc) {
+                            const clonedCard = captureArea.id ? clonedDoc.getElementById(captureArea.id) : clonedDoc.body.firstElementChild;
+                            if (clonedCard) inlineComputedStyles(captureArea, clonedCard);
+                        }
+                    });
+                };
 
                 Promise.resolve()
                     .then(() => document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
                     .then(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))
+                    .then(() => new Promise(r => setTimeout(r, 150)))
                     .then(doCapture)
                     .then(canvas => {
                     if (deleteBtn) deleteBtn.style.display = '';

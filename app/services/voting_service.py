@@ -229,13 +229,15 @@ class VotingService(IVotingService):
         if winner:
             winner.total_points += bonus
             self.player_repo.save(winner)
-            
+
             # Reflect bonus in the match history (persist so bonus is stored in MatchStat)
             for stat in match.stats:
                 if stat.player_id == winner_id:
                     stat.points_earned += bonus
                     stat.bonus_points = bonus
+                    stat.voting_bonus_applied = True
                     self.match_repo.db.add(stat)
+                    self.match_repo.db.commit()
                     break
         
         if match.voting_round < 3:

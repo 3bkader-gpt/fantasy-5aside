@@ -164,3 +164,100 @@ def calculate_player_points(
         defensive_contribution=defensive_contribution,
     )
     return default_calculator.calculate_total(ctx)
+
+
+def get_points_breakdown(stat, match) -> List[dict]:
+    """
+    تفصيل نقاط اللاعب في المباراة لعرضها في popup.
+    يرجع قائمة [{"label": "وصف البند", "points": عدد}, ...] للبنود غير الصفرية،
+    ثم بند "المجموع" (يتضمن بونص التصويت إن وُجد).
+    """
+    goals = getattr(stat, "goals", 0) or 0
+    assists = getattr(stat, "assists", 0) or 0
+    saves = getattr(stat, "saves", 0) or 0
+    goals_conceded = getattr(stat, "goals_conceded", 0) or 0
+    own_goals = getattr(stat, "own_goals", 0) or 0
+    is_winner = getattr(stat, "is_winner", False)
+    is_gk = getattr(stat, "is_gk", False)
+    clean_sheet = getattr(stat, "clean_sheet", False)
+    defensive_contribution = getattr(stat, "defensive_contribution", False) or False
+    bonus_points = getattr(stat, "bonus_points", 0) or 0
+
+    is_draw = False
+    if match and getattr(match, "team_a_score", None) is not None and getattr(match, "team_b_score", None) is not None:
+        is_draw = match.team_a_score == match.team_b_score
+
+    ctx = PointsContext(
+        goals=goals,
+        assists=assists,
+        is_winner=is_winner,
+        is_draw=is_draw,
+        is_gk=is_gk,
+        clean_sheet=clean_sheet,
+        saves=saves,
+        goals_conceded=goals_conceded,
+        own_goals=own_goals,
+        defensive_contribution=defensive_contribution,
+    )
+
+    out: List[dict] = []
+
+    # مشاركة
+    p_part = 2
+    out.append({"label": "مشاركة", "points": p_part})
+
+    # أهداف
+    p_goals = goals * (6 if is_gk else 3)
+    if p_goals != 0:
+        out.append({"label": f"أهداف ({goals}×{'6' if is_gk else '3'})", "points": p_goals})
+
+    # أسيست
+    p_assists = assists * (4 if is_gk else 2)
+    if p_assists != 0:
+        out.append({"label": f"أسيست ({assists}×{'4' if is_gk else '2'})", "points": p_assists})
+
+    # فوز / تعادل / خسارة
+    if is_winner:
+        out.append({"label": "فوز الفريق", "points": 2})
+    elif is_draw:
+        out.append({"label": "تعادل", "points": 1})
+    else:
+        out.append({"label": "خسارة", "points": -1})
+
+    # شباك نظيفة
+    if clean_sheet:
+        if is_gk:
+            if goals_conceded <= 2:
+                out.append({"label": "شباك نظيفة (حارس)", "points": 10})
+            elif goals_conceded <= 6:
+                out.append({"label": "شباك نظيفة (حارس)", "points": 4})
+        else:
+            out.append({"label": "شباك نظيفة", "points": 2})
+
+    # تصديات (حارس)
+    if is_gk and saves:
+        p_saves = (saves // 3) * 2
+        if p_saves:
+            out.append({"label": f"تصديات ({saves}÷3)×2", "points": p_saves})
+
+    # أهداف مستهلكة (حارس)
+    if is_gk and goals_conceded:
+        p_conceded = -(goals_conceded // 4)
+        if p_conceded:
+            out.append({"label": f"أهداف مستهلكة -{goals_conceded}÷4", "points": p_conceded})
+
+    # أهداف ذاتية
+    if own_goals:
+        out.append({"label": "أهداف ذاتية", "points": -own_goals})
+
+    # مساهمة دفاعية
+    if defensive_contribution and not is_gk:
+        out.append({"label": "مساهمة دفاعية (DF)", "points": 2})
+
+    # بونص التصويت
+    if bonus_points:
+        out.append({"label": "بونص التصويت", "points": bonus_points})
+
+    total = sum(item["points"] for item in out)
+    out.append({"label": "المجموع", "points": total})
+    return out

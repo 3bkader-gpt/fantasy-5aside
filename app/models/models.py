@@ -156,6 +156,8 @@ class MatchStat(Base):
     
     points_earned = Column(Integer, default=0)
     bonus_points = Column(Integer, default=0)
+    # True after voting bonus has been added to points_earned (avoids double-apply in fix script)
+    voting_bonus_applied = Column(Boolean, default=False)
 
     player = relationship("Player", back_populates="match_stats")
     match = relationship("Match", back_populates="stats")

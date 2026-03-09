@@ -127,10 +127,15 @@
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.defensive_contribution|default(false) %}<span title="مساهمة دفاعية">✅</span>{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
-                                <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
+                                <td style="font-weight: bold; color: var(--success-color);" class="points-cell-with-detail">
+                                    <span>{{ stat.points_earned }}</span>
+                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown="{{ (stat | points_breakdown(match)) | tojson | e }}">ℹ️</button>
                                 </td>
                                 {% else %}
-                                <td class="text-secondary" style="font-weight: bold;">{{ stat.points_earned }}</td>
+                                <td class="text-secondary points-cell-with-detail" style="font-weight: bold;">
+                                    <span>{{ stat.points_earned }}</span>
+                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown="{{ (stat | points_breakdown(match)) | tojson | e }}">ℹ️</button>
+                                </td>
                                 {% endif %}
                             </tr>
                             {% endif %}
@@ -177,10 +182,15 @@
                                 <td>{% if stat.saves > 0 %}{{ stat.saves }}{% else %}-{% endif %}</td>
                                 <td>{% if stat.defensive_contribution|default(false) %}<span title="مساهمة دفاعية">✅</span>{% else %}-{% endif %}</td>
                                 {% if stat.is_winner %}
-                                <td style="font-weight: bold; color: var(--success-color);">{{ stat.points_earned }}
+                                <td style="font-weight: bold; color: var(--success-color);" class="points-cell-with-detail">
+                                    <span>{{ stat.points_earned }}</span>
+                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown="{{ (stat | points_breakdown(match)) | tojson | e }}">ℹ️</button>
                                 </td>
                                 {% else %}
-                                <td class="text-secondary" style="font-weight: bold;">{{ stat.points_earned }}</td>
+                                <td class="text-secondary points-cell-with-detail" style="font-weight: bold;">
+                                    <span>{{ stat.points_earned }}</span>
+                                    <button type="button" class="points-breakdown-btn" aria-label="تفاصيل النقاط" title="تفاصيل النقاط" data-player-name="{{ stat.player.name }}" data-breakdown="{{ (stat | points_breakdown(match)) | tojson | e }}">ℹ️</button>
+                                </td>
                                 {% endif %}
                             </tr>
                             {% endif %}
@@ -416,6 +426,18 @@
 }
 </script>
 {% endif %}
+
+<!-- Points breakdown popover (single shared instance) -->
+<div id="points-breakdown-popover" class="points-breakdown-popover" aria-hidden="true" role="dialog" aria-labelledby="points-breakdown-title" aria-modal="true">
+    <div class="points-breakdown-popover-inner">
+        <div class="points-breakdown-popover-header">
+            <h3 id="points-breakdown-title" class="points-breakdown-player-name"></h3>
+            <button type="button" class="points-breakdown-close-btn" aria-label="إغلاق">×</button>
+        </div>
+        <ul class="points-breakdown-list" id="points-breakdown-list"></ul>
+    </div>
+    <div class="points-breakdown-backdrop" aria-hidden="true"></div>
+</div>
 
 <div id="matches-config" data-slug="{{ league.slug }}" data-is-admin="{{ is_admin | tojson }}"></div>
 <script src="/static/js/matches.js"></script>

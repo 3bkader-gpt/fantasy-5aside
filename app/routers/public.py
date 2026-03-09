@@ -18,10 +18,12 @@ from ..dependencies import (
     ITransferRepository, get_transfer_repository
 )
 from ..services.achievements import achievement_service
+from ..services.points import get_points_breakdown
 
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.filters["points_breakdown"] = get_points_breakdown
 
 
 def _canonical_league_redirect(request: Request, provided_slug: str, canonical_slug: str) -> RedirectResponse:
