@@ -369,7 +369,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({}),
+                    credentials: 'same-origin'
                 });
 
                 const result = await response.json();
@@ -377,7 +378,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     showToast(result.message || 'تمت العملية بنجاح!', 'success');
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    showToast(result.detail || 'حدث خطأ.', 'error');
+                    const msg = result.detail || 'حدث خطأ.';
+                    const isCsrf = response.status === 403 && (msg.indexOf('CSRF') !== -1 || msg.indexOf('csrf') !== -1);
+                    showToast(isCsrf ? 'انتهت صلاحية الجلسة. حدّث الصفحة (F5) ثم حاول إغلاق الجولة مرة أخرى.' : msg, 'error');
                     this.disabled = false;
                 }
             } catch (error) {
