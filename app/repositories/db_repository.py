@@ -17,10 +17,11 @@ class VotingRepository(IVotingRepository):
         return self.db.query(models.Vote).filter(models.Vote.match_id == match_id, models.Vote.round_number == round_number).all()
     def get_vote_by_voter(self, match_id: int, voter_id: int, round_number: int) -> Optional[models.Vote]:
         return self.db.query(models.Vote).filter(models.Vote.match_id == match_id, models.Vote.voter_id == voter_id, models.Vote.round_number == round_number).first()
-    def save_vote(self, vote: models.Vote) -> models.Vote:
+    def save_vote(self, vote: models.Vote, commit: bool = True) -> models.Vote:
         self.db.add(vote)
-        self.db.commit()
-        self.db.refresh(vote)
+        if commit:
+            self.db.commit()
+            self.db.refresh(vote)
         return vote
     def get_round_results(self, match_id: int, round_number: int) -> List[dict]:
         results = self.db.query(
@@ -65,7 +66,7 @@ class LeagueRepository(ILeagueRepository):
         return self.db.query(models.League).filter(models.League.id == league_id).first()
     def get_all(self) -> List[models.League]:
         return self.db.query(models.League).order_by(models.League.created_at.desc()).all()
-    def update(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[models.League]:
+    def update(self, league_id: int, update_data: schemas.LeagueUpdate, commit: bool = True) -> Optional[models.League]:
         league = self.get_by_id(league_id)
         if not league:
             return None
@@ -77,27 +78,31 @@ class LeagueRepository(ILeagueRepository):
         if update_data.team_b_label is not None:
             league.team_b_label = update_data.team_b_label.strip()
         self.db.add(league)
-        self.db.commit()
-        self.db.refresh(league)
+        if commit:
+            self.db.commit()
+            self.db.refresh(league)
         return league
-    def delete(self, league_id: int) -> bool:
+    def delete(self, league_id: int, commit: bool = True) -> bool:
         league = self.get_by_id(league_id)
         if not league:
             return False
         # ORM cascade="all, delete" handles Players, Matches, etc.
         self.db.delete(league)
-        self.db.commit()
+        if commit:
+            self.db.commit()
         return True
-    def create(self, league_in: schemas.LeagueCreate, hashed_password: str) -> models.League:
+    def create(self, league_in: schemas.LeagueCreate, hashed_password: str, commit: bool = True) -> models.League:
         league = models.League(name=league_in.name, slug=league_in.slug.strip(), admin_password=hashed_password)
         self.db.add(league)
-        self.db.commit()
-        self.db.refresh(league)
+        if commit:
+            self.db.commit()
+            self.db.refresh(league)
         return league
-    def save(self, league: models.League) -> models.League:
+    def save(self, league: models.League, commit: bool = True) -> models.League:
         self.db.add(league)
-        self.db.commit()
-        self.db.refresh(league)
+        if commit:
+            self.db.commit()
+            self.db.refresh(league)
         return league
 
 class PlayerRepository(IPlayerRepository):
@@ -113,21 +118,23 @@ class PlayerRepository(IPlayerRepository):
             .filter(models.Player.league_id == league_id)
             .all()
         )
-    def create(self, name: str, league_id: int) -> models.Player:
+    def create(self, name: str, league_id: int, commit: bool = True) -> models.Player:
         player = models.Player(name=name, league_id=league_id)
         self.db.add(player)
-        self.db.commit()
-        self.db.refresh(player)
+        if commit:
+            self.db.commit()
+            self.db.refresh(player)
         return player
-    def update_name(self, player_id: int, new_name: str) -> models.Player:
+    def update_name(self, player_id: int, new_name: str, commit: bool = True) -> models.Player:
         player = self.get_by_id(player_id)
         if player:
             player.name = new_name
             self.db.add(player)
-            self.db.commit()
-            self.db.refresh(player)
+            if commit:
+                self.db.commit()
+                self.db.refresh(player)
         return player
-    def delete(self, player_id: int) -> bool:
+    def delete(self, player_id: int, commit: bool = True) -> bool:
         player = self.get_by_id(player_id)
         if not player: return False
         self.db.query(models.Vote).filter(
@@ -137,7 +144,8 @@ class PlayerRepository(IPlayerRepository):
         self.db.query(models.MatchStat).filter(models.MatchStat.player_id == player_id).delete(synchronize_session=False)
         self.db.query(models.CupMatchup).filter((models.CupMatchup.player1_id == player_id) | (models.CupMatchup.player2_id == player_id)).delete(synchronize_session=False)
         self.db.delete(player)
-        self.db.commit()
+        if commit:
+            self.db.commit()
         return True
     def get_leaderboard(self, league_id: int) -> List[models.Player]:
         return self.db.query(models.Player).filter(
@@ -174,21 +182,24 @@ class MatchRepository(IMatchRepository):
             .order_by(models.Match.date.asc())
             .all()
         )
-    def save(self, match: models.Match) -> models.Match:
+    def save(self, match: models.Match, commit: bool = True) -> models.Match:
         self.db.add(match)
-        self.db.commit()
-        self.db.refresh(match)
+        if commit:
+            self.db.commit()
+            self.db.refresh(match)
         return match
-    def delete(self, match_id: int) -> bool:
+    def delete(self, match_id: int, commit: bool = True) -> bool:
         match = self.get_by_id(match_id)
         if not match: return False
         # ORM cascade="all, delete" handles stats
         self.db.delete(match)
-        self.db.commit()
+        if commit:
+            self.db.commit()
         return True
-    def delete_match_stats(self, match_id: int) -> None:
+    def delete_match_stats(self, match_id: int, commit: bool = True) -> None:
         self.db.query(models.MatchStat).filter(models.MatchStat.match_id == match_id).delete(synchronize_session=False)
-        self.db.commit()
+        if commit:
+            self.db.commit()
     def get_player_history(self, player_id: int) -> List[models.MatchStat]:
         return self.db.query(models.MatchStat).options(
             joinedload(models.MatchStat.match).joinedload(models.Match.stats)
@@ -206,12 +217,14 @@ class CupRepository(ICupRepository):
         return self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id, models.CupMatchup.is_active == True).options(joinedload(models.CupMatchup.player1), joinedload(models.CupMatchup.player2)).all()
     def get_all_for_league(self, league_id: int) -> List[models.CupMatchup]:
         return self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id).options(joinedload(models.CupMatchup.player1), joinedload(models.CupMatchup.player2)).all()
-    def save_matchups(self, matchups: List[models.CupMatchup]) -> None:
+    def save_matchups(self, matchups: List[models.CupMatchup], commit: bool = True) -> None:
         self.db.add_all(matchups)
-        self.db.commit()
-    def delete_all_for_league(self, league_id: int) -> None:
+        if commit:
+            self.db.commit()
+    def delete_all_for_league(self, league_id: int, commit: bool = True) -> None:
         self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id).delete(synchronize_session=False)
-        self.db.commit()
+        if commit:
+            self.db.commit()
 
 class HallOfFameRepository(IHallOfFameRepository):
     def __init__(self, db: Session): self.db = db
@@ -219,16 +232,18 @@ class HallOfFameRepository(IHallOfFameRepository):
         return self.db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league_id).order_by(models.HallOfFame.id.desc()).first()
     def get_all_for_league(self, league_id: int) -> List[models.HallOfFame]:
         return self.db.query(models.HallOfFame).filter(models.HallOfFame.league_id == league_id).options(joinedload(models.HallOfFame.player)).order_by(models.HallOfFame.id.desc()).all()
-    def save(self, hof_record: models.HallOfFame) -> models.HallOfFame:
+    def save(self, hof_record: models.HallOfFame, commit: bool = True) -> models.HallOfFame:
         self.db.add(hof_record)
-        self.db.commit()
-        self.db.refresh(hof_record)
+        if commit:
+            self.db.commit()
+            self.db.refresh(hof_record)
         return hof_record
-    def delete(self, hof_id: int) -> None:
+    def delete(self, hof_id: int, commit: bool = True) -> None:
         record = self.db.query(models.HallOfFame).filter(models.HallOfFame.id == hof_id).first()
         if record:
             self.db.delete(record)
-            self.db.commit()
+            if commit:
+                self.db.commit()
 
 
 class TeamRepository(ITeamRepository):
@@ -246,20 +261,22 @@ class TeamRepository(ITeamRepository):
             func.lower(models.Team.name) == name.lower()
         ).first()
 
-    def create(self, league_id: int, name: str, short_code: Optional[str] = None, color: Optional[str] = None) -> models.Team:
+    def create(self, league_id: int, name: str, short_code: Optional[str] = None, color: Optional[str] = None, commit: bool = True) -> models.Team:
         team = models.Team(league_id=league_id, name=name.strip(), short_code=short_code, color=color)
         self.db.add(team)
-        self.db.commit()
-        self.db.refresh(team)
+        if commit:
+            self.db.commit()
+            self.db.refresh(team)
         return team
 
-    def save(self, team: models.Team) -> models.Team:
+    def save(self, team: models.Team, commit: bool = True) -> models.Team:
         self.db.add(team)
-        self.db.commit()
-        self.db.refresh(team)
+        if commit:
+            self.db.commit()
+            self.db.refresh(team)
         return team
 
-    def delete(self, team_id: int) -> bool:
+    def delete(self, team_id: int, commit: bool = True) -> bool:
         team = self.get_by_id(team_id)
         if not team:
             return False
@@ -275,7 +292,8 @@ class TeamRepository(ITeamRepository):
                 detail="لا يمكن حذف الفريق لأن هناك لاعبين أو مباريات مرتبطة به"
             )
         self.db.delete(team)
-        self.db.commit()
+        if commit:
+            self.db.commit()
         return True
 
 
@@ -290,8 +308,9 @@ class TransferRepository(ITransferRepository):
             joinedload(models.Transfer.to_team)
         ).order_by(models.Transfer.created_at.desc()).all()
 
-    def save(self, transfer: models.Transfer) -> models.Transfer:
+    def save(self, transfer: models.Transfer, commit: bool = True) -> models.Transfer:
         self.db.add(transfer)
-        self.db.commit()
-        self.db.refresh(transfer)
+        if commit:
+            self.db.commit()
+            self.db.refresh(transfer)
         return transfer

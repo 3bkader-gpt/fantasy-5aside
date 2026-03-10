@@ -5,11 +5,13 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
+import logging
 from ..core.config import settings
 from ..database import get_db
 from ..models import models
 from ..dependencies import get_current_admin_league, get_match_repository, IMatchRepository
 
+logger = logging.getLogger(__name__)
 
 UPLOAD_DIR = "uploads"
 BUCKET_MATCH_MEDIA = "match-media"
@@ -33,7 +35,8 @@ def _supabase_storage_upload(league_id: int, match_id: int, raw: bytes, ext: str
         client.storage.from_(BUCKET_MATCH_MEDIA).upload(path, raw, {"content-type": content_type})
         public_url = client.storage.from_(BUCKET_MATCH_MEDIA).get_public_url(path)
         return (path, public_url)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Supabase upload failed: {str(e)}")
         return None
 
 
@@ -46,7 +49,8 @@ def _supabase_storage_remove(storage_path: str) -> bool:
         client = create_client(settings.supabase_project_url, settings.supabase_service_role_key)
         client.storage.from_(BUCKET_MATCH_MEDIA).remove([storage_path])
         return True
-    except Exception:
+    except Exception as e:
+        logger.error(f"Supabase removal failed for {storage_path}: {str(e)}")
         return False
 
 
@@ -104,8 +108,10 @@ async def upload_match_media(
                     size_bytes=len(raw),
                     file_url=public_url,
                 )
+                logger.info(f"Uploaded to Supabase: {public_url}")
             else:
                 # Fallback to local if Supabase upload failed
+                logger.warning(f"Supabase upload failed for {f.filename}, falling back to local storage")
                 filename = f"{uuid.uuid4().hex}{ext}"
                 path = os.path.join(UPLOAD_DIR, filename)
                 with open(path, "wb") as out:
@@ -135,6 +141,7 @@ async def upload_match_media(
         created_items.append(media)
 
     db.commit()
+    logger.info(f"Successfully uploaded {len(created_items)} media items for match {match_id}")
     return {"success": True, "count": len(created_items)}
 
 
@@ -162,4 +169,5 @@ async def delete_match_media(
 
     db.delete(media)
     db.commit()
+    logger.info(f"Deleted media {media_id} for league {league.id}")
     return {"success": True}

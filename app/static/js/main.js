@@ -88,6 +88,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+// Global utilities
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // Global UI functions
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');

@@ -68,10 +68,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const playerAssignPanel = document.getElementById('player-assign-panel');
     const playerSearchInput = document.getElementById('player-search-input');
 
+    let playerItemsCache = null;
+
     function filterPlayerList(query) {
-        const items = document.querySelectorAll('.player-assign-item');
+        if (!playerItemsCache) {
+            playerItemsCache = Array.from(document.querySelectorAll('.player-assign-item'));
+        }
         const normalized = (query || '').trim().toLowerCase();
-        items.forEach(function (label) {
+        playerItemsCache.forEach(function (label) {
             const name = label.querySelector('span').textContent.trim().toLowerCase();
             label.style.display = name.includes(normalized) ? '' : 'none';
         });
@@ -80,13 +84,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (toggleAssignBtn && playerAssignPanel) {
         toggleAssignBtn.addEventListener('click', function () {
             playerAssignPanel.style.display = playerAssignPanel.style.display === 'none' ? 'block' : 'none';
+            // Reset cache if panel opens (might have new players)
+            if (playerAssignPanel.style.display === 'block') playerItemsCache = null;
         });
     }
 
     if (playerSearchInput) {
-        playerSearchInput.addEventListener('input', function () {
+        playerSearchInput.addEventListener('input', debounce(function () {
             filterPlayerList(this.value);
-        });
+        }, 250));
     }
 
     // Function to add a new row
@@ -382,18 +388,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Animation: button tap feedback on key admin actions
-    const tapButtons = [
+    // Consolidate Animation: button tap feedback on admin actions
+    const buttonSelectors = [
         '.delete-league-btn', '#import-backup-btn', '#save-match-btn',
         '.delete-player-btn', '.edit-player-btn', '.delete-team-btn',
-        '#reset-voting-round-btn', '#add-new-player-from-team', '.manage-team-players-btn'
+        '#reset-voting-round-btn', '#add-new-player-from-team', '.manage-team-players-btn',
+        '#start-new-match-btn'
     ];
-    tapButtons.forEach(sel => {
-        document.querySelectorAll(sel).forEach(btn => {
-            btn.addEventListener('click', function () {
-                if (window.FantasyMotion) window.FantasyMotion.buttonTap(this);
-            });
-        });
+    
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest(buttonSelectors.join(','));
+        if (btn && window.FantasyMotion) {
+            window.FantasyMotion.buttonTap(btn);
+        }
     });
 
     // Delete League Logic
@@ -570,12 +577,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Animation: button tap feedback on admin action buttons
-    document.querySelectorAll('#save-match-btn, .delete-league-btn, #import-backup-btn, .delete-player-btn, .edit-player-btn, .delete-team-btn, #reset-voting-round-btn, #start-new-match-btn').forEach(btn => {
-        if (btn) btn.addEventListener('click', function () {
-            if (window.FantasyMotion) window.FantasyMotion.buttonTap(this);
-        });
-    });
 
     // Delete Team
     document.querySelectorAll('.delete-team-btn').forEach(btn => {

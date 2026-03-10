@@ -67,6 +67,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (isVisible) {
                 visibleRank++;
                 row.style.display = "";
+                row.style.opacity = "";
+                row.style.transform = "";
 
                 const rankText = visibleRank;
                 const rankTitles = { 1: "المركز الأول", 2: "المركز الثاني", 3: "المركز الثالث" };
@@ -94,6 +96,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
             tbody.appendChild(row);
         });
+
+        if (window.FantasyMotion) {
+            window.FantasyMotion.cardStaggerIn("#leaderboard-body tr", 0.02);
+        }
     }
 
     // Sorting tabs
@@ -137,32 +143,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const captureArea = document.getElementById("capture-area");
 
     if (shareBtn && captureArea) {
-        // Resolve CSS variable colors to inline styles so html2canvas can render them
-        function resolveVarColors(root) {
-            var els = [root].concat(Array.from(root.querySelectorAll('*')));
-            var saved = [];
-            for (var i = 0; i < els.length; i++) {
-                var el = els[i];
-                var cs = window.getComputedStyle(el);
-                saved.push({ el: el, color: el.style.color, bg: el.style.backgroundColor, bc: el.style.borderColor, bgi: el.style.backgroundImage });
-                el.style.color = cs.color;
-                el.style.backgroundColor = cs.backgroundColor;
-                el.style.borderColor = cs.borderColor;
-                var bgImg = cs.backgroundImage;
-                if (bgImg && bgImg !== 'none') el.style.backgroundImage = bgImg;
-            }
-            return saved;
-        }
-        function restoreStyles(saved) {
-            for (var i = 0; i < saved.length; i++) {
-                var s = saved[i];
-                s.el.style.color = s.color;
-                s.el.style.backgroundColor = s.bg;
-                s.el.style.borderColor = s.bc;
-                s.el.style.backgroundImage = s.bgi;
-            }
-        }
-
         shareBtn.addEventListener("click", () => {
             const originalDisplay = shareBtn.style.display;
             const originalText = shareBtn.textContent;
@@ -171,21 +151,59 @@ document.addEventListener("DOMContentLoaded", function () {
             shareBtn.disabled = true;
             shareBtn.textContent = "جاري التقاط الصورة...";
 
-            const isDark = document.body.classList.contains("dark-mode");
-            const bgColor = isDark ? "#020617" : "#f8fafc";
-
             const doCapture = () => {
-                captureArea.scrollIntoView({ behavior: "instant", block: "start" });
-                var saved = resolveVarColors(captureArea);
+                var wasDark = document.body.classList.contains("dark-mode");
+
+                // Kill transitions so getComputedStyle returns final values immediately
+                var noTransition = document.createElement('style');
+                noTransition.textContent = '* { transition: none !important; }';
+                document.head.appendChild(noTransition);
+                document.body.offsetHeight; // force recalc
+
+                if (!wasDark) document.body.classList.add("dark-mode");
+                document.body.offsetHeight; // force recalc with dark-mode values
+
+                // Fix html2canvas: remove overflow clip + force explicit colors
+                var tweaks = [];
+                captureArea.querySelectorAll('.table-responsive').forEach(function (el) {
+                    tweaks.push({ el: el, ov: el.style.overflow, ovx: el.style.overflowX });
+                    el.style.overflow = 'visible';
+                    el.style.overflowX = 'visible';
+                });
+                var allEls = captureArea.querySelectorAll('*');
+                var colorSaved = [];
+                for (var i = 0; i < allEls.length; i++) {
+                    var el = allEls[i];
+                    var cs = getComputedStyle(el);
+                    colorSaved.push({ el: el, c: el.style.color, bg: el.style.backgroundColor });
+                    el.style.color = cs.color;
+                    el.style.backgroundColor = cs.backgroundColor;
+                }
+
+                function restore() {
+                    for (var j = 0; j < colorSaved.length; j++) {
+                        colorSaved[j].el.style.color = colorSaved[j].c;
+                        colorSaved[j].el.style.backgroundColor = colorSaved[j].bg;
+                    }
+                    tweaks.forEach(function (t) { t.el.style.overflow = t.ov; t.el.style.overflowX = t.ovx; });
+                    captureArea.style.backgroundColor = oldBg;
+                    if (!wasDark) document.body.classList.remove("dark-mode");
+                    document.head.removeChild(noTransition);
+                }
+
+                captureArea.scrollIntoView({ behavior: "auto", block: "start" });
+                const oldBg = captureArea.style.backgroundColor;
+                captureArea.style.backgroundColor = !wasDark ? "#020617" : getComputedStyle(document.body).backgroundColor;
+                
                 return html2canvas(captureArea, {
-                    backgroundColor: bgColor,
+                    backgroundColor: !wasDark ? "#020617" : oldBg || "#f8fafc",
                     scale: 2,
                     useCORS: true,
                     logging: false,
-                    windowWidth: captureArea.scrollWidth,
-                    windowHeight: captureArea.scrollHeight
-                }).then(function (canvas) { restoreStyles(saved); return canvas; })
-                  .catch(function (err) { restoreStyles(saved); throw err; });
+                    windowWidth: Math.ceil(captureArea.scrollWidth),
+                    windowHeight: Math.ceil(captureArea.scrollHeight)
+                }).then(function (c) { restore(); return c; },
+                    function (e) { restore(); throw e; });
             };
 
             Promise.resolve()
@@ -194,32 +212,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(() => new Promise(r => setTimeout(r, 150)))
                 .then(doCapture)
                 .then(canvas => {
-                shareBtn.style.display = originalDisplay;
-                shareBtn.classList.remove("btn-loading");
-                shareBtn.disabled = false;
-                shareBtn.textContent = originalText;
+                    shareBtn.style.display = originalDisplay;
+                    shareBtn.classList.remove("btn-loading");
+                    shareBtn.disabled = false;
+                    shareBtn.textContent = originalText;
 
-                const image = canvas.toDataURL("image/png");
-                const link = document.createElement("a");
-                link.href = image;
-                link.download = `leaderboard.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }).catch(err => {
-                shareBtn.style.display = originalDisplay;
-                shareBtn.classList.remove("btn-loading");
-                shareBtn.disabled = false;
-                shareBtn.textContent = originalText;
-                console.error("Error generating screenshot: ", err);
-                alert("❌ حدث خطأ أثناء التقاط الصورة.");
-            });
+                    const image = canvas.toDataURL("image/png");
+                    const link = document.createElement("a");
+                    link.href = image;
+                    link.download = `leaderboard.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }).catch(err => {
+                    shareBtn.style.display = originalDisplay;
+                    shareBtn.classList.remove("btn-loading");
+                    shareBtn.disabled = false;
+                    shareBtn.textContent = originalText;
+                    console.error("Error generating screenshot: ", err);
+                    alert("❌ حدث خطأ أثناء التقاط الصورة.");
+                });
         });
     }
 
     // Card stagger animations (banners + table rows)
     if (window.FantasyMotion) {
         window.FantasyMotion.cardStaggerIn(".banner-card", 0.05);
-        window.FantasyMotion.cardStaggerIn("#leaderboard-body tr", 0.02);
     }
 });

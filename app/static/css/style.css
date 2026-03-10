@@ -91,7 +91,7 @@
     /* Text (improved contrast ~5.5:1 and ~4.8:1) */
     --text-primary: #f9fafb;
     --text-secondary: #a8b8cc;
-    --text-muted: #8494a7;
+    --text-muted: #94a3b8; /* Increased contrast for dark mode muted text */
     --text-color: var(--text-primary);
     --heading-color: #e5e7eb;
 
@@ -117,6 +117,91 @@
     --shadow-md: 0 4px 10px rgba(15, 23, 42, 0.7);
     --shadow-lg: 0 18px 45px rgba(15, 23, 42, 0.9);
 }
+
+/* Match Card & Scoreboard Dark Mode Fixes */
+.dark-mode .card {
+    background-color: #0f172a;
+    border-color: rgba(148, 163, 184, 0.1);
+}
+
+.dark-mode .scoreboard {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.dark-mode .scoreboard-meta {
+    color: #94a3b8;
+}
+
+.dark-mode .scoreboard-result span[style*="color: rgba(255,255,255,0.5)"] {
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.dark-mode .table-responsive thead {
+    background: rgba(148, 163, 184, 0.1) !important;
+}
+
+.dark-mode table th {
+    color: #f9fafb !important;
+}
+
+.dark-mode table td {
+    border-bottom-color: rgba(148, 163, 184, 0.1) !important;
+    color: #cbd5e1;
+}
+
+.dark-mode .rules-table-container {
+    background: #0f172a;
+    border-color: rgba(148, 163, 184, 0.2);
+}
+
+.dark-mode .rules-table thead {
+    background: rgba(148, 163, 184, 0.1) !important;
+}
+
+/* Team Specific Styles */
+.team-a-header {
+    color: #4da8da;
+    border-bottom: 2px solid #4da8da;
+    padding-bottom: 5px;
+}
+
+.team-b-header {
+    color: #f39c12;
+    border-bottom: 2px solid #f39c12;
+    padding-bottom: 5px;
+}
+
+.team-a-thead {
+    background: rgba(52, 152, 219, 0.2);
+}
+
+.team-b-thead {
+    background: rgba(230, 126, 34, 0.2);
+}
+
+.stat-row {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.dark-mode .team-a-thead {
+    background: rgba(77, 168, 218, 0.15) !important;
+}
+
+.dark-mode .team-b-thead {
+    background: rgba(243, 156, 18, 0.15) !important;
+}
+
+.dark-mode .team-a-header {
+    color: #60a5fa;
+    border-bottom-color: #60a5fa;
+}
+
+.dark-mode .team-b-header {
+    color: #fbbf24;
+    border-bottom-color: #fbbf24;
+}
+
 
 /* Basic Reset */
 * {
@@ -1110,6 +1195,14 @@ input[type="checkbox"] {
     transform: translateY(0);
 }
 
+.dark-mode .modal-overlay {
+    background: rgba(0, 0, 0, 0.75); /* Darker overlay for better modal focus in dark mode */
+}
+
+.dark-mode .modal-content {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border-subtle);
+}
+
 .modal-actions {
     display: flex;
     justify-content: space-between;
@@ -1139,7 +1232,8 @@ input[type="checkbox"] {
 .points-breakdown-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7); /* Slightly darker for better focus */
+    z-index: 1;
 }
 
 .points-breakdown-popover-inner {
@@ -1154,6 +1248,7 @@ input[type="checkbox"] {
     max-height: 85vh;
     overflow: hidden;
     border: 1px solid var(--border-color);
+    z-index: 2; /* Ensure it stays above backdrop */
 }
 
 .points-breakdown-popover-header {
@@ -1216,8 +1311,16 @@ input[type="checkbox"] {
     color: var(--success-color);
 }
 
+.dark-mode .points-breakdown-positive {
+    color: #4ade80; /* Brighter green for dark mode visibility */
+}
+
 .points-breakdown-negative {
     color: var(--danger-color);
+}
+
+.dark-mode .points-breakdown-negative {
+    color: #f87171; /* Brighter red for dark mode visibility */
 }
 
 .points-breakdown-btn {

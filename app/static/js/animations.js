@@ -68,20 +68,43 @@
             const cards = document.querySelectorAll(selector);
             if (!cards.length) return;
             cards.forEach((card, i) => {
-                card.style.opacity = "0";
-                card.style.transform = "translateY(12px)";
-                card.animate(
-                    [
-                        { opacity: 0, transform: "translateY(12px)" },
-                        { opacity: 1, transform: "translateY(0)" },
-                    ],
-                    {
-                        duration: 350,
-                        delay: i * baseDelay * 1000,
-                        easing: "ease-out",
-                        fill: "forwards",
+                try {
+                    // Cancel existing animations carefully
+                    if (typeof card.getAnimations === "function") {
+                        card.getAnimations().forEach(a => a.cancel());
                     }
-                );
+
+                    if (typeof card.animate !== "function") {
+                        // Fallback: Web Animations API not supported
+                        card.style.opacity = "";
+                        card.style.transform = "";
+                        return;
+                    }
+
+                    card.style.opacity = "0";
+                    card.style.transform = "translateY(12px)";
+                    card.animate(
+                        [
+                            { opacity: 0, transform: "translateY(12px)" },
+                            { opacity: 1, transform: "translateY(0)" },
+                        ],
+                        {
+                            duration: 350,
+                            delay: i * baseDelay * 1000,
+                            easing: "ease-out",
+                            fill: "forwards",
+                        }
+                    ).onfinish = () => {
+                        // Ensure styles are formally cleared after animation to prevent lingering inline styles
+                        card.style.opacity = "";
+                        card.style.transform = "";
+                    };
+                } catch (e) {
+                    console.error("Animation failed on element:", card, e);
+                    // Safe fallback
+                    card.style.opacity = "";
+                    card.style.transform = "";
+                }
             });
         },
 

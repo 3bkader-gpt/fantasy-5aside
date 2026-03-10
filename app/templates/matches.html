@@ -92,11 +92,11 @@
 
             <!-- Team A Stats -->
             <div style="flex: 1; min-width: 300px;">
-                <h4 class="mb-1" style="color: #4da8da; border-bottom: 2px solid #4da8da; padding-bottom: 5px;">
+                <h4 class="mb-1 team-a-header">
                     تشكيلة {{ match.team_a.name if match.team_a else match.team_a_name }}</h4>
                 <div class="table-responsive">
                     <table style="width: 100%; font-size: 0.9rem;">
-                        <thead style="background: rgba(52, 152, 219, 0.2);">
+                        <thead class="team-a-thead">
                             <tr>
                                 <th>اللاعب</th>
                                 <th title="أهداف">⚽</th>
@@ -109,7 +109,7 @@
                         <tbody>
                             {% for stat in match.stats %}
                             {% if stat.team == 'A' %}
-                            <tr style="border-bottom: 1px solid var(--border-color);">
+                            <tr class="stat-row">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
                                     {% if stat.bonus_points == 3 %}<span title="أفضل لاعب في المباراة (3 نقاط BPS)">🥇</span>
@@ -147,11 +147,11 @@
 
             <!-- Team B Stats -->
             <div style="flex: 1; min-width: 300px;">
-                <h4 class="mb-1" style="color: #f39c12; border-bottom: 2px solid #f39c12; padding-bottom: 5px;">
+                <h4 class="mb-1 team-b-header">
                     تشكيلة {{ match.team_b.name if match.team_b else match.team_b_name }}</h4>
                 <div class="table-responsive">
                     <table style="width: 100%; font-size: 0.9rem;">
-                        <thead style="background: rgba(230, 126, 34, 0.2);">
+                        <thead class="team-b-thead">
                             <tr>
                                 <th>اللاعب</th>
                                 <th title="أهداف">⚽</th>
@@ -164,7 +164,7 @@
                         <tbody>
                             {% for stat in match.stats %}
                             {% if stat.team == 'B' %}
-                            <tr style="border-bottom: 1px solid var(--border-color);">
+                            <tr class="stat-row">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
                                     {% if stat.bonus_points == 3 %}<span title="أفضل لاعب في المباراة (3 نقاط BPS)">🥇</span>
@@ -429,6 +429,7 @@
 
 <!-- Points breakdown popover (single shared instance) -->
 <div id="points-breakdown-popover" class="points-breakdown-popover" aria-hidden="true" role="dialog" aria-labelledby="points-breakdown-title" aria-modal="true">
+    <div class="points-breakdown-backdrop" aria-hidden="true"></div>
     <div class="points-breakdown-popover-inner">
         <div class="points-breakdown-popover-header">
             <h3 id="points-breakdown-title" class="points-breakdown-player-name"></h3>
@@ -436,9 +437,8 @@
         </div>
         <ul class="points-breakdown-list" id="points-breakdown-list"></ul>
     </div>
-    <div class="points-breakdown-backdrop" aria-hidden="true"></div>
 </div>
 
 <div id="matches-config" data-slug="{{ league.slug }}" data-is-admin="{{ is_admin | tojson }}"></div>
-<script src="/static/js/matches.js?v=1.2"></script>
+<script src="/static/js/matches.js?v=1.9"></script>
 {% endblock %}

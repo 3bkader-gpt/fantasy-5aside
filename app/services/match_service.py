@@ -193,25 +193,32 @@ class MatchService(IMatchService):
 
         team_a_score, team_b_score = self._compute_team_scores_from_stats(match_data.stats)
 
-        self._snapshot_ranks(league_id)
+        # Start Transaction
+        try:
+            self._snapshot_ranks(league_id)
 
-        db_match = models.Match(
-            league_id=league_id,
-            team_a_name=team_a_name,
-            team_b_name=team_b_name,
-            team_a_id=match_data.team_a_id,
-            team_b_id=match_data.team_b_id,
-            team_a_score=team_a_score,
-            team_b_score=team_b_score
-        )
-        self.match_repo.save(db_match)
+            db_match = models.Match(
+                league_id=league_id,
+                team_a_name=team_a_name,
+                team_b_name=team_b_name,
+                team_a_id=match_data.team_a_id,
+                team_b_id=match_data.team_b_id,
+                team_a_score=team_a_score,
+                team_b_score=team_b_score
+            )
+            self.match_repo.save(db_match, commit=False)
 
-        combined_stats = self._build_combined_stats(league_id, match_data.stats, team_a_score, team_b_score)
-        self._apply_combined_stats_to_match(db_match, combined_stats)
-        self.match_repo.db.commit()
-        self.cup_service.auto_resolve_cups(league_id, db_match.id)
-        
-        return db_match
+            combined_stats = self._build_combined_stats(league_id, match_data.stats, team_a_score, team_b_score)
+            self._apply_combined_stats_to_match(db_match, combined_stats)
+            
+            self.match_repo.db.commit()
+            self.match_repo.db.refresh(db_match)
+            
+            self.cup_service.auto_resolve_cups(league_id, db_match.id)
+            return db_match
+        except Exception:
+            self.match_repo.db.rollback()
+            raise
 
     def update_match(self, league_id: int, match_id: int, update_data: schemas.MatchEditRequest) -> models.Match:
         league = self.league_repo.get_by_id(league_id)
@@ -222,63 +229,71 @@ class MatchService(IMatchService):
         if not match or match.league_id != league_id:
             raise HTTPException(status_code=404, detail="Match not found")
 
-        self._snapshot_ranks(league_id)
+        try:
+            self._snapshot_ranks(league_id)
 
-        # Revert old stats
-        for stat in list(match.stats):
-            player = stat.player
-            player.total_points = max(0, player.total_points - stat.points_earned)
-            player.total_goals = max(0, player.total_goals - stat.goals)
-            player.total_assists = max(0, player.total_assists - stat.assists)
-            player.total_saves = max(0, player.total_saves - stat.saves)
-            player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
-            player.total_matches = max(0, player.total_matches - 1)
-            if stat.clean_sheet:
-                player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
-            self.player_repo.save(player)
-            # Remove stat from session correctly to avoid conflict with cascade
-            self.match_repo.db.delete(stat)
+            # Revert old stats
+            for stat in list(match.stats):
+                player = stat.player
+                player.total_points = max(0, player.total_points - stat.points_earned)
+                player.total_goals = max(0, player.total_goals - stat.goals)
+                player.total_assists = max(0, player.total_assists - stat.assists)
+                player.total_saves = max(0, player.total_saves - stat.saves)
+                player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
+                player.total_matches = max(0, player.total_matches - 1)
+                if stat.clean_sheet:
+                    player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
+                self.player_repo.save(player, commit=False)
+                # Remove stat from session correctly to avoid conflict with cascade
+                self.match_repo.db.delete(stat)
+                
+            # Ensure match object handles newly appended state correctly
+            match.stats = []
+
+            team_a_score, team_b_score = self._compute_team_scores_from_stats(update_data.stats)
+
+            match.team_a_name = update_data.team_a_name
+            match.team_b_name = update_data.team_b_name
+            match.team_a_score = team_a_score
+            match.team_b_score = team_b_score
+            if getattr(update_data, "team_a_id", None) is not None:
+                match.team_a_id = update_data.team_a_id
+            if getattr(update_data, "team_b_id", None) is not None:
+                match.team_b_id = update_data.team_b_id
+
+            combined_stats = self._build_combined_stats(league_id, update_data.stats, team_a_score, team_b_score)
+            self._apply_combined_stats_to_match(match, combined_stats)
+            self.match_repo.db.commit()
+            self.match_repo.db.refresh(match)
+            self.cup_service.auto_resolve_cups(league_id, match.id)
             
-        # Ensure match object handles newly appended state correctly
-        match.stats = []
-
-        team_a_score, team_b_score = self._compute_team_scores_from_stats(update_data.stats)
-
-        match.team_a_name = update_data.team_a_name
-        match.team_b_name = update_data.team_b_name
-        match.team_a_score = team_a_score
-        match.team_b_score = team_b_score
-        if getattr(update_data, "team_a_id", None) is not None:
-            match.team_a_id = update_data.team_a_id
-        if getattr(update_data, "team_b_id", None) is not None:
-            match.team_b_id = update_data.team_b_id
-
-        combined_stats = self._build_combined_stats(league_id, update_data.stats, team_a_score, team_b_score)
-        self._apply_combined_stats_to_match(match, combined_stats)
-        self.match_repo.db.commit()
-        self.cup_service.auto_resolve_cups(league_id, match.id)
-        
-        return match
+            return match
+        except Exception:
+            self.match_repo.db.rollback()
+            raise
 
     def delete_match(self, match_id: int, league_id: int) -> bool:
         match = self.match_repo.get_by_id(match_id)
-        
         if not match or match.league_id != league_id:
             raise HTTPException(status_code=404, detail="Match not found")
             
-        self._snapshot_ranks(league_id)
-            
-        for stat in match.stats:
-            player = stat.player
-            player.total_points = max(0, player.total_points - stat.points_earned)
-            player.total_goals = max(0, player.total_goals - stat.goals)
-            player.total_assists = max(0, player.total_assists - stat.assists)
-            player.total_saves = max(0, player.total_saves - stat.saves)
-            player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
-            player.total_matches = max(0, player.total_matches - 1)
-            if stat.clean_sheet:
-                player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
-            self.player_repo.save(player)
-            
-        self.match_repo.delete(match.id)
-        return True
+        try:
+            self._snapshot_ranks(league_id)
+                
+            for stat in match.stats:
+                player = stat.player
+                player.total_points = max(0, player.total_points - stat.points_earned)
+                player.total_goals = max(0, player.total_goals - stat.goals)
+                player.total_assists = max(0, player.total_assists - stat.assists)
+                player.total_saves = max(0, player.total_saves - stat.saves)
+                player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
+                player.total_matches = max(0, player.total_matches - 1)
+                if stat.clean_sheet:
+                    player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
+                self.player_repo.save(player, commit=False)
+                
+            self.match_repo.delete(match.id, commit=True) # Repository delete calls commit
+            return True
+        except Exception:
+            self.match_repo.db.rollback()
+            raise

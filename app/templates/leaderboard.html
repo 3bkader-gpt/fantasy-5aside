@@ -5,7 +5,8 @@
 <h1>🏆 ترتيب دوري الأبطال</h1>
 
 <div class="text-center mb-1">
-    <button id="share-leaderboard" class="btn btn-primary" title="مشاركة صورة الترتيب أو نسخ الرابط">مشاركة الترتيب 📤📸</button>
+    <button id="share-leaderboard" class="btn btn-primary" title="مشاركة صورة الترتيب أو نسخ الرابط">مشاركة الترتيب
+        📤📸</button>
 </div>
 
 <div id="capture-area" style="padding: 1rem;">
@@ -21,7 +22,8 @@
 
         {% if next_cup %}
         <div class="banner-card banner-danger">
-            🏆 موعد الكأس القادم: {{ next_cup.player1.name }} 🆚 {% if next_cup.player2 %}{{ next_cup.player2.name }}{% else %}إعفاء{% endif %} 🏆
+            🏆 موعد الكأس القادم: {{ next_cup.player1.name }} 🆚 {% if next_cup.player2 %}{{ next_cup.player2.name }}{%
+            else %}إعفاء{% endif %} 🏆
         </div>
         {% endif %}
 
@@ -29,7 +31,8 @@
         <div class="banner-card banner-info pulse-animation" id="voting-banner">
             🗳️ التصويت لماتش {{ active_voting_match.date.strftime('%Y-%m-%d') }} مفتوح الآن! (الجولة {{
             active_voting_match.voting_round }})
-            <button class="btn btn-sm btn-light ms-2 open-voting-modal-btn" data-match-id="{{ active_voting_match.id }}">
+            <button class="btn btn-sm btn-light ms-2 open-voting-modal-btn"
+                data-match-id="{{ active_voting_match.id }}">
                 صوّت الآن
             </button>
         </div>
@@ -65,7 +68,8 @@
             <!-- Live Results Section (admin only) -->
             <div id="voting-live-results" class="mt-2" style="margin-top: 1.25rem; text-align: right; display: none;">
                 <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">📊 النتائج الحالية</h3>
-                <div id="voting-live-meta" class="text-secondary" style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;"></div>
+                <div id="voting-live-meta" class="text-secondary"
+                    style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;"></div>
                 <div class="table-responsive" style="margin-bottom: 0; box-shadow: none;">
                     <table style="min-width: 0; font-size: 1rem; font-weight: 700;">
                         <thead>
@@ -131,28 +135,24 @@
             </thead>
             <tbody id="leaderboard-body" data-active-scope="current">
                 {% for player in players %}
-                <tr
-                    data-points-current="{{ player.scope_points_current }}"
+                <tr data-points-current="{{ player.scope_points_current }}"
                     data-goals-current="{{ player.scope_goals_current }}"
                     data-assists-current="{{ player.scope_assists_current }}"
                     data-saves-current="{{ player.scope_saves_current }}"
                     data-clean-sheets-current="{{ player.scope_clean_sheets_current }}"
                     data-matches-current="{{ player.scope_matches_current }}"
-
                     data-points-all_time="{{ player.scope_points_all_time }}"
                     data-goals-all_time="{{ player.scope_goals_all_time }}"
                     data-assists-all_time="{{ player.scope_assists_all_time }}"
                     data-saves-all_time="{{ player.scope_saves_all_time }}"
                     data-clean-sheets-all_time="{{ player.scope_clean_sheets_all_time }}"
                     data-matches-all_time="{{ player.scope_matches_all_time }}"
-
                     data-points-last5="{{ player.scope_points_last5 }}"
                     data-goals-last5="{{ player.scope_goals_last5 }}"
                     data-assists-last5="{{ player.scope_assists_last5 }}"
                     data-saves-last5="{{ player.scope_saves_last5 }}"
                     data-clean-sheets-last5="{{ player.scope_clean_sheets_last5 }}"
-                    data-matches-last5="{{ player.scope_matches_last5 }}"
-                >
+                    data-matches-last5="{{ player.scope_matches_last5 }}">
                     <td data-label="المركز" class="rank-col">
                         <span class="trend-indicator" style="margin-inline-end: 0.5rem;">
                             {% if player.total_points > 0 %}
@@ -170,7 +170,9 @@
                         </span>
                         {{ loop.index }}
                         {% if player.total_points > 0 %}
-                        {% if loop.index == 1 %}<span title="المركز الأول">🥇</span>{% elif loop.index == 2 %}<span title="المركز الثاني">🥈</span>{% elif loop.index == 3 %}<span title="المركز الثالث">🥉</span>{% endif %}
+                        {% if loop.index == 1 %}<span title="المركز الأول">🥇</span>{% elif loop.index == 2 %}<span
+                            title="المركز الثاني">🥈</span>{% elif loop.index == 3 %}<span
+                            title="المركز الثالث">🥉</span>{% endif %}
                         {% endif %}
                     </td>
                     <td data-label="اللاعب">
@@ -183,7 +185,8 @@
                                 {{ (player.team.short_code or player.team.name[:2]) if player.team else '??' }}
                             </span>
                             {% endif %}
-                            {% if player.total_points > 0 and loop.index == 1 %}<span class="crown" title="صاحب المركز الأول (بطل الترتيب)">👑</span>{% endif %}
+                            {% if player.total_points > 0 and loop.index == 1 %}<span class="crown"
+                                title="صاحب المركز الأول (بطل الترتيب)">👑</span>{% endif %}
                             <div class="player-badges-mini" style="display: flex; gap: 2px;">
                                 {% for badge in player.badges %}
                                 <span title="{{ badge.name }}: {{ badge.description }}"
@@ -213,6 +216,6 @@
     </div>
 </div> <!-- End capture-area -->
 
-<script src="/static/js/leaderboard.js?v=1.2"></script>
-<script src="/static/js/leaderboard_voting.js"></script>
+<script src="/static/js/leaderboard.js?v=2.3"></script>
+<script src="/static/js/leaderboard_voting.js?v=1.1"></script>
 {% endblock %}
