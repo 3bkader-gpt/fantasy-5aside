@@ -145,40 +145,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const isDark = document.body.classList.contains("dark-mode");
 
-                // Apply computed styles to clone so html2canvas gets real colors (fixes black image with CSS variables)
-                function inlineComputedStyles(source, clone) {
-                    if (!source || !clone) return;
-                    var cs = window.getComputedStyle(source);
-                    clone.style.backgroundColor = cs.backgroundColor;
-                    clone.style.color = cs.color;
-                    clone.style.borderColor = cs.borderColor;
-                    var bgImage = cs.backgroundImage;
-                    if (bgImage && bgImage !== 'none') {
-                        clone.style.backgroundImage = bgImage;
-                        clone.style.backgroundSize = cs.backgroundSize;
-                        clone.style.backgroundPosition = cs.backgroundPosition;
+                // Resolve CSS variable colors to inline styles so html2canvas can render them
+                function resolveVarColors(root) {
+                    var els = [root].concat(Array.from(root.querySelectorAll('*')));
+                    var saved = [];
+                    for (var i = 0; i < els.length; i++) {
+                        var el = els[i];
+                        var cs = window.getComputedStyle(el);
+                        saved.push({ el: el, color: el.style.color, bg: el.style.backgroundColor, bc: el.style.borderColor, bgi: el.style.backgroundImage });
+                        el.style.color = cs.color;
+                        el.style.backgroundColor = cs.backgroundColor;
+                        el.style.borderColor = cs.borderColor;
+                        var bgImg = cs.backgroundImage;
+                        if (bgImg && bgImg !== 'none') el.style.backgroundImage = bgImg;
                     }
-                    var children = source.children;
-                    for (var i = 0; i < children.length; i++) {
-                        if (clone.children[i]) inlineComputedStyles(children[i], clone.children[i]);
+                    return saved;
+                }
+                function restoreStyles(saved) {
+                    for (var i = 0; i < saved.length; i++) {
+                        var s = saved[i];
+                        s.el.style.color = s.color;
+                        s.el.style.backgroundColor = s.bg;
+                        s.el.style.borderColor = s.bc;
+                        s.el.style.backgroundImage = s.bgi;
                     }
                 }
 
                 const doCapture = () => {
                     captureArea.scrollIntoView({ behavior: 'instant', block: 'center' });
                     var bgColorResolved = isDark ? '#020617' : '#f8fafc';
+                    var saved = resolveVarColors(captureArea);
                     return html2canvas(captureArea, {
                         backgroundColor: bgColorResolved,
                         scale: 2,
                         useCORS: true,
                         logging: false,
                         windowWidth: captureArea.scrollWidth,
-                        windowHeight: captureArea.scrollHeight,
-                        onclone: function (clonedDoc) {
-                            var clonedCard = captureArea.id ? clonedDoc.getElementById(captureArea.id) : clonedDoc.body.firstElementChild;
-                            if (clonedCard) inlineComputedStyles(captureArea, clonedCard);
-                        }
-                    });
+                        windowHeight: captureArea.scrollHeight
+                    }).then(function (canvas) { restoreStyles(saved); return canvas; })
+                      .catch(function (err) { restoreStyles(saved); throw err; });
                 };
 
                 Promise.resolve()
