@@ -120,13 +120,13 @@
 
 /* Match Card & Scoreboard Dark Mode Fixes */
 .dark-mode .card {
-    background-color: #0f172a;
-    border-color: rgba(148, 163, 184, 0.1);
+    background-color: var(--card-bg);
+    border-color: var(--border-subtle);
 }
 
 .dark-mode .scoreboard {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .dark-mode .scoreboard-meta {
@@ -327,7 +327,7 @@ thead th {
 }
 
 .dark-mode .scoreboard {
-    background: linear-gradient(135deg, #020617, var(--primary-color)) !important;
+    background: linear-gradient(135deg, #0f172a, #020617) !important;
 }
 
 .dark-mode .table-responsive table thead {
@@ -346,9 +346,7 @@ thead th {
 .match-timeline {
     margin-top: 0.75rem;
     border-radius: var(--radius-md);
-    background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 55%),
-                radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.08), transparent 55%),
-                var(--card-bg);
+    background: var(--card-bg);
     border: 1px solid var(--border-subtle);
     overflow: hidden;
 }
