@@ -83,8 +83,9 @@
     /* Surfaces */
     --bg-color: #020617;
     --surface-color: #020617;
-    --card-bg: #020617;
-    --input-bg: #020617;
+    /* Give cards/inputs a slightly lighter surface for depth */
+    --card-bg: #0b1220;
+    --input-bg: #0b1220;
     --nav-bg: #020617;
     --hover-bg: rgba(148, 163, 184, 0.18);
 
