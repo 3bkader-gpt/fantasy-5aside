@@ -71,6 +71,7 @@ def open_voting(
     request: Request,
     slug: str,
     match_id: int,
+    payload: schemas.VotingOpenRequest,
     _csrf: None = Depends(verify_csrf),
     voting_service: IVotingService = Depends(get_voting_service),
     league: League = Depends(get_current_admin_league),
@@ -83,7 +84,7 @@ def open_voting(
     match = match_repo.get_by_id(match_id)
     if not match or match.league_id != league.id:
         raise HTTPException(status_code=404, detail="Match not found")
-    result = voting_service.open_voting(match_id)
+    result = voting_service.open_voting(match_id, allowed_voter_ids=payload.allowed_voter_ids)
     if result.get("status") == "error":
         raise HTTPException(status_code=400, detail=result.get("message", "التصويت انتهى لهذه المباراة"))
 

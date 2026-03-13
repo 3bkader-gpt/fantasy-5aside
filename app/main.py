@@ -90,6 +90,7 @@ async def lifespan(app: FastAPI):
             ("votes", "device_fingerprint", "VARCHAR(255) DEFAULT NULL"),
             ("match_media", "file_url", "VARCHAR(512) DEFAULT NULL"),
             ("match_stats", "voting_bonus_applied", "BOOLEAN DEFAULT FALSE"),
+            ("matches", "allowed_voter_ids", "TEXT DEFAULT NULL"),
             ("cup_matchups", "league_id", "INDEX"),
             ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL"),
         ]

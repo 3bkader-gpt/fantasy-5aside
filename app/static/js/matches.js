@@ -479,6 +479,116 @@ document.addEventListener('DOMContentLoaded', function () {
     // =========================================
     // Voting Round Control Logic
     // =========================================
+    function chooseAllowedVoters(matchId) {
+        const card = document.getElementById(`match-${matchId}`);
+        if (!card) return Promise.resolve([]);
+
+        const rows = Array.from(card.querySelectorAll('tr.stat-row[data-player-id]'));
+        const seen = new Set();
+        const players = [];
+        rows.forEach((row) => {
+            const id = parseInt(row.getAttribute('data-player-id') || '0', 10);
+            const nameEl = row.querySelector('td strong');
+            const name = nameEl ? nameEl.textContent.trim() : '';
+            if (id > 0 && name && !seen.has(id)) {
+                seen.add(id);
+                players.push({ id, name });
+            }
+        });
+
+        if (!players.length) {
+            return Promise.resolve([]);
+        }
+
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+            const panel = document.createElement('div');
+            panel.style.cssText = 'background:#0f172a;color:#f8fafc;border:1px solid rgba(148,163,184,.4);border-radius:12px;max-width:420px;width:100%;max-height:80vh;overflow:auto;padding:1rem;';
+            panel.innerHTML = '<h3 style="margin:0 0 .75rem 0;font-size:1.05rem;">اختيار اللاعبين المسموح لهم بالتصويت</h3>' +
+                              '<p style="margin:0 0 .75rem 0;color:#cbd5e1;font-size:.92rem;">اختر من يقدر يصوّت في هذه المباراة:</p>';
+
+            const list = document.createElement('div');
+            list.style.cssText = 'display:grid;gap:.45rem;margin-bottom:.9rem;';
+            players.forEach((p) => {
+                const item = document.createElement('label');
+                item.style.cssText = 'display:flex;align-items:center;gap:.5rem;padding:.4rem .5rem;background:rgba(15,23,42,.55);border:1px solid rgba(148,163,184,.35);border-radius:8px;';
+                item.innerHTML = `<input type="checkbox" data-player-id="${p.id}" checked> <span>${p.name}</span>`;
+                list.appendChild(item);
+            });
+            panel.appendChild(list);
+
+            const actions = document.createElement('div');
+            actions.style.cssText = 'display:flex;justify-content:space-between;gap:.5rem;';
+
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.type = 'button';
+            selectAllBtn.textContent = 'تحديد الكل';
+            selectAllBtn.className = 'btn btn-outline btn-sm';
+
+            const clearAllBtn = document.createElement('button');
+            clearAllBtn.type = 'button';
+            clearAllBtn.textContent = 'إلغاء الكل';
+            clearAllBtn.className = 'btn btn-outline btn-sm';
+
+            const okBtn = document.createElement('button');
+            okBtn.type = 'button';
+            okBtn.textContent = 'فتح التصويت';
+            okBtn.className = 'btn btn-primary btn-sm';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.textContent = 'إلغاء';
+            cancelBtn.className = 'btn btn-secondary btn-sm';
+
+            const left = document.createElement('div');
+            left.style.cssText = 'display:flex;gap:.4rem;';
+            left.appendChild(selectAllBtn);
+            left.appendChild(clearAllBtn);
+
+            const right = document.createElement('div');
+            right.style.cssText = 'display:flex;gap:.4rem;';
+            right.appendChild(cancelBtn);
+            right.appendChild(okBtn);
+
+            actions.appendChild(left);
+            actions.appendChild(right);
+            panel.appendChild(actions);
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+
+            function selectedIds() {
+                return Array.from(panel.querySelectorAll('input[type="checkbox"][data-player-id]:checked'))
+                    .map((i) => parseInt(i.getAttribute('data-player-id') || '0', 10))
+                    .filter((n) => n > 0);
+            }
+
+            selectAllBtn.addEventListener('click', () => {
+                panel.querySelectorAll('input[type="checkbox"]').forEach((i) => { i.checked = true; });
+            });
+
+            clearAllBtn.addEventListener('click', () => {
+                panel.querySelectorAll('input[type="checkbox"]').forEach((i) => { i.checked = false; });
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                document.body.removeChild(overlay);
+                resolve(null);
+            });
+
+            okBtn.addEventListener('click', () => {
+                const ids = selectedIds();
+                if (!ids.length) {
+                    showToast('اختر لاعباً واحداً على الأقل', 'error');
+                    return;
+                }
+                document.body.removeChild(overlay);
+                resolve(ids);
+            });
+        });
+    }
+
     document.querySelectorAll('.voting-btn').forEach(btn => {
         btn.addEventListener('click', async function () {
             const matchId = this.getAttribute('data-match-id');
@@ -488,6 +598,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
             let action = round === 0 ? "فتح التصويت" : `إغلاق الجولة ${round}`;
             let endpoint = round === 0 ? `/api/voting/${leagueSlug}/open/${matchId}` : `/api/voting/${leagueSlug}/close/${matchId}`;
+            let payload = {};
+
+            if (round === 0) {
+                const selected = await chooseAllowedVoters(matchId);
+                if (selected === null) return;
+                payload = { allowed_voter_ids: selected };
+            }
 
             const ok = window.confirm(`هل أنت متأكد من ${action} للمباراة رقم #${matchNumber}؟`);
             if (!ok) return;
@@ -497,7 +614,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
-                    body: JSON.stringify({}),
+                    body: JSON.stringify(payload),
                     credentials: 'same-origin'
                 });
 

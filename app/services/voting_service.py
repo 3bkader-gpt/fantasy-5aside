@@ -1,4 +1,5 @@
 from typing import List, Optional
+import json
 from ..models import models
 from ..schemas import schemas
 from ..repositories.interfaces import IVotingRepository, IMatchRepository, IPlayerRepository
@@ -17,13 +18,31 @@ class VotingService(IVotingService):
         self.match_repo = match_repo
         self.player_repo = player_repo
 
+    @staticmethod
+    def _parse_allowed_voter_ids(raw: Optional[str]) -> Optional[List[int]]:
+        if not raw:
+            return None
+        try:
+            parsed = json.loads(raw)
+        except Exception:
+            return None
+        if not isinstance(parsed, list):
+            return None
+        out: List[int] = []
+        for item in parsed:
+            try:
+                out.append(int(item))
+            except Exception:
+                continue
+        return out if out else None
+
     def get_voting_status(self, match_id: int, voter_id: int) -> schemas.VotingStatusResponse:
         match = self.match_repo.get_by_id(match_id)
         if not match:
-            return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[])
+            return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[], allowed_voter_ids=None)
 
         if match.voting_round == 0 or match.voting_round == 4:
-            return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[])
+            return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[], allowed_voter_ids=self._parse_allowed_voter_ids(getattr(match, "allowed_voter_ids", None)))
         
         # Check if already voted in current round
         existing_vote = self.voting_repo.get_vote_by_voter(match_id, voter_id, match.voting_round)
@@ -45,7 +64,8 @@ class VotingService(IVotingService):
             is_open=True,
             current_round=match.voting_round,
             has_voted=has_voted,
-            excluded_player_ids=excluded_ids
+            excluded_player_ids=excluded_ids,
+            allowed_voter_ids=self._parse_allowed_voter_ids(getattr(match, "allowed_voter_ids", None))
         )
 
     CHEAT_MESSAGE = "يا غشاش يا حرامي يا وسخ! 🤡 انت عملت تصويت قبل كده من الجهاز ده... فاكر إنك هتعدّيها علينا؟"
@@ -89,6 +109,11 @@ class VotingService(IVotingService):
             raise HTTPException(status_code=400, detail="يجب أن تكون مشاركاً في المباراة للتصويت")
         if vote_in.candidate_id not in participant_ids:
             raise HTTPException(status_code=400, detail="اللاعب المرشح لم يشارك في المباراة")
+
+        # If admin selected a whitelist, only those voters are allowed.
+        allowed_voters = self._parse_allowed_voter_ids(getattr(match, "allowed_voter_ids", None))
+        if allowed_voters is not None and vote_in.voter_id not in set(allowed_voters):
+            raise HTTPException(status_code=403, detail="أنت غير مسموح لك بالتصويت في هذه المباراة")
 
         # Check if candidate is excluded
         status = self.get_voting_status(match_id, vote_in.voter_id)
@@ -249,12 +274,21 @@ class VotingService(IVotingService):
             self.match_repo.save(match)
             return {"status": "closed", "winner": winner.name if winner else "Unknown"}
 
-    def open_voting(self, match_id: int) -> dict:
+    def open_voting(self, match_id: int, allowed_voter_ids: Optional[list[int]] = None) -> dict:
         match = self.match_repo.get_by_id(match_id)
         if not match:
             return {"status": "error", "message": "الماتش غير موجود"}
         if match.voting_round == 4:
             return {"status": "error", "message": "التصويت انتهى لهذه المباراة"}
+
+        if allowed_voter_ids is not None:
+            participant_ids = {s.player_id for s in match.stats if s.player_id is not None}
+            normalized = sorted({int(x) for x in allowed_voter_ids if int(x) in participant_ids})
+            if not normalized:
+                return {"status": "error", "message": "اختر لاعباً واحداً على الأقل مسموح له بالتصويت"}
+            match.allowed_voter_ids = json.dumps(normalized)
+        else:
+            match.allowed_voter_ids = None
         
         match.voting_round = 1
         self.match_repo.save(match)

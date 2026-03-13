@@ -122,6 +122,8 @@ class Match(Base):
     
     # Voting State: 0=Not Started, 1=Round 1, 2=Round 2, 3=Round 3, 4=Closed
     voting_round = Column(Integer, default=0)
+    # Optional JSON list of player IDs allowed to vote for this match
+    allowed_voter_ids = Column(Text, nullable=True)
 
     league = relationship("League", back_populates="matches")
     team_a = relationship("Team", foreign_keys=[team_a_id])

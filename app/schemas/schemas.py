@@ -191,6 +191,11 @@ class VotingStatusResponse(BaseModel):
     current_round: int  # 0=Not Started, 1, 2, 3, 4=Closed
     has_voted: bool
     excluded_player_ids: List[int] = []
+    allowed_voter_ids: Optional[List[int]] = None
+
+
+class VotingOpenRequest(BaseModel):
+    allowed_voter_ids: Optional[List[int]] = None
 
 
 class LiveVotingCandidate(BaseModel):

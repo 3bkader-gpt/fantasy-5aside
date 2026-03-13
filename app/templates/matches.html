@@ -109,7 +109,7 @@
                         <tbody>
                             {% for stat in match.stats %}
                             {% if stat.team == 'A' %}
-                            <tr class="stat-row">
+                            <tr class="stat-row" data-player-id="{{ stat.player.id }}">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
                                     {% if stat.bonus_points == 3 %}<span title="أفضل لاعب في المباراة (3 نقاط BPS)">🥇</span>
@@ -164,7 +164,7 @@
                         <tbody>
                             {% for stat in match.stats %}
                             {% if stat.team == 'B' %}
-                            <tr class="stat-row">
+                            <tr class="stat-row" data-player-id="{{ stat.player.id }}">
                                 <td>
                                     <strong>{{ stat.player.name }}</strong>
                                     {% if stat.bonus_points == 3 %}<span title="أفضل لاعب في المباراة (3 نقاط BPS)">🥇</span>
@@ -440,5 +440,5 @@
 </div>
 
 <div id="matches-config" data-slug="{{ league.slug }}" data-is-admin="{{ is_admin | tojson }}"></div>
-<script src="/static/js/matches.js?v=2.0"></script>
+<script src="/static/js/matches.js?v=2.1"></script>
 {% endblock %}

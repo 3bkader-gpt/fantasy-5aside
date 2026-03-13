@@ -73,6 +73,18 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".player-card").forEach((c) => c.classList.remove("selected"));
     }
 
+    function applyAllowedVoters(allowedIds) {
+        const allowedSet = Array.isArray(allowedIds) && allowedIds.length > 0 ? new Set(allowedIds) : null;
+        document.querySelectorAll("#voter-list .player-card").forEach((card) => {
+            if (!allowedSet) {
+                card.style.display = "flex";
+                return;
+            }
+            const voterId = parseInt(card.getAttribute("data-id"), 10);
+            card.style.display = allowedSet.has(voterId) ? "flex" : "none";
+        });
+    }
+
     async function selectVoter(cardEl) {
         const id = parseInt(cardEl.getAttribute("data-id"), 10);
         if (!id) return;
@@ -161,6 +173,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (res.ok) {
                     const data = await res.json();
                     currentRound = data.current_round || 0;
+                    applyAllowedVoters(data.allowed_voter_ids);
                     const roundNumEl = document.getElementById("round-num");
                     if (roundNumEl) roundNumEl.textContent = String(currentRound);
                 }
