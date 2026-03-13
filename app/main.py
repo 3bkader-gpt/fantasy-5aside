@@ -125,19 +125,31 @@ async def lifespan(app: FastAPI):
         # Fix voting_bonus_applied on PostgreSQL if it was created as integer (DatatypeMismatch on INSERT)
         if engine.dialect.name == "postgresql":
             try:
-                with engine.connect() as conn:
+                with engine.begin() as conn:
                     r = conn.execute(text(
                         "SELECT data_type FROM information_schema.columns "
-                        "WHERE table_schema = 'public' AND table_name = 'match_stats' AND column_name = 'voting_bonus_applied'"
+                        "WHERE table_schema = current_schema() "
+                        "AND table_name = 'match_stats' "
+                        "AND column_name = 'voting_bonus_applied'"
                     ))
                     row = r.fetchone()
-                if row and row[0] in ("integer", "smallint", "bigint"):
-                    with engine.begin() as conn2:
-                        conn2.execute(text(
-                            "ALTER TABLE match_stats ALTER COLUMN voting_bonus_applied "
-                            "TYPE boolean USING (COALESCE(voting_bonus_applied, 0)::int != 0)"
+
+                    if row and row[0] in ("integer", "smallint", "bigint"):
+                        # Drop default first, then cast, then re-apply default.
+                        conn.execute(text(
+                            "ALTER TABLE match_stats "
+                            "ALTER COLUMN voting_bonus_applied DROP DEFAULT"
                         ))
-                    logger.info("Migration: converted match_stats.voting_bonus_applied to boolean.")
+                        conn.execute(text(
+                            "ALTER TABLE match_stats "
+                            "ALTER COLUMN voting_bonus_applied "
+                            "TYPE boolean USING (COALESCE(voting_bonus_applied, 0)::int <> 0)"
+                        ))
+                        conn.execute(text(
+                            "ALTER TABLE match_stats "
+                            "ALTER COLUMN voting_bonus_applied SET DEFAULT FALSE"
+                        ))
+                        logger.info("Migration: converted match_stats.voting_bonus_applied to boolean.")
             except Exception as e:
                 logger.warning(f"voting_bonus_applied type fix skipped: {e}")
     except Exception as e:
