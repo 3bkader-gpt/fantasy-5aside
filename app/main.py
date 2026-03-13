@@ -89,7 +89,7 @@ async def lifespan(app: FastAPI):
             ("votes", "ip_address", "VARCHAR(64) DEFAULT NULL"),
             ("votes", "device_fingerprint", "VARCHAR(255) DEFAULT NULL"),
             ("match_media", "file_url", "VARCHAR(512) DEFAULT NULL"),
-            ("match_stats", "voting_bonus_applied", "INTEGER DEFAULT 0"),
+            ("match_stats", "voting_bonus_applied", "BOOLEAN DEFAULT FALSE"),
             ("cup_matchups", "league_id", "INDEX"),
             ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL"),
         ]
@@ -121,6 +121,24 @@ async def lifespan(app: FastAPI):
             except Exception:
                 # Expected if column already exists
                 logger.debug(f"Skipping migration for '{col_name}' in '{table}' (likely exists).")
+
+        # Fix voting_bonus_applied on PostgreSQL if it was created as integer (DatatypeMismatch on INSERT)
+        if engine.dialect.name == "postgresql":
+            try:
+                with engine.begin() as conn:
+                    r = conn.execute(text(
+                        "SELECT data_type FROM information_schema.columns "
+                        "WHERE table_name = 'match_stats' AND column_name = 'voting_bonus_applied'"
+                    ))
+                    row = r.fetchone()
+                    if row and row[0] in ("integer", "smallint", "bigint"):
+                        conn.execute(text(
+                            "ALTER TABLE match_stats ALTER COLUMN voting_bonus_applied "
+                            "TYPE boolean USING (COALESCE(voting_bonus_applied, 0)::int != 0)"
+                        ))
+                        logger.info("Migration: converted match_stats.voting_bonus_applied to boolean.")
+            except Exception as e:
+                logger.debug(f"voting_bonus_applied type fix skipped: {e}")
     except Exception as e:
         logger.warning(f"Database startup tasks failed (app will still run): {e}")
                 

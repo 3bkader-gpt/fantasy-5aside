@@ -517,6 +517,21 @@
         </form>
     </div>
 
+    <!-- Recompute totals from matches (fix old data / Supabase) -->
+    <div class="card mb-4">
+        <h3 style="color: var(--text-color);">🔄 إعادة حساب النقاط من المباريات</h3>
+        <p class="text-secondary mb-2" style="font-size: 1rem; font-weight: 700;">
+            يعيد حساب إجمالي نقاط كل لاعب من إحصائيات المباريات (مفيد للمباريات القديمة أو بعد نقل البيانات).
+        </p>
+        <form action="/l/{{ league.slug }}/admin/recompute-totals" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-primary">إعادة حساب النقاط الآن</button>
+        </form>
+        {% if admin_msg == 'recomputed' %}
+        <p class="text-success mt-2 mb-0" style="font-weight: 700;">✅ تم إعادة حساب النقاط بنجاح.</p>
+        {% endif %}
+    </div>
+
     <!-- Danger Zone -->
     <div class="card mb-4 admin-danger-zone">
         <h3 style="color: var(--danger-color);">⚠️ منطقة الخطر (Danger Zone)</h3>

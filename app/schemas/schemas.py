@@ -97,8 +97,10 @@ class MatchStatBase(BaseModel):
     clean_sheet: bool = False
     defensive_contribution: bool = False
 
+
 class MatchStatCreate(MatchStatBase):
-    pass
+    """BPS (3/2/1) can be sent here; included in total_points for ranking."""
+    bonus_points: int = Field(default=0, ge=0, le=3)
 
 class MatchStatResponse(MatchStatBase):
     id: int

@@ -81,6 +81,7 @@ class MatchService(IMatchService):
                 defensive_contribution=getattr(stat_data, "defensive_contribution", False),
             )
 
+            bonus_bps = getattr(stat_data, 'bonus_points', 0) or 0
             stat_dict = {
                 'id': player.id,
                 'team': stat_data.team,
@@ -88,6 +89,7 @@ class MatchService(IMatchService):
                 'assists': stat_data.assists,
                 'is_winner': is_winner,
                 'base_points': base_points,
+                'bonus_bps': bonus_bps,
                 'stat_data': stat_data,
                 'player': player,
             }
@@ -111,8 +113,9 @@ class MatchService(IMatchService):
         for s in combined_stats:
             player = s['player']
             stat_data = s['stat_data']
-            bonus = 0
-            total_points = s['base_points']
+            base_points = s['base_points']
+            bonus_bps = s.get('bonus_bps', 0) or 0
+            full_points = base_points + bonus_bps
 
             db_stat = models.MatchStat(
                 match_id=match.id,
@@ -127,13 +130,13 @@ class MatchService(IMatchService):
                 is_gk=stat_data.is_gk,
                 clean_sheet=stat_data.clean_sheet,
                 defensive_contribution=getattr(stat_data, "defensive_contribution", False),
-                points_earned=total_points,
-                bonus_points=bonus,
+                points_earned=full_points,
+                bonus_points=bonus_bps,
             )
 
             self.match_repo.db.add(db_stat)
 
-            player.total_points += total_points
+            player.total_points += full_points
             player.total_goals += stat_data.goals
             player.total_assists += stat_data.assists
             player.total_saves += stat_data.saves

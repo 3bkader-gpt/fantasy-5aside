@@ -77,9 +77,10 @@ def admin_dashboard(
     ]
     active_voting_match = match_repo.get_active_voting_match(league.id)
     token = generate_csrf_token()
+    msg = request.query_params.get("msg")
     resp = templates.TemplateResponse(
         request=request,
-        name="admin/dashboard.html", 
+        name="admin/dashboard.html",
         context={
             "league": league,
             "players": players,
@@ -87,6 +88,7 @@ def admin_dashboard(
             "is_admin": True,
             "active_voting_match": active_voting_match,
             "csrf_token": token,
+            "admin_msg": msg,
         }
     )
     set_csrf_cookie(resp, token)
@@ -270,6 +272,41 @@ def delete_league_entirely(
         return {"success": False, "detail": e.detail}
     except Exception as e:
         return {"success": False, "detail": str(e)}
+
+
+@router.post("/recompute-totals")
+def recompute_player_totals_from_matches(
+    request: Request,
+    csrf_token: str = Form(None),
+    league: models.League = Depends(get_current_admin_league),
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    audit=Depends(get_audit_logger),
+):
+    """Recompute every player's total_points (and other aggregates) from their match_stats. Use once to fix old matches."""
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+    try:
+        players = player_repo.get_all_for_league(league.id)
+        for player in players:
+            stats = list(player.match_stats or [])
+            player.total_matches = len(stats)
+            player.total_goals = sum(s.goals for s in stats)
+            player.total_assists = sum(s.assists for s in stats)
+            player.total_saves = sum(s.saves for s in stats)
+            player.total_clean_sheets = sum(1 for s in stats if s.clean_sheet)
+            player.total_own_goals = sum(s.own_goals for s in stats)
+            player.total_points = sum(getattr(s, "points_earned", 0) or 0 for s in stats)
+            player_repo.save(player, commit=False)
+        player_repo.db.commit()
+        audit(league.id, "recompute_totals", league.slug, {"players_count": len(players)})
+        return RedirectResponse(
+            url=f"/l/{league.slug}/admin?msg=recomputed",
+            status_code=303,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.delete("/match/{match_id}")
 def delete_match(
