@@ -88,10 +88,7 @@
     --nav-bg: #020617;
     --hover-bg: rgba(148, 163, 184, 0.18);
 
-    /* Text (improved contrast ~5.5:1 and ~4.8:1) */
-    --text-primary: #f9fafb;
-    --text-secondary: #a8b8cc;
-    --text-muted: #94a3b8; /* Increased contrast for dark mode muted text */
+    /* Text (improved c    --text-muted: #94a3b8; /* Increased contrast for dark mode muted text */
     --text-color: var(--text-primary);
     --heading-color: #e5e7eb;
 
@@ -115,18 +112,15 @@
     /* Component Adjustments for Dark Mode */
     --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.5);
     --shadow-md: 0 4px 10px rgba(15, 23, 42, 0.7);
-    --shadow-lg: 0 18px 45px rgba(15, 23, 42, 0.9);
-}
-
-/* Match Card & Scoreboard Dark Mode Fixes */
+    --shadow-lg: 0 18px 45px rg/* Match Card & Scoreboard Dark Mode Fixes */
 .dark-mode .card {
-    background-color: var(--card-bg);
-    border-color: var(--border-subtle);
+    background-color: #0f172a;
+    border-color: rgba(148, 163, 184, 0.1);
 }
 
 .dark-mode .scoreboard {
-    background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
-    border-bottom: 1px solid var(--border-subtle);
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .dark-mode .scoreboard-meta {
@@ -156,10 +150,7 @@
 }
 
 .dark-mode .rules-table thead {
-    background: rgba(148, 163, 184, 0.1) !important;
-}
-
-/* Team Specific Styles */
+    background: rg/* Team Specific Styles */
 .team-a-header {
     color: #4da8da;
     border-bottom: 2px solid #4da8da;
@@ -202,6 +193,12 @@
     border-bottom-color: #fbbf24;
 }
 
+ba(148, 163, 184, 0.1) !important;
+}
+
+
+ba(15, 23, 42, 0.9);
+}
 
 /* Basic Reset */
 * {
@@ -327,7 +324,7 @@ thead th {
 }
 
 .dark-mode .scoreboard {
-    background: linear-gradient(135deg, #0f172a, #020617) !important;
+    background: linear-gradient(135deg, #020617, var(--primary-color)) !important;
 }
 
 .dark-mode .table-responsive table thead {
@@ -346,7 +343,9 @@ thead th {
 .match-timeline {
     margin-top: 0.75rem;
     border-radius: var(--radius-md);
-    background: var(--card-bg);
+    background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), transparent 55%),
+                radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.08), transparent 55%),
+                var(--card-bg);
     border: 1px solid var(--border-subtle);
     overflow: hidden;
 }
@@ -1199,38 +1198,37 @@ input[type="checkbox"] {
 
 .dark-mode .modal-content {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border-subtle);
+te p {
+    font-size: 1rem;
+    opacity: 0.8;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 1.5rem;
-}
-
-/* Points breakdown popover (match result) */
-.points-breakdown-popover {
+/* Modal & Toast Styles */
+.modal-overlay {
     position: fixed;
-    inset: 0;
-    z-index: 2000;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
+    z-index: 2000;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.3s ease;
+    padding: 1rem;
 }
 
-.points-breakdown-popover.active {
+.modal-overlay.active {
     opacity: 1;
     pointer-events: auto;
 }
 
-.points-breakdown-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7); /* Slightly darker for better focus */
+.modal-content {
+    background: var(--card-bg);
+    color: var(--text    background: rgba(0, 0, 0, 0.7); /* Slightly darker for better focus */
     z-index: 1;
 }
 
@@ -1319,87 +1317,6 @@ input[type="checkbox"] {
 
 .dark-mode .points-breakdown-negative {
     color: #f87171; /* Brighter red for dark mode visibility */
-}
-
-.points-breakdown-btn {
-    margin-right: 4px;
-    padding: 2px 6px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.9rem;
-    opacity: 0.85;
-    vertical-align: middle;
-}
-
-.points-breakdown-btn:hover {
-    opacity: 1;
-}
-
-#toast-container {
-    position: fixed;
-    bottom: 90px;
-    left: 20px;
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.toast {
-    padding: 12px 20px;
-    border-radius: 8px;
-    color: white;
-    font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    animation: slideIn 0.3s forwards;
-    opacity: 0;
-}
-
-.toast-success {
-    background: var(--positive-color);
-}
-
-.toast-error {
-    background: var(--negative-color);
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-
-    to {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-}
-
-/* Icons and specific statuses */
-.crown {
-    margin-inline-end: 5px;
-    font-size: 1.2rem;
-}
-
-.player-row.inactive {
-    opacity: 0.5;
-    background-color: var(--hover-bg);
-}
-
-/* General Layout helpers */
 .text-center {
     text-align: center;
 }
@@ -2173,7 +2090,7 @@ button,
     display: inline-flex;
     align-items: center;
     padding: 0.25rem 0.75rem;
-    font-size: 1rem;
+    font-size: 0.85rem;
     font-weight: 700;
     border-radius: var(--radius-pill);
     background-color: var(--bg-color);
@@ -2534,7 +2451,7 @@ button,
 
     .tab-btn {
         padding: 8px 12px;
-        font-size: 1rem;
+        font-size: 0.85rem;
         white-space: nowrap;
         flex-shrink: 0;
     }
@@ -2724,8 +2641,7 @@ button,
 }
 
 .admin-stat-card .stat-label {
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 0.85rem;
     color: var(--text-secondary);
     margin-top: 2px;
 }

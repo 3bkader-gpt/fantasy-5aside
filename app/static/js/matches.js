@@ -152,8 +152,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.head.appendChild(noTransition);
                     document.body.offsetHeight; // force recalc
 
-                    if (wasDark) document.body.classList.remove("dark-mode");
-                    document.body.offsetHeight; // force recalc with light-mode values
+                    if (!wasDark) document.body.classList.add("dark-mode");
+                    document.body.offsetHeight; // force recalc with dark-mode values
 
                     // Fix html2canvas: remove overflow clip + force explicit colors
                     var tweaks = [];
@@ -178,13 +178,16 @@ document.addEventListener('DOMContentLoaded', function () {
                             colorSaved[j].el.style.backgroundColor = colorSaved[j].bg;
                         }
                         tweaks.forEach(function(t) { t.el.style.overflow = t.ov; t.el.style.overflowX = t.ovx; });
-                        if (wasDark) document.body.classList.add("dark-mode");
+                        if (!wasDark) document.body.classList.remove("dark-mode");
+                        captureArea.style.backgroundColor = oldBg;
                         document.head.removeChild(noTransition);
                     }
 
                     captureArea.scrollIntoView({ behavior: 'auto', block: 'center' });
+                    const oldBg = captureArea.style.backgroundColor;
+                    captureArea.style.backgroundColor = !wasDark ? "#020617" : getComputedStyle(document.body).backgroundColor;
                     return html2canvas(captureArea, {
-                        backgroundColor: '#f8fafc',
+                        backgroundColor: !wasDark ? "#020617" : (oldBg || "#020617"),
                         scale: 2,
                         useCORS: true,
                         logging: false,
