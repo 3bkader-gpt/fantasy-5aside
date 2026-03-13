@@ -187,6 +187,9 @@ class MatchRepository(IMatchRepository):
         if commit:
             self.db.commit()
             self.db.refresh(match)
+        else:
+            self.db.flush()
+            self.db.refresh(match)
         return match
     def delete(self, match_id: int, commit: bool = True) -> bool:
         match = self.get_by_id(match_id)

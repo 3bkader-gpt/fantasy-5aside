@@ -125,20 +125,21 @@ async def lifespan(app: FastAPI):
         # Fix voting_bonus_applied on PostgreSQL if it was created as integer (DatatypeMismatch on INSERT)
         if engine.dialect.name == "postgresql":
             try:
-                with engine.begin() as conn:
+                with engine.connect() as conn:
                     r = conn.execute(text(
                         "SELECT data_type FROM information_schema.columns "
-                        "WHERE table_name = 'match_stats' AND column_name = 'voting_bonus_applied'"
+                        "WHERE table_schema = 'public' AND table_name = 'match_stats' AND column_name = 'voting_bonus_applied'"
                     ))
                     row = r.fetchone()
-                    if row and row[0] in ("integer", "smallint", "bigint"):
-                        conn.execute(text(
+                if row and row[0] in ("integer", "smallint", "bigint"):
+                    with engine.begin() as conn2:
+                        conn2.execute(text(
                             "ALTER TABLE match_stats ALTER COLUMN voting_bonus_applied "
                             "TYPE boolean USING (COALESCE(voting_bonus_applied, 0)::int != 0)"
                         ))
-                        logger.info("Migration: converted match_stats.voting_bonus_applied to boolean.")
+                    logger.info("Migration: converted match_stats.voting_bonus_applied to boolean.")
             except Exception as e:
-                logger.debug(f"voting_bonus_applied type fix skipped: {e}")
+                logger.warning(f"voting_bonus_applied type fix skipped: {e}")
     except Exception as e:
         logger.warning(f"Database startup tasks failed (app will still run): {e}")
                 
