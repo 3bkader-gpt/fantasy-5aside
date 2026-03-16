@@ -19,9 +19,11 @@ from ..dependencies import (
     get_team_repository, get_transfer_repository, get_voting_service,
     get_current_admin_league,
     get_audit_logger,
+    get_hof_repository,
     ILeagueService, ICupService, IMatchService,
     ILeagueRepository, IPlayerRepository, IMatchRepository,
     ITeamRepository, ITransferRepository,
+    IHallOfFameRepository,
     IAnalyticsService, IVotingService,
     get_notification_service,
 )
@@ -41,18 +43,34 @@ def _canonical_admin_redirect(request: Request, provided_slug: str, canonical_sl
     return RedirectResponse(url=url, status_code=308)
 
 
+def _current_season_matches_from_db(match_repo: IMatchRepository, hof_repo: IHallOfFameRepository, league_id: int) -> int:
+    """Compute actual number of matches in the current season from DB (total matches minus completed seasons)."""
+    matches = match_repo.get_all_for_league(league_id)
+    hof_records = hof_repo.get_all_for_league(league_id)
+    completed_season_matches = sum(h.season_matches_count or 0 for h in hof_records)
+    return max(0, len(matches) - completed_season_matches)
+
+
 @router.get("/")
 def admin_dashboard(
-    slug: str, 
-    request: Request, 
+    slug: str,
+    request: Request,
     league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository),
     team_repo: ITeamRepository = Depends(get_team_repository),
     match_repo: IMatchRepository = Depends(get_match_repository),
+    hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
 ):
     if league.slug != slug:
         return _canonical_admin_redirect(request, slug, league.slug)
-        
+
+    # Show actual current-season match count (sync counter if it was wrong)
+    current_season_actual = _current_season_matches_from_db(match_repo, hof_repo, league.id)
+    if league.current_season_matches != current_season_actual:
+        league.current_season_matches = current_season_actual
+        league_repo.save(league)
+
     players_raw = player_repo.get_all_for_league(league.id)
     players = []
     for p in players_raw:
