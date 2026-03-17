@@ -112,12 +112,27 @@ class CupService(ICupService):
         league = self.league_repo.get_by_id(league_id)
         season_number = (league.season_number if league and league.season_number else 1)
 
-        self.cup_repo.delete_all_for_league(league_id, season_number=season_number)
+        # If a season just ended (match #4), totals are reset and season_number increments.
+        # In that case, cup should be generated for the just-finished season using last_season_*.
+        use_last_season = bool(
+            league
+            and (league.current_season_matches or 0) == 0
+            and (league.season_number or 1) > 1
+        )
+        target_season = (season_number - 1) if use_last_season else season_number
+
+        self.cup_repo.delete_all_for_league(league_id, season_number=target_season)
 
         all_players = self.player_repo.get_all_for_league(league_id)
 
-        # Cup participants: top 10 by current-season standings (Player.total_points)
-        ranked = sorted(all_players, key=lambda p: ((p.total_points or 0), -(p.id or 0)), reverse=True)
+        # Cup participants: top 10 by standings for target season.
+        # If target is previous season, rank by last_season_points; otherwise, rank by total_points.
+        rank_attr = "last_season_points" if use_last_season else "total_points"
+        ranked = sorted(
+            all_players,
+            key=lambda p: ((getattr(p, rank_attr, 0) or 0), -(p.id or 0)),
+            reverse=True,
+        )
         selected = ranked[:10]
         selected_ids = {p.id for p in selected if p.id is not None}
 
@@ -131,13 +146,13 @@ class CupService(ICupService):
         fixtures: List[models.CupMatchup] = []
 
         if len(goalkeepers) >= 2:
-            fixtures.extend(_pair_players(goalkeepers, league_id, "goalkeeper", season_number))
+            fixtures.extend(_pair_players(goalkeepers, league_id, "goalkeeper", target_season))
         elif len(goalkeepers) == 1:
             goalkeepers[0].is_active_in_cup = True
             self.player_repo.save(goalkeepers[0])
 
         if len(outfield) >= 2:
-            fixtures.extend(_pair_players(outfield, league_id, "outfield", season_number))
+            fixtures.extend(_pair_players(outfield, league_id, "outfield", target_season))
         elif len(outfield) == 1:
             outfield[0].is_active_in_cup = True
             self.player_repo.save(outfield[0])

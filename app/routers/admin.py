@@ -178,8 +178,10 @@ def delete_cup_for_current_season(
     if not verify_csrf_token(cookie_token, csrf_token):
         raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
     season_number = league.season_number or 1
-    cup_service.delete_cup_for_season(league.id, season_number)
-    audit(league.id, "delete_cup", league.slug, {"season_number": season_number})
+    # If the current season just started (after end-of-season), delete the cup of the just-finished season.
+    target_season = (season_number - 1) if (season_number > 1 and (league.current_season_matches or 0) == 0) else season_number
+    cup_service.delete_cup_for_season(league.id, target_season)
+    audit(league.id, "delete_cup", league.slug, {"season_number": target_season})
     return RedirectResponse(url=f"/l/{league.slug}/admin?msg=cup_deleted", status_code=303)
 
 @router.post("/season/end")
