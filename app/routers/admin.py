@@ -320,23 +320,58 @@ def recompute_player_totals_from_matches(
     csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
     player_repo: IPlayerRepository = Depends(get_player_repository),
+    match_repo: IMatchRepository = Depends(get_match_repository),
+    hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
     audit=Depends(get_audit_logger),
 ):
-    """Recompute every player's total_points (and other aggregates) from their match_stats. Use once to fix old matches."""
+    """Recompute total_* from current-season matches only, all_time_* from completed seasons. Fixes wrong points in current season."""
     cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
     if not verify_csrf_token(cookie_token, csrf_token):
         raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
     try:
+        matches = match_repo.get_all_for_league(league.id)
+        hof_records = hof_repo.get_all_for_league(league.id)
+        completed_count = sum(h.season_matches_count or 0 for h in hof_records)
+        match_id_to_index = {m.id: i for i, m in enumerate(matches)}
+
         players = player_repo.get_all_for_league(league.id)
         for player in players:
             stats = list(player.match_stats or [])
-            player.total_matches = len(stats)
-            player.total_goals = sum(s.goals for s in stats)
-            player.total_assists = sum(s.assists for s in stats)
-            player.total_saves = sum(s.saves for s in stats)
-            player.total_clean_sheets = sum(1 for s in stats if s.clean_sheet)
-            player.total_own_goals = sum(s.own_goals for s in stats)
-            player.total_points = sum(getattr(s, "points_earned", 0) or 0 for s in stats)
+            cur_matches = cur_goals = cur_assists = cur_saves = cur_cs = cur_og = cur_points = 0
+            past_matches = past_goals = past_assists = past_saves = past_cs = past_og = past_points = 0
+            for s in stats:
+                idx = match_id_to_index.get(s.match_id, 0)
+                pts = getattr(s, "points_earned", 0) or 0
+                if idx >= completed_count:
+                    cur_matches += 1
+                    cur_goals += s.goals
+                    cur_assists += s.assists
+                    cur_saves += s.saves
+                    cur_cs += 1 if s.clean_sheet else 0
+                    cur_og += s.own_goals
+                    cur_points += pts
+                else:
+                    past_matches += 1
+                    past_goals += s.goals
+                    past_assists += s.assists
+                    past_saves += s.saves
+                    past_cs += 1 if s.clean_sheet else 0
+                    past_og += s.own_goals
+                    past_points += pts
+            player.total_matches = cur_matches
+            player.total_goals = cur_goals
+            player.total_assists = cur_assists
+            player.total_saves = cur_saves
+            player.total_clean_sheets = cur_cs
+            player.total_own_goals = cur_og
+            player.total_points = cur_points
+            player.all_time_matches = past_matches
+            player.all_time_goals = past_goals
+            player.all_time_assists = past_assists
+            player.all_time_saves = past_saves
+            player.all_time_clean_sheets = past_cs
+            player.all_time_own_goals = past_og
+            player.all_time_points = past_points
             player_repo.save(player, commit=False)
         player_repo.db.commit()
         audit(league.id, "recompute_totals", league.slug, {"players_count": len(players)})

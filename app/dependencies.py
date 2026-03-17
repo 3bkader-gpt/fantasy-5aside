@@ -82,9 +82,10 @@ def get_match_service(
     match_repo: IMatchRepository = Depends(get_match_repository),
     player_repo: IPlayerRepository = Depends(get_player_repository),
     cup_service: ICupService = Depends(get_cup_service),
-    team_repo: ITeamRepository = Depends(get_team_repository)
+    team_repo: ITeamRepository = Depends(get_team_repository),
+    hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
 ) -> IMatchService:
-    return MatchService(league_repo, match_repo, player_repo, cup_service, team_repo)
+    return MatchService(league_repo, match_repo, player_repo, cup_service, team_repo, hof_repo)
 
 def get_analytics_service(
     player_repo: IPlayerRepository = Depends(get_player_repository),

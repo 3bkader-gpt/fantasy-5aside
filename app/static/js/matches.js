@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Populate Match Date (لتصحيح مباراة انتقلت لموسم خاطئ)
             const dateInput = document.getElementById('edit_match_date');
             if (dateInput && matchData.date) {
-                dateInput.value = matchData.date.length >= 16 ? matchData.date.slice(0, 16) : matchData.date;
+                dateInput.value = matchData.date.slice(0, 10);
             } else if (dateInput) {
                 dateInput.value = '';
             }
@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const dateInputVal = document.getElementById('edit_match_date') && document.getElementById('edit_match_date').value;
             if (dateInputVal) {
-                payload.date = dateInputVal.length >= 16 ? dateInputVal.slice(0, 16) : dateInputVal;
+                payload.date = dateInputVal;
             }
 
             const leagueSlug = window.LEAGUE_SLUG;

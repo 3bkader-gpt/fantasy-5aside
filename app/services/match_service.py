@@ -5,7 +5,7 @@ from ..schemas import schemas
 from ..services import points
 from ..core.security import verify_password
 from .interfaces import IMatchService, ICupService
-from ..repositories.interfaces import ILeagueRepository, IMatchRepository, IPlayerRepository, ITeamRepository
+from ..repositories.interfaces import ILeagueRepository, IMatchRepository, IPlayerRepository, ITeamRepository, IHallOfFameRepository
 
 class MatchService(IMatchService):
     def __init__(
@@ -15,12 +15,14 @@ class MatchService(IMatchService):
         player_repo: IPlayerRepository,
         cup_service: ICupService,
         team_repo: ITeamRepository = None,
+        hof_repo: IHallOfFameRepository = None,
     ):
         self.league_repo = league_repo
         self.match_repo = match_repo
         self.player_repo = player_repo
         self.cup_service = cup_service
         self.team_repo = team_repo
+        self.hof_repo = hof_repo
 
     def _snapshot_ranks(self, league_id: int):
         players = self.player_repo.get_leaderboard(league_id)
@@ -146,6 +148,47 @@ class MatchService(IMatchService):
                 player.total_clean_sheets += 1
             self.player_repo.save(player, commit=False)
 
+    def _apply_combined_stats_to_match_all_time(
+        self,
+        match: models.Match,
+        combined_stats: list[dict],
+    ) -> None:
+        """Like _apply_combined_stats_to_match but updates only all_time_* (for editing a match in a completed season)."""
+        for s in combined_stats:
+            player = s['player']
+            stat_data = s['stat_data']
+            base_points = s['base_points']
+            bonus_bps = s.get('bonus_bps', 0) or 0
+            full_points = base_points + bonus_bps
+
+            db_stat = models.MatchStat(
+                match_id=match.id,
+                player_id=player.id,
+                team=s['team'],
+                goals=stat_data.goals,
+                assists=stat_data.assists,
+                saves=stat_data.saves,
+                goals_conceded=stat_data.goals_conceded,
+                own_goals=stat_data.own_goals,
+                is_winner=s['is_winner'],
+                is_gk=stat_data.is_gk,
+                clean_sheet=stat_data.clean_sheet,
+                defensive_contribution=getattr(stat_data, "defensive_contribution", False),
+                points_earned=full_points,
+                bonus_points=bonus_bps,
+            )
+            self.match_repo.db.add(db_stat)
+
+            player.all_time_points += full_points
+            player.all_time_goals += stat_data.goals
+            player.all_time_assists += stat_data.assists
+            player.all_time_saves += stat_data.saves
+            player.all_time_own_goals += stat_data.own_goals
+            player.all_time_matches += 1
+            if stat_data.clean_sheet:
+                player.all_time_clean_sheets += 1
+            self.player_repo.save(player, commit=False)
+
     @staticmethod
     def normalize_name(name: str) -> str:
         if not name: return ""
@@ -232,28 +275,54 @@ class MatchService(IMatchService):
         if not match or match.league_id != league_id:
             raise HTTPException(status_code=404, detail="Match not found")
 
-        # الاحتفاظ بتاريخ المباراة الأصلي حتى لا تنتقل للموسم التالي بعد التعديل (الترتيب بالتاريخ)
         original_date = match.date
+        if getattr(update_data, "date", None) is not None:
+            from datetime import timezone
+            d = update_data.date
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+            match.date = d
+        # else: keep original_date
+
+        # Is this match in a completed season? (by order: first N matches = completed, N = sum(HOF season_matches_count))
+        match_in_completed_season = False
+        if self.hof_repo:
+            from datetime import datetime as _dt, timezone as _tz
+            all_matches = self.match_repo.get_all_for_league(league_id)
+            order_dates = [(m.id, m.date if m.id != match.id else match.date) for m in all_matches]
+            order_dates.sort(key=lambda x: x[1] or _dt(1970, 1, 1, tzinfo=_tz.utc))
+            match_index = next((i for i, (mid, _) in enumerate(order_dates) if mid == match.id), 0)
+            hof_records = self.hof_repo.get_all_for_league(league_id)
+            completed_count = sum(h.season_matches_count or 0 for h in hof_records)
+            match_in_completed_season = match_index < completed_count
 
         try:
             self._snapshot_ranks(league_id)
 
-            # Revert old stats
+            # Revert old stats (from total_* or all_time_* depending on season)
             for stat in list(match.stats):
                 player = stat.player
-                player.total_points = max(0, player.total_points - stat.points_earned)
-                player.total_goals = max(0, player.total_goals - stat.goals)
-                player.total_assists = max(0, player.total_assists - stat.assists)
-                player.total_saves = max(0, player.total_saves - stat.saves)
-                player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
-                player.total_matches = max(0, player.total_matches - 1)
-                if stat.clean_sheet:
-                    player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
+                if match_in_completed_season:
+                    player.all_time_points = max(0, player.all_time_points - stat.points_earned)
+                    player.all_time_goals = max(0, player.all_time_goals - stat.goals)
+                    player.all_time_assists = max(0, player.all_time_assists - stat.assists)
+                    player.all_time_saves = max(0, player.all_time_saves - stat.saves)
+                    player.all_time_own_goals = max(0, player.all_time_own_goals - stat.own_goals)
+                    player.all_time_matches = max(0, player.all_time_matches - 1)
+                    if stat.clean_sheet:
+                        player.all_time_clean_sheets = max(0, player.all_time_clean_sheets - 1)
+                else:
+                    player.total_points = max(0, player.total_points - stat.points_earned)
+                    player.total_goals = max(0, player.total_goals - stat.goals)
+                    player.total_assists = max(0, player.total_assists - stat.assists)
+                    player.total_saves = max(0, player.total_saves - stat.saves)
+                    player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
+                    player.total_matches = max(0, player.total_matches - 1)
+                    if stat.clean_sheet:
+                        player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
                 self.player_repo.save(player, commit=False)
-                # Remove stat from session correctly to avoid conflict with cascade
                 self.match_repo.db.delete(stat)
-                
-            # Ensure match object handles newly appended state correctly
+
             match.stats = []
 
             team_a_score, team_b_score = self._compute_team_scores_from_stats(update_data.stats)
@@ -268,16 +337,10 @@ class MatchService(IMatchService):
                 match.team_b_id = update_data.team_b_id
 
             combined_stats = self._build_combined_stats(league_id, update_data.stats, team_a_score, team_b_score)
-            self._apply_combined_stats_to_match(match, combined_stats)
-            # استخدام التاريخ المرسل من الواجهة إن وُجد، وإلا الاحتفاظ بالأصلي (لتصحيح مباراة انتقلت لموسم خاطئ)
-            if getattr(update_data, "date", None) is not None:
-                from datetime import timezone
-                d = update_data.date
-                if d.tzinfo is None:
-                    d = d.replace(tzinfo=timezone.utc)
-                match.date = d
+            if match_in_completed_season:
+                self._apply_combined_stats_to_match_all_time(match, combined_stats)
             else:
-                match.date = original_date
+                self._apply_combined_stats_to_match(match, combined_stats)
             self.match_repo.db.commit()
             self.match_repo.db.refresh(match)
             self.cup_service.auto_resolve_cups(league_id, match.id)
