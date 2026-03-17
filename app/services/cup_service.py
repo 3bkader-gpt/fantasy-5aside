@@ -1,95 +1,9 @@
-import random
 from typing import List, Optional, Dict
+
 from ..models import models
 from .interfaces import ICupService
 from ..repositories.interfaces import IPlayerRepository, ICupRepository, IMatchRepository, ILeagueRepository
-
-
-ROUND_LABELS = {
-    2: "النهائي (Final)",
-    4: "نصف النهائي (Semi-Final)",
-    8: "ربع النهائي (Quarter-Final)",
-}
-
-
-def _round_label(count: int) -> str:
-    if count <= 2:
-        return ROUND_LABELS[2]
-    if count <= 4:
-        return ROUND_LABELS[4]
-    if count <= 8:
-        return ROUND_LABELS[8]
-    return f"دور الـ {count}"
-
-
-def _pair_players(
-    players: List[models.Player],
-    league_id: int,
-    bracket_type: str,
-    season_number: int,
-) -> List[models.CupMatchup]:
-    """Shuffle, pair H2H, and give a bye to the odd player out.
-
-    Tries to avoid pairing players from the same team where possible.
-    """
-
-    def _pairing_penalty(order: List[models.Player]) -> int:
-        # Lower is better: count same-team pairs.
-        penalty = 0
-        i = 0
-        while i + 1 < len(order):
-            t1 = getattr(order[i], "team_id", None)
-            t2 = getattr(order[i + 1], "team_id", None)
-            if t1 is not None and t2 is not None and t1 == t2:
-                penalty += 1
-            i += 2
-        return penalty
-
-    best_order = list(players)
-    best_penalty = 10**9
-    # Try multiple shuffles and keep the one with minimum same-team pairs.
-    for _ in range(60):
-        candidate = list(players)
-        random.shuffle(candidate)
-        p = _pairing_penalty(candidate)
-        if p < best_penalty:
-            best_penalty = p
-            best_order = candidate
-            if best_penalty == 0:
-                break
-
-    players = best_order
-    fixtures: List[models.CupMatchup] = []
-    round_label = _round_label(len(players))
-
-    i = 0
-    while i + 1 < len(players):
-        fixtures.append(models.CupMatchup(
-            league_id=league_id,
-            season_number=season_number,
-            player1_id=players[i].id,
-            player2_id=players[i + 1].id,
-            round_name=round_label,
-            bracket_type=bracket_type,
-            is_active=True,
-            is_revealed=False,
-        ))
-        i += 2
-
-    if i < len(players):
-        fixtures.append(models.CupMatchup(
-            league_id=league_id,
-            season_number=season_number,
-            player1_id=players[i].id,
-            player2_id=None,
-            round_name=round_label,
-            bracket_type=bracket_type,
-            is_active=False,
-            is_revealed=True,
-            winner_id=players[i].id,
-        ))
-
-    return fixtures
+from ..use_cases.generate_cup import GenerateCupUseCase
 
 
 class CupService(ICupService):
@@ -104,63 +18,13 @@ class CupService(ICupService):
         self.player_repo = player_repo
         self.cup_repo = cup_repo
         self.match_repo = match_repo
+        self._generate_use_case = GenerateCupUseCase(league_repo, player_repo, cup_repo, match_repo)
 
     # ------------------------------------------------------------------
     # generate_cup_draw
     # ------------------------------------------------------------------
     def generate_cup_draw(self, league_id: int) -> List[models.CupMatchup]:
-        league = self.league_repo.get_by_id(league_id)
-        season_number = (league.season_number if league and league.season_number else 1)
-
-        # If a season just ended (match #4), totals are reset and season_number increments.
-        # In that case, cup should be generated for the just-finished season using last_season_*.
-        use_last_season = bool(
-            league
-            and (league.current_season_matches or 0) == 0
-            and (league.season_number or 1) > 1
-        )
-        target_season = (season_number - 1) if use_last_season else season_number
-
-        self.cup_repo.delete_all_for_league(league_id, season_number=target_season)
-
-        all_players = self.player_repo.get_all_for_league(league_id)
-
-        # Cup participants: top 10 by standings for target season.
-        # If target is previous season, rank by last_season_points; otherwise, rank by total_points.
-        rank_attr = "last_season_points" if use_last_season else "total_points"
-        ranked = sorted(
-            all_players,
-            key=lambda p: ((getattr(p, rank_attr, 0) or 0), -(p.id or 0)),
-            reverse=True,
-        )
-        selected = ranked[:10]
-        selected_ids = {p.id for p in selected if p.id is not None}
-
-        goalkeepers = [p for p in selected if p.default_is_gk]
-        outfield = [p for p in selected if not p.default_is_gk]
-
-        for p in all_players:
-            p.is_active_in_cup = (p.id in selected_ids)
-            self.player_repo.save(p)
-
-        fixtures: List[models.CupMatchup] = []
-
-        if len(goalkeepers) >= 2:
-            fixtures.extend(_pair_players(goalkeepers, league_id, "goalkeeper", target_season))
-        elif len(goalkeepers) == 1:
-            goalkeepers[0].is_active_in_cup = True
-            self.player_repo.save(goalkeepers[0])
-
-        if len(outfield) >= 2:
-            fixtures.extend(_pair_players(outfield, league_id, "outfield", target_season))
-        elif len(outfield) == 1:
-            outfield[0].is_active_in_cup = True
-            self.player_repo.save(outfield[0])
-
-        if fixtures:
-            self.cup_repo.save_matchups(fixtures)
-
-        return fixtures
+        return self._generate_use_case.execute(league_id)
 
     def delete_cup_for_season(self, league_id: int, season_number: int) -> None:
         # Delete cup matchups for this season and deactivate all players in cup
@@ -325,6 +189,7 @@ class CupService(ICupService):
         if len(winner_players) < 2:
             return
 
-        next_fixtures = _pair_players(winner_players, league_id, bracket_type, season_number)
+        # Reuse the same pairing rules as generation (via use case helper)
+        next_fixtures = self._generate_use_case._pair(winner_players, league_id, bracket_type, season_number)
         if next_fixtures:
             self.cup_repo.save_matchups(next_fixtures)

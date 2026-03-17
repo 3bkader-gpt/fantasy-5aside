@@ -19,6 +19,7 @@ from ..dependencies import (
 )
 from ..services.achievements import achievement_service
 from ..services.points import get_points_breakdown
+from ..queries.cup_queries import query_active_cup_for_leaderboard, query_cup_for_display
 
 
 router = APIRouter()
@@ -139,12 +140,7 @@ def read_leaderboard(
     hofs = hof_repo.get_all_for_league(league.id)
     latest_hof = hofs[0] if hofs else None
     
-    season_number = league.season_number or 1
-    active_cups = cup_repo.get_active_matchups(league.id, season_number=season_number)
-    if not active_cups and season_number > 1:
-        # If cup was generated for the just-finished season, show that.
-        active_cups = cup_repo.get_active_matchups(league.id, season_number=season_number - 1)
-    next_cup = active_cups[0] if active_cups else None
+    next_cup = query_active_cup_for_leaderboard(league.id, league_repo, cup_repo)
     
     is_admin = check_admin_status(slug, request)
 
@@ -293,11 +289,8 @@ def read_cup(
     if league.slug != slug:
         return _canonical_league_redirect(request, slug, league.slug)
         
-    season_number = league.season_number or 1
-    matchups = cup_repo.get_all_for_league(league.id, season_number=season_number)
-    if not matchups and season_number > 1:
-        # If cup was generated for the just-finished season, show that.
-        matchups = cup_repo.get_all_for_league(league.id, season_number=season_number - 1)
+    cup_view = query_cup_for_display(league.id, league_repo, cup_repo)
+    matchups = cup_view.matchups
     # Group matchups by bracket_type then round_name for easier bracket rendering
     grouped = {"outfield": {}, "goalkeeper": {}}
     for m in matchups:
