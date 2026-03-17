@@ -19,8 +19,8 @@ class LeagueService(ILeagueService):
                 # Compute seasonal awards based on current season aggregates
                 top_scorer = max(players, key=lambda p: p.total_goals)
                 top_assister = max(players, key=lambda p: p.total_assists)
-                goalkeepers = [p for p in players if p.default_is_gk]
-                top_gk = max(goalkeepers, key=lambda p: p.total_saves) if goalkeepers else None
+                # حارس الشهر = صاحب أعلى تصديات (من كل اللاعبين، مش فقط اللي مسجل حارس افتراضي)
+                top_gk = max(players, key=lambda p: p.total_saves) if players and any(p.total_saves > 0 for p in players) else None
 
                 hof = models.HallOfFame(
                     league_id=league_id,
