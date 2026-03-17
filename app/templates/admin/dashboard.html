@@ -517,6 +517,21 @@
         </form>
     </div>
 
+    <!-- Fix latest Hall of Fame awards (e.g. حارس الشهر after logic change) -->
+    <div class="card mb-4 border-right-success">
+        <h3 style="color: var(--success-color);">🏅 إصلاح جوائز آخر موسم في لوحة الشرف</h3>
+        <p class="text-secondary mb-2" style="font-size: 1rem; font-weight: 700;">
+            يعيد حساب هداف الشهر، صانع الشهر وحارس الشهر لآخر موسم منتهي من بيانات اللاعبين (مفيد لو ظهر «لا يوجد» لحارس الشهر بعد تحديث النظام).
+        </p>
+        <form action="/l/{{ league.slug }}/admin/hof/fix-latest" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-success">إصلاح جوائز آخر موسم الآن</button>
+        </form>
+        {% if admin_msg == 'hof_fixed' %}
+        <p class="text-success mt-2 mb-0" style="font-weight: 700;">✅ تم تحديث جوائز لوحة الشرف لآخر موسم.</p>
+        {% endif %}
+    </div>
+
     <!-- Recompute totals from matches (fix old data / Supabase) -->
     <div class="card mb-4">
         <h3 style="color: var(--text-color);">🔄 إعادة حساب النقاط من المباريات</h3>

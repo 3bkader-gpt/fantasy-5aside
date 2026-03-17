@@ -232,6 +232,9 @@ class MatchService(IMatchService):
         if not match or match.league_id != league_id:
             raise HTTPException(status_code=404, detail="Match not found")
 
+        # الاحتفاظ بتاريخ المباراة الأصلي حتى لا تنتقل للموسم التالي بعد التعديل (الترتيب بالتاريخ)
+        original_date = match.date
+
         try:
             self._snapshot_ranks(league_id)
 
@@ -266,6 +269,15 @@ class MatchService(IMatchService):
 
             combined_stats = self._build_combined_stats(league_id, update_data.stats, team_a_score, team_b_score)
             self._apply_combined_stats_to_match(match, combined_stats)
+            # استخدام التاريخ المرسل من الواجهة إن وُجد، وإلا الاحتفاظ بالأصلي (لتصحيح مباراة انتقلت لموسم خاطئ)
+            if getattr(update_data, "date", None) is not None:
+                from datetime import timezone
+                d = update_data.date
+                if d.tzinfo is None:
+                    d = d.replace(tzinfo=timezone.utc)
+                match.date = d
+            else:
+                match.date = original_date
             self.match_repo.db.commit()
             self.match_repo.db.refresh(match)
             self.cup_service.auto_resolve_cups(league_id, match.id)

@@ -219,6 +219,28 @@ def undo_end_season(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+@router.post("/hof/fix-latest")
+def fix_latest_hof_awards(
+    request: Request,
+    csrf_token: str = Form(None),
+    league: models.League = Depends(get_current_admin_league),
+    league_service: ILeagueService = Depends(get_league_service),
+    audit=Depends(get_audit_logger),
+):
+    """إصلاح جوائز آخر موسم في لوحة الشرف (هداف/صانع/حارس الشهر) من بيانات last_season_*."""
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+    try:
+        league_service.fix_latest_hof_awards(league.id)
+        audit(league.id, "fix_latest_hof", league.slug, {})
+        return RedirectResponse(url=f"/l/{league.slug}/admin?msg=hof_fixed", status_code=303)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.post("/settings/update")
 def update_league_settings(
     request: Request,
@@ -385,6 +407,7 @@ def get_match_details(
         "id": match.id,
         "team_a_name": match.team_a_name,
         "team_b_name": match.team_b_name,
+        "date": match.date.isoformat() if match.date else None,
         "stats": stats_payload,
     }
 

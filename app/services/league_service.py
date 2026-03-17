@@ -71,6 +71,31 @@ class LeagueService(ILeagueService):
 
         self.cup_repo.delete_all_for_league(league_id)
 
+    def fix_latest_hof_awards(self, league_id: int) -> None:
+        """إصلاح جوائز آخر موسم في لوحة الشرف من بيانات last_season_* (مثلاً حارس الشهر بعد تعديل المنطق)."""
+        from fastapi import HTTPException
+
+        latest_hof = self.hof_repo.get_latest_for_league(league_id)
+        if not latest_hof:
+            raise HTTPException(status_code=400, detail="لا يوجد سجل في لوحة الشرف")
+
+        players = self.player_repo.get_all_for_league(league_id)
+        if not players:
+            return
+
+        top_scorer = max(players, key=lambda p: getattr(p, "last_season_goals", 0) or 0)
+        top_assister = max(players, key=lambda p: getattr(p, "last_season_assists", 0) or 0)
+        top_gk = max(players, key=lambda p: getattr(p, "last_season_saves", 0) or 0) if any((getattr(p, "last_season_saves", 0) or 0) > 0 for p in players) else None
+
+        latest_hof.top_scorer_id = top_scorer.id if (getattr(top_scorer, "last_season_goals", 0) or 0) > 0 else None
+        latest_hof.top_scorer_goals = getattr(top_scorer, "last_season_goals", 0) or 0
+        latest_hof.top_assister_id = top_assister.id if (getattr(top_assister, "last_season_assists", 0) or 0) > 0 else None
+        latest_hof.top_assister_assists = getattr(top_assister, "last_season_assists", 0) or 0
+        latest_hof.top_gk_id = top_gk.id if top_gk and (getattr(top_gk, "last_season_saves", 0) or 0) > 0 else None
+        latest_hof.top_gk_saves = getattr(top_gk, "last_season_saves", 0) or 0 if top_gk else 0
+
+        self.hof_repo.save(latest_hof)
+
     def undo_end_season(self, league_id: int) -> None:
         """Reverse the last end_current_season call.
         

@@ -312,6 +312,14 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelector('.team-a-label').textContent = matchData.team_a_name;
             document.querySelector('.team-b-label').textContent = matchData.team_b_name;
 
+            // Populate Match Date (لتصحيح مباراة انتقلت لموسم خاطئ)
+            const dateInput = document.getElementById('edit_match_date');
+            if (dateInput && matchData.date) {
+                dateInput.value = matchData.date.length >= 16 ? matchData.date.slice(0, 16) : matchData.date;
+            } else if (dateInput) {
+                dateInput.value = '';
+            }
+
             // Clear existing rows
             document.getElementById('edit-team-a-body').innerHTML = '';
             document.getElementById('edit-team-b-body').innerHTML = '';
@@ -447,6 +455,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 team_b_score: 0,
                 stats: stats
             };
+
+            const dateInputVal = document.getElementById('edit_match_date') && document.getElementById('edit_match_date').value;
+            if (dateInputVal) {
+                payload.date = dateInputVal.length >= 16 ? dateInputVal.slice(0, 16) : dateInputVal;
+            }
 
             const leagueSlug = window.LEAGUE_SLUG;
 

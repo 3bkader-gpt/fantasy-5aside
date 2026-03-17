@@ -309,6 +309,12 @@
                 <h3 style="margin-top:0;">تأكيد الإدارة لتحديث المباريات</h3>
                 <input type="password" id="edit_admin_password" placeholder="أدخل كلمة سر إدارة الدوري لحفظ التعديلات"
                     required class="form-control">
+                <div class="form-group mt-2">
+                    <label for="edit_match_date" style="font-weight: 700;">📅 تاريخ المباراة</label>
+                    <input type="datetime-local" id="edit_match_date" class="form-control"
+                        title="تعديل التاريخ يحدد ترتيب المباراة (الموسم 1 = أول 4 مباريات، إلخ). استخدمه لتصحيح مباراة ظهرت في الموسم الخطأ.">
+                    <p class="text-muted mb-0" style="font-size: 0.85rem;">غيّر التاريخ ثم احفظ لو المباراة ظهرت في الموسم التالي بالخطأ.</p>
+                </div>
             </div>
 
             <div class="tactical-board" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
@@ -405,6 +411,7 @@
     "{{ match.id }}": {
         "team_a_name": {{ match.team_a_name | tojson }},
         "team_b_name": {{ match.team_b_name | tojson }},
+        "date": {{ (match.date.strftime('%Y-%m-%dT%H:%M') if match.date else '') | tojson }},
         "stats": [
             {% for stat in match.stats %}
             {

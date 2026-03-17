@@ -141,6 +141,7 @@ class MatchEditRequest(MatchBase):
     stats: List[MatchStatCreate] = []
     team_a_id: Optional[int] = None
     team_b_id: Optional[int] = None
+    date: Optional[datetime] = None  # إن وُجد يُستخدم (لتصحيح مباراة انتقلت لموسم خاطئ)
 
 class MatchResponse(MatchBase):
     id: int
