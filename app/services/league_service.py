@@ -69,7 +69,9 @@ class LeagueService(ILeagueService):
             player.previous_rank = 0
             self.player_repo.save(player)
 
-        self.cup_repo.delete_all_for_league(league_id)
+        league = self.league_repo.get_by_id(league_id)
+        season_number = (league.season_number if league and league.season_number else 1)
+        self.cup_repo.delete_all_for_league(league_id, season_number=season_number)
 
     def fix_latest_hof_awards(self, league_id: int) -> None:
         """إصلاح جوائز آخر موسم في لوحة الشرف من بيانات last_season_* (مثلاً حارس الشهر بعد تعديل المنطق)."""

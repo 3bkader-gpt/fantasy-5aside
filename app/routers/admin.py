@@ -165,6 +165,23 @@ def generate_cup(
     audit(league.id, "generate_cup", league.slug, {})
     return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
 
+
+@router.post("/cup/delete")
+def delete_cup_for_current_season(
+    request: Request,
+    csrf_token: str = Form(None),
+    league: models.League = Depends(get_current_admin_league),
+    cup_service: ICupService = Depends(get_cup_service),
+    audit=Depends(get_audit_logger),
+):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+    season_number = league.season_number or 1
+    cup_service.delete_cup_for_season(league.id, season_number)
+    audit(league.id, "delete_cup", league.slug, {"season_number": season_number})
+    return RedirectResponse(url=f"/l/{league.slug}/admin?msg=cup_deleted", status_code=303)
+
 @router.post("/season/end")
 def end_season(
     request: Request,

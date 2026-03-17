@@ -26,6 +26,10 @@ class ICupService(ABC):
         pass
 
     @abstractmethod
+    def delete_cup_for_season(self, league_id: int, season_number: int) -> None:
+        pass
+
+    @abstractmethod
     def auto_resolve_cups(self, league_id: int, match_id: int) -> None:
         pass
 

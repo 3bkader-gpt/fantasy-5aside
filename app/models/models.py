@@ -170,10 +170,14 @@ class CupMatchup(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     league_id = Column(Integer, ForeignKey("leagues.id"))
+    # Cup is seasonal (each league season has its own cup bracket)
+    season_number = Column(Integer, default=1)
     player1_id = Column(Integer, ForeignKey("players.id"))
     player2_id = Column(Integer, ForeignKey("players.id"), nullable=True)
     round_name = Column(String)
     winner_id = Column(Integer, ForeignKey("players.id"), nullable=True)
+    # Shared final rule: in some cases there can be 2 winners (e.g., same team in final)
+    winner2_id = Column(Integer, ForeignKey("players.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     bracket_type = Column(String(20), default="outfield")  # "outfield" or "goalkeeper"
     is_revealed = Column(Boolean, default=False)
@@ -183,6 +187,7 @@ class CupMatchup(Base):
     player1 = relationship("Player", foreign_keys=[player1_id])
     player2 = relationship("Player", foreign_keys=[player2_id])
     winner = relationship("Player", foreign_keys=[winner_id])
+    winner2 = relationship("Player", foreign_keys=[winner2_id])
 
 
 class HallOfFame(Base):

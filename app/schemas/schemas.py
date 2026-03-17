@@ -155,6 +155,7 @@ class MatchResponse(MatchBase):
 class CupMatchupResponse(BaseModel):
     id: int
     league_id: int
+    season_number: int = 1
     player1_id: int
     player2_id: Optional[int] = None
     round_name: str
@@ -163,6 +164,7 @@ class CupMatchupResponse(BaseModel):
     is_revealed: bool = False
     match_id: Optional[int] = None
     winner_id: Optional[int] = None
+    winner2_id: Optional[int] = None
     player1: Optional[PlayerResponse] = None
     player2: Optional[PlayerResponse] = None
 

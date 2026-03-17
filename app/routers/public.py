@@ -139,7 +139,8 @@ def read_leaderboard(
     hofs = hof_repo.get_all_for_league(league.id)
     latest_hof = hofs[0] if hofs else None
     
-    active_cups = cup_repo.get_active_matchups(league.id)
+    season_number = league.season_number or 1
+    active_cups = cup_repo.get_active_matchups(league.id, season_number=season_number)
     next_cup = active_cups[0] if active_cups else None
     
     is_admin = check_admin_status(slug, request)
@@ -289,7 +290,8 @@ def read_cup(
     if league.slug != slug:
         return _canonical_league_redirect(request, slug, league.slug)
         
-    matchups = cup_repo.get_all_for_league(league.id)
+    season_number = league.season_number or 1
+    matchups = cup_repo.get_all_for_league(league.id, season_number=season_number)
     # Group matchups by bracket_type then round_name for easier bracket rendering
     grouped = {"outfield": {}, "goalkeeper": {}}
     for m in matchups:

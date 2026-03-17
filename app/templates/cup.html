@@ -26,10 +26,10 @@
                         <div
                             class="card matchup-card flex-between mb-1 {% if matchup.is_active %}active-matchup{% else %}resolved-matchup{% endif %}">
 
-                            <div class="player player1 text-center {% if not matchup.is_active and matchup.winner_id and matchup.winner_id != matchup.player1_id %}loser{% endif %}">
-                                <div class="player-name {% if matchup.winner_id == matchup.player1_id %}text-success{% endif %}">
+                            <div class="player player1 text-center {% if not matchup.is_active and (matchup.winner_id or matchup.winner2_id) and matchup.winner_id != matchup.player1_id and matchup.winner2_id != matchup.player1_id %}loser{% endif %}">
+                                <div class="player-name {% if matchup.winner_id == matchup.player1_id or matchup.winner2_id == matchup.player1_id %}text-success{% endif %}">
                                     {{ matchup.player1.name }}
-                                    {% if matchup.winner_id == matchup.player1_id %} <span title="الفائز">🏆</span> {% endif %}
+                                    {% if matchup.winner_id == matchup.player1_id or matchup.winner2_id == matchup.player1_id %} <span title="الفائز">🏆</span> {% endif %}
                                 </div>
                                 <div class="text-secondary small-text">
                                     إجمالي النقاط: {{ matchup.player1.total_points }}
@@ -44,9 +44,9 @@
                                 {% endif %}
                             </div>
 
-                            <div class="player player2 text-center {% if matchup.player2_id and not matchup.is_active and matchup.winner_id and matchup.winner_id != matchup.player2_id %}loser{% endif %}">
-                                <div class="player-name {% if matchup.winner_id == matchup.player2_id %}text-success{% endif %}">
-                                    {% if matchup.winner_id == matchup.player2_id %} <span title="الفائز">🏆</span> {% endif %}
+                            <div class="player player2 text-center {% if matchup.player2_id and not matchup.is_active and (matchup.winner_id or matchup.winner2_id) and matchup.winner_id != matchup.player2_id and matchup.winner2_id != matchup.player2_id %}loser{% endif %}">
+                                <div class="player-name {% if matchup.winner_id == matchup.player2_id or matchup.winner2_id == matchup.player2_id %}text-success{% endif %}">
+                                    {% if matchup.winner_id == matchup.player2_id or matchup.winner2_id == matchup.player2_id %} <span title="الفائز">🏆</span> {% endif %}
                                     {% if matchup.player2 %}{{ matchup.player2.name }}{% else %}إعفاء{% endif %}
                                 </div>
                                 <div class="text-secondary small-text">

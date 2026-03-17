@@ -57,13 +57,13 @@ class IMatchRepository(ABC):
 
 class ICupRepository(ABC):
     @abstractmethod
-    def get_active_matchups(self, league_id: int) -> List[models.CupMatchup]: pass
+    def get_active_matchups(self, league_id: int, season_number: Optional[int] = None) -> List[models.CupMatchup]: pass
     @abstractmethod
-    def get_all_for_league(self, league_id: int) -> List[models.CupMatchup]: pass
+    def get_all_for_league(self, league_id: int, season_number: Optional[int] = None) -> List[models.CupMatchup]: pass
     @abstractmethod
     def save_matchups(self, matchups: List[models.CupMatchup]) -> None: pass
     @abstractmethod
-    def delete_all_for_league(self, league_id: int) -> None: pass
+    def delete_all_for_league(self, league_id: int, season_number: Optional[int] = None) -> None: pass
 
 class IHallOfFameRepository(ABC):
     @abstractmethod

@@ -440,6 +440,15 @@
                 </button>
             </div>
         </form>
+        <form action="/l/{{ league.slug }}/admin/cup/delete" method="POST"
+            onsubmit="return confirm('هل تريد حذف الكأس بالكامل لهذا الموسم؟ لا يمكن التراجع.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="form-group mb-1">
+                <button type="submit" class="btn btn-danger" style="color: white;">
+                    حذف الكأس لهذا الموسم 🗑️
+                </button>
+            </div>
+        </form>
         <p class="text-muted mt-1" style="font-size: 0.9rem;">* سيتم اختيار أفضل 10 لاعبين في الترتيب الحالي وتسكينهم في
             مواجهات
             ربع النهائي.</p>

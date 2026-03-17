@@ -73,9 +73,10 @@ def get_voting_service(
 def get_cup_service(
     player_repo: IPlayerRepository = Depends(get_player_repository),
     cup_repo: ICupRepository = Depends(get_cup_repository),
-    match_repo: IMatchRepository = Depends(get_match_repository)
+    match_repo: IMatchRepository = Depends(get_match_repository),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
 ) -> ICupService:
-    return CupService(player_repo, cup_repo, match_repo)
+    return CupService(league_repo, player_repo, cup_repo, match_repo)
 
 def get_match_service(
     league_repo: ILeagueRepository = Depends(get_league_repository),

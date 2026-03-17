@@ -216,16 +216,38 @@ class MatchRepository(IMatchRepository):
 
 class CupRepository(ICupRepository):
     def __init__(self, db: Session): self.db = db
-    def get_active_matchups(self, league_id: int) -> List[models.CupMatchup]:
-        return self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id, models.CupMatchup.is_active == True).options(joinedload(models.CupMatchup.player1), joinedload(models.CupMatchup.player2)).all()
-    def get_all_for_league(self, league_id: int) -> List[models.CupMatchup]:
-        return self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id).options(joinedload(models.CupMatchup.player1), joinedload(models.CupMatchup.player2)).all()
+    def get_active_matchups(self, league_id: int, season_number: Optional[int] = None) -> List[models.CupMatchup]:
+        q = self.db.query(models.CupMatchup).filter(
+            models.CupMatchup.league_id == league_id,
+            models.CupMatchup.is_active == True,
+        )
+        if season_number is not None:
+            q = q.filter(models.CupMatchup.season_number == season_number)
+        return q.options(
+            joinedload(models.CupMatchup.player1),
+            joinedload(models.CupMatchup.player2),
+            joinedload(models.CupMatchup.winner),
+            joinedload(models.CupMatchup.winner2),
+        ).all()
+    def get_all_for_league(self, league_id: int, season_number: Optional[int] = None) -> List[models.CupMatchup]:
+        q = self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id)
+        if season_number is not None:
+            q = q.filter(models.CupMatchup.season_number == season_number)
+        return q.options(
+            joinedload(models.CupMatchup.player1),
+            joinedload(models.CupMatchup.player2),
+            joinedload(models.CupMatchup.winner),
+            joinedload(models.CupMatchup.winner2),
+        ).all()
     def save_matchups(self, matchups: List[models.CupMatchup], commit: bool = True) -> None:
         self.db.add_all(matchups)
         if commit:
             self.db.commit()
-    def delete_all_for_league(self, league_id: int, commit: bool = True) -> None:
-        self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id).delete(synchronize_session=False)
+    def delete_all_for_league(self, league_id: int, season_number: Optional[int] = None, commit: bool = True) -> None:
+        q = self.db.query(models.CupMatchup).filter(models.CupMatchup.league_id == league_id)
+        if season_number is not None:
+            q = q.filter(models.CupMatchup.season_number == season_number)
+        q.delete(synchronize_session=False)
         if commit:
             self.db.commit()
 
