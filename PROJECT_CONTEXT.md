@@ -18,6 +18,7 @@
 - Multi-tenant Fantasy Football SaaS for 5-a-side leagues.
 - Tenant isolation is league-scoped via slug paths: `/l/{slug}`.
 - Admin session is league-bound JWT (`sub = league.slug`) stored in `access_token` cookie.
+- User account session is a separate JWT (`sub = user.id`, `scope = "user"`) stored in `user_access_token` cookie (used by `/dashboard` and `/onboarding/*`).
 
 ### 1.2 Backend
 - Framework: FastAPI.
@@ -26,7 +27,9 @@
   - `app/routers/public.py`: landing, create-league flow (with admin_email + slug autosuggest/availability + confirmation page), leaderboard, matches, cup, player profile, stats pages.
   - `app/routers/admin.py`: admin dashboard, match CRUD, season/cup actions, teams, transfers, imports/exports; all league operations go through league-scoped dependencies.
   - `app/routers/voting.py`: voting APIs (`status`, `live`, `closed-results`, `vote`, `open`, `close`).
-  - `app/routers/auth.py`: login/logout.
+  - `app/routers/auth.py`: login/logout (league admin PIN) + user account login (`POST /user/login`).
+  - `app/routers/accounts.py`: user registration + email verification + multi-league `/dashboard`.
+  - `app/routers/onboarding.py`: user-auth gated onboarding wizard (`/onboarding/*`) to create an owned league and add initial data.
   - `app/routers/media.py`: match image upload/delete.
   - `app/routers/notifications.py`: web push subscription endpoints.
 

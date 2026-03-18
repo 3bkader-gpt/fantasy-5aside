@@ -16,6 +16,9 @@ from ..core.csrf import (
     set_csrf_cookie,
     verify_csrf_token,
 )
+from sqlalchemy import func
+
+from ..models import models
 from ..dependencies import get_current_user, get_user_service, get_email_service
 from ..database import get_db
 from ..services.user_service import UserService
@@ -91,12 +94,53 @@ def verify_email(token: str, request: Request, user_service: UserService = Depen
 def dashboard(
     request: Request,
     current_user = Depends(get_current_user),
+    db: Session = Depends(get_db),
     user_service: UserService = Depends(get_user_service),
 ):
     leagues = user_service.get_owned_leagues(current_user)
+
+    league_ids = [l.id for l in leagues]
+    player_counts: dict[int, int] = {}
+    last_match_dates: dict[int, str] = {}
+
+    if league_ids:
+        # Player counts per league
+        rows = (
+            db.query(models.Player.league_id, func.count(models.Player.id))
+            .filter(models.Player.league_id.in_(league_ids))
+            .group_by(models.Player.league_id)
+            .all()
+        )
+        player_counts = {int(lid): int(cnt) for lid, cnt in rows}
+
+        # Last match date per league
+        rows2 = (
+            db.query(models.Match.league_id, func.max(models.Match.date))
+            .filter(models.Match.league_id.in_(league_ids))
+            .group_by(models.Match.league_id)
+            .all()
+        )
+        last_match_dates = {
+            int(lid): (dt.isoformat() if dt is not None else "")
+            for lid, dt in rows2
+        }
+
+    league_cards = []
+    for l in leagues:
+        league_cards.append(
+            {
+                "league": l,
+                "player_count": player_counts.get(l.id, 0),
+                "last_match_date": last_match_dates.get(l.id) or None,
+                "season_number": getattr(l, "season_number", 1),
+                "is_verified": bool(getattr(l, "is_verified", False)),
+                "plan_label": "Free",
+            }
+        )
+
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",
-        context={"user": current_user, "leagues": leagues},
+        context={"user": current_user, "league_cards": league_cards, "leagues": leagues},
     )
 

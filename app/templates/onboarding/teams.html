@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="margin-top: 3rem; max-width: 760px;">
+  <div class="card" style="padding: 1.5rem;">
+    <div class="d-flex justify-content-between align-items-start mb-3" style="gap: 1rem; flex-wrap: wrap;">
+      <div>
+        <h1 class="mb-1" style="text-align: right; color: var(--text-color);">2) أسماء الفرق</h1>
+        <p class="text-muted mb-0" style="text-align: right;">
+          خطوة اختيارية—هتظهر في صفحات المباريات والإدارة.
+        </p>
+      </div>
+      <a href="/onboarding/league" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" style="text-align: right;">{{ error }}</div>
+    {% endif %}
+
+    <div class="card mb-3" style="padding: 1rem;">
+      <div style="text-align: right; color: var(--text-color); font-weight: 700;">{{ league.name }}</div>
+      <div class="text-muted" style="text-align: right; font-size: .9rem;">/l/{{ league.slug }}</div>
+    </div>
+
+    <form method="post" action="/onboarding/teams" class="m-0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="league_id" value="{{ league.id }}">
+
+      <div class="mb-3">
+        <label class="form-label" style="text-align: right; display:block;">اسم الفريق A</label>
+        <input name="team_a_label" class="form-control" value="{{ league.team_a_label or 'فريق أ' }}" placeholder="مثال: الأحمر">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" style="text-align: right; display:block;">اسم الفريق B</label>
+        <input name="team_b_label" class="form-control" value="{{ league.team_b_label or 'فريق ب' }}" placeholder="مثال: الأزرق">
+      </div>
+
+      <div class="d-flex" style="gap: .5rem; justify-content: flex-end; flex-wrap: wrap;">
+        <a href="/dashboard" class="btn btn-outline-secondary">إلغاء</a>
+        <button type="submit" class="btn btn-primary">التالي</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

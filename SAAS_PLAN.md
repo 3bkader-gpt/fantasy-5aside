@@ -26,7 +26,7 @@
 - [ ] 🟡 Phase 2 – User accounts & email-based auth
 - [ ] ❌ Phase 3 – Plans & usage limits (Free / Pro / Unlimited)
 - [ ] ❌ Phase 4 – Billing & subscriptions (Stripe / others)
-- [ ] ❌ Phase 5 – Multi-league dashboard & onboarding
+- [ ] 🟡 Phase 5 – Multi-league dashboard & onboarding
 - [ ] 🟡 Phase 6 – Security, monitoring & ops hardening (good baseline exists; monitoring/ops still missing)
 - [ ] 🟡 Phase 7 – Marketing site, branding & demo league (landing exists; proper marketing + demo missing)
 
@@ -191,33 +191,34 @@ subscription_ended  → downgrade to "free"
 
 ## Phase 5 — Multi-League Dashboard & Onboarding
 
-**Status:** ❌ Not implemented yet (current admin is league-scoped).
+**Status:** 🟡 Implemented (dashboard cards + onboarding wizard; no persistence flags yet).
 
 ### `/dashboard` Page (post-login)
-- ❌ Cards for each league: name, slug, player count, last match date
-- ❌ "Create New League" button
-- ❌ Current plan badge + upgrade prompt
+- ✅ Cards for each league: name, slug, player count, last match date + admin/league links
+- ✅ "Create New League" button + "Start onboarding" CTA
+- 🟡 Current plan badge placeholder (static "Free" label; upgrades in Phase 3/4)
 
 ### Onboarding Wizard (first-time users)
 ```
 Step 1 → League name + slug
-Step 2 → Team names + colors (Team A / Team B)
+Step 2 → Team names (Team A / Team B)
 Step 3 → Bulk-add players (comma-separated names)
 Step 4 → Done! Share your league link
 ```
 
 ### Implementation Checklist
-- ❌ User-auth gated dashboard
-- ❌ Onboarding wizard flow + persistence
-- ❌ Post-create “next steps” UX (can share with Phase 1 confirmation page)
+- ✅ User-auth gated dashboard (uses user_access_token + get_current_user)
+- ✅ Onboarding wizard flow (league → teams → players → done)
+- 🟡 Persistence/state: uses `league_id` query params + ownership checks (no `User.onboarding_completed` yet)
 
 ### Files
 
 | File | Purpose |
 |------|---------|
 | `app/templates/dashboard.html` | User dashboard |
-| `app/templates/onboarding.html` | Setup wizard |
-| `app/routers/accounts.py` | Dashboard routes |
+| `app/templates/onboarding/*.html` | Setup wizard steps |
+| `app/routers/accounts.py` | Dashboard route (cards + stats) |
+| `app/routers/onboarding.py` | Onboarding routes |
 
 ---
 

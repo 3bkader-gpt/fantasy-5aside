@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="margin-top: 3rem; max-width: 760px;">
+  <div class="card" style="padding: 1.5rem;">
+    <h1 class="mb-2" style="text-align: right; color: var(--text-color);">تم الإعداد ✅</h1>
+    <p class="text-muted mb-3" style="text-align: right;">
+      الدوري جاهز! اتضاف {{ created_players }} لاعب.
+    </p>
+
+    <div class="card mb-3" style="padding: 1rem;">
+      <div style="text-align: right; color: var(--text-color); font-weight: 800;">{{ league.name }}</div>
+      <div class="text-muted" style="text-align: right; font-size: .9rem;">/l/{{ league.slug }}</div>
+    </div>
+
+    <div class="d-flex" style="gap: .5rem; justify-content: flex-end; flex-wrap: wrap;">
+      <a href="/l/{{ league.slug }}" class="btn btn-outline-secondary">عرض الدوري</a>
+      <a href="/l/{{ league.slug }}/admin" class="btn btn-outline-primary">لوحة الإدارة</a>
+      <a href="/dashboard" class="btn btn-primary">رجوع للوحة الحساب</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

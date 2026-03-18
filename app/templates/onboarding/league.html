@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="margin-top: 3rem; max-width: 760px;">
+  <div class="card" style="padding: 1.5rem;">
+    <div class="d-flex justify-content-between align-items-start mb-3" style="gap: 1rem; flex-wrap: wrap;">
+      <div>
+        <h1 class="mb-1" style="text-align: right; color: var(--text-color);">1) إنشاء الدوري</h1>
+        <p class="text-muted mb-0" style="text-align: right;">اختار اسم للدوري، رابط قصير، و PIN للأدمن.</p>
+      </div>
+      <a href="/onboarding/start" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" style="text-align: right;">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/onboarding/league" class="m-0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="mb-3">
+        <label class="form-label" style="text-align: right; display:block;">اسم الدوري</label>
+        <input id="name" name="name" class="form-control" required placeholder="مثال: دوري الجمعة" autocomplete="off">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" style="text-align: right; display:block;">رابط الدوري (Slug)</label>
+        <input id="slug" name="slug" class="form-control" required placeholder="مثال: friday-league" autocomplete="off">
+        <div id="slug-help" class="text-muted" style="text-align:right; font-size: .9rem; margin-top: .4rem;">
+          هنستخدمه في الرابط: <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">/l/slug</span>
+        </div>
+        <div id="slug-status" class="text-muted" style="text-align:right; font-size: .9rem; margin-top: .2rem;"></div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" style="text-align: right; display:block;">PIN الأدمن</label>
+        <input name="admin_password" type="password" class="form-control" required placeholder="مثال: Abc12345">
+        <div class="text-muted" style="text-align:right; font-size: .9rem; margin-top: .4rem;">
+          لازم يحتوي على حرف كبير + حرف صغير + رقم (8 أحرف أو أكثر).
+        </div>
+      </div>
+
+      <div class="d-flex" style="gap: .5rem; justify-content: flex-end; flex-wrap: wrap;">
+        <a href="/dashboard" class="btn btn-outline-secondary">إلغاء</a>
+        <button id="submit-btn" type="submit" class="btn btn-primary">التالي</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const nameEl = document.getElementById("name");
+  const slugEl = document.getElementById("slug");
+  const statusEl = document.getElementById("slug-status");
+  const submitBtn = document.getElementById("submit-btn");
+
+  const slugify = (s) => (s || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9_-]/g, "")
+    .replace(/-+/g, "-")
+    .slice(0, 64);
+
+  let lastCheck = 0;
+  const checkSlug = async (slug) => {
+    const myCheck = ++lastCheck;
+    statusEl.textContent = "جاري التحقق من توفر الرابط...";
+    submitBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/slug-available?slug=${encodeURIComponent(slug)}`);
+      const data = await res.json();
+      if (myCheck !== lastCheck) return;
+      if (data.available) {
+        statusEl.textContent = "متاح ✅";
+        statusEl.style.color = "var(--success-color)";
+        submitBtn.disabled = false;
+      } else {
+        statusEl.textContent = "غير متاح ❌";
+        statusEl.style.color = "var(--danger-color)";
+        submitBtn.disabled = true;
+      }
+    } catch (e) {
+      if (myCheck !== lastCheck) return;
+      statusEl.textContent = "تعذر التحقق الآن، جرّب لاحقاً.";
+      statusEl.style.color = "var(--text-muted)";
+      submitBtn.disabled = false;
+    }
+  };
+
+  nameEl.addEventListener("input", () => {
+    const suggested = slugify(nameEl.value);
+    if (!slugEl.value || slugEl.value === slugify(slugEl.value)) {
+      slugEl.value = suggested;
+      if (suggested.length >= 2) checkSlug(suggested);
+    }
+  });
+
+  slugEl.addEventListener("input", () => {
+    const s = slugify(slugEl.value);
+    if (s !== slugEl.value) slugEl.value = s;
+    if (s.length >= 2) checkSlug(s);
+  });
+</script>
+{% endblock %}
+
