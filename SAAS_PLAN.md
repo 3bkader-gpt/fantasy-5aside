@@ -23,10 +23,10 @@
 
 - [x] Core multi-tenant fantasy engine (current repo)
 - [x] Phase 1 – Harden multi-tenancy (league-scoped repos + admin flows + create-league UX)
-- [ ] 🟡 Phase 2 – User accounts & email-based auth
+- [x] ✅ Phase 2 – User accounts & email-based auth
 - [ ] ❌ Phase 3 – Plans & usage limits (Free / Pro / Unlimited)
 - [ ] ❌ Phase 4 – Billing & subscriptions (Stripe / others)
-- [ ] 🟡 Phase 5 – Multi-league dashboard & onboarding
+- [x] ✅ Phase 5 – Multi-league dashboard & onboarding
 - [ ] 🟡 Phase 6 – Security, monitoring & ops hardening (good baseline exists; monitoring/ops still missing)
 - [ ] 🟡 Phase 7 – Marketing site, branding & demo league (landing exists; proper marketing + demo missing)
 
