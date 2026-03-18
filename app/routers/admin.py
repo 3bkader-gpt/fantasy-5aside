@@ -28,6 +28,7 @@ from ..dependencies import (
     get_notification_service,
 )
 from ..services.achievements import achievement_service
+from ..core.logging import log_event
 
 router = APIRouter(prefix="/l/{slug}/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -141,6 +142,13 @@ def create_match(
             league_repo.save(league)
 
         audit(league.id, "create_match", league.slug, {"match_id": match.id})
+        log_event(
+            "match_created",
+            league_id=league.id,
+            match_id=match.id,
+            season_ended=season_ended,
+            season_number=getattr(league, "season_number", None),
+        )
         return {"message": "Match registered successfully", "match_id": match.id, "season_ended": season_ended}
     except HTTPException as e:
         raise e
@@ -163,6 +171,7 @@ def generate_cup(
     if not success:
         raise HTTPException(status_code=400, detail="Not enough players to generate cup in this league")
     audit(league.id, "generate_cup", league.slug, {})
+    log_event("cup_generated", league_id=league.id, season_number=getattr(league, "season_number", None))
     return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
 
 
@@ -206,6 +215,12 @@ def end_season(
             updated.season_number += 1
             league_repo.save(updated)
         audit(league.id, "end_season", league.slug, {"month_name": month_name})
+        log_event(
+            "season_ended",
+            league_id=league.id,
+            month_name=month_name,
+            next_season_number=getattr(updated, "season_number", None) if updated else None,
+        )
 
         try:
             notification_service.notify_league(

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Super Admin</h1>
+      <p class="page-subtitle">إدارة على مستوى المنصة (محمي بـ SUPERADMIN_SECRET)</p>
+    </div>
+    <div class="page-actions">
+      <a href="/" class="btn btn-outline-secondary">الرئيسية</a>
+    </div>
+  </div>
+
+  <div class="card" style="padding: 1rem;">
+    <div class="table-responsive">
+      <table class="table" style="width: 100%;">
+        <thead>
+          <tr>
+            <th style="text-align:right;">الدوري</th>
+            <th>Slug</th>
+            <th>Owner</th>
+            <th>Admin Email</th>
+            <th>Players</th>
+            <th>Matches</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for league in leagues %}
+          <tr>
+            <td style="text-align:right; font-weight: 800;">{{ league.name }}</td>
+            <td><a href="/l/{{ league.slug }}" class="text-primary">/l/{{ league.slug }}</a></td>
+            <td>{{ league.owner_user_id or "—" }}</td>
+            <td>{{ league.admin_email or "—" }}</td>
+            <td>{{ player_counts.get(league.id, 0) }}</td>
+            <td>{{ match_counts.get(league.id, 0) }}</td>
+            <td>{{ league.created_at[:10] if league.created_at else "—" }}</td>
+            <td style="text-align:left;">
+              <a href="/superadmin/league/{{ league.id }}/delete" class="btn btn-sm btn-outline-danger">حذف</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

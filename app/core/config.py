@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     brevo_sender_name: str | None = None
     brevo_api_base_url: str = "https://api.brevo.com/v3"
 
+    # Sentry (Phase 6)
+    sentry_dsn: str | None = None
+    sentry_environment: str | None = None
+    sentry_traces_sample_rate: float = 0.0
+
+    # Superadmin (Phase 6)
+    superadmin_secret: str | None = None
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property

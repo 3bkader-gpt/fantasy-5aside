@@ -45,6 +45,7 @@ fantasy/
 │   ├── core/                    # Core configuration
 │   │   ├── config.py           # Environment & settings management
 │   │   └── security.py         # JWT + password hashing
+│   │   └── logging.py          # Structured event logging (Phase 6)
 │   │
 │   ├── models/                  # Database models (SQLAlchemy)
 │   │   ├── models.py           # League, players, matches, votes, etc.
@@ -439,6 +440,13 @@ POST /onboarding/players           → Bulk add players
 GET  /onboarding/done              → Completion summary
 ```
 
+### Superadmin Routes (`routers/superadmin.py`):
+```
+GET  /superadmin/                   → Super-admin dashboard (requires X-Superadmin-Secret)
+GET  /superadmin/league/{id}/delete → Confirm league deletion
+POST /superadmin/league/{id}/delete → Delete league (type DELETE to confirm)
+```
+
 ### Voting API (`routers/voting.py`):
 ```
 GET  /api/voting/match/{id}/status → Voting status
@@ -485,6 +493,17 @@ response.set_cookie(
 2. IP Limit: max 2 votes per IP
 3. Fingerprint: unique device fingerprint
 ```
+
+---
+
+## 📈 Observability (Phase 6)
+
+### Sentry
+- **Optional** error tracking via Sentry (enabled only when `SENTRY_DSN` is set).
+- Config keys (see `app/core/config.py`):
+  - `SENTRY_DSN`
+  - `SENTRY_ENVIRONMENT` (defaults to `ENV`)
+  - `SENTRY_TRACES_SAMPLE_RATE` (default `0.0`)
 
 ---
 

@@ -30,6 +30,7 @@
   - `app/routers/auth.py`: login/logout (league admin PIN) + user account login (`POST /user/login`).
   - `app/routers/accounts.py`: user registration + email verification + password reset (`/forgot-password`, `/reset-password/{token}`) + multi-league `/dashboard`.
   - `app/routers/onboarding.py`: user-auth gated onboarding wizard (`/onboarding/*`) to create an owned league and add initial data.
+  - `app/routers/superadmin.py`: platform-level admin dashboard (requires `SUPERADMIN_SECRET` and `X-Superadmin-Secret` header).
   - `app/routers/media.py`: match image upload/delete.
   - `app/routers/notifications.py`: web push subscription endpoints.
 
@@ -39,6 +40,15 @@
 - CSS design-token-based styling in `app/static/css/style.css` with RTL support and dark mode.
 - Analytics slot in `app/templates/base.html` (`{% block analytics %}`) wired to GA4 (`G-81P7TKRS4V`) and disabled for admins via `is_admin` to avoid polluting product metrics.
 - No Tailwind in this codebase (custom CSS only).
+
+### 1.3.1 Structured Logging (Phase 6)
+- The app emits searchable **structured event logs** via `app/core/logging.py` (`log_event(event, **fields)`).
+- Used for high-signal operations like:
+  - League creation
+  - Match creation
+  - Cup generation
+  - Season end
+- Never log secrets (passwords, JWTs, reset tokens).
 
 ### 1.4 Data Layer
 - SQLAlchemy ORM models in `app/models/models.py`.
@@ -52,6 +62,14 @@
 - Rate limiting via `slowapi` (e.g. login and vote endpoints).
 - Security headers middleware with CSP in `app/middleware/security_headers.py`.
 - PWA basics: `manifest.json`, service worker (`/sw.js`), push notifications via VAPID + `pywebpush`.
+
+### 1.5.1 Error Tracking (Sentry — Phase 6)
+- Optional Sentry integration is initialized in `app/main.py` and is **disabled by default**.
+- Enable by setting:
+  - `SENTRY_DSN`
+  - Optional: `SENTRY_ENVIRONMENT` (defaults to `ENV`)
+  - Optional: `SENTRY_TRACES_SAMPLE_RATE` (defaults to `0.0`)
+- Privacy: `send_default_pii=False` to avoid sending personal data by default.
 
 ### 1.6 Deployment
 - Render blueprint in `render.yaml`.
@@ -375,6 +393,21 @@ Before merging any non-trivial change:
 
 
 ## 7) Known Operational Caveats
+
+### 7.1 Backups & Restore (Supabase-native strategy — Phase 6)
+- **Goal:** full-database backups and point-in-time recovery (PITR) are handled by Supabase; the app keeps per-league JSON export as a lightweight fallback.
+
+**Recommended setup (Supabase):**
+- Enable Supabase **Backups** (and **PITR** if available on your plan) in the Supabase dashboard.
+- Define an internal policy for:
+  - Backup retention (e.g., 7/14/30 days)
+  - Who can perform restores
+  - When restores are allowed (maintenance windows)
+
+**Restore runbook:**
+- Single-league data issue: prefer per-league recovery via the existing league JSON export (`/admin/export/backup`) when possible.
+- Full DB incident / bad migration / accidental destructive change: use Supabase restore/PITR.
+  - Prefer restore to a separate instance/branch when possible, verify, then cut over app DB URL.
 
 - Startup migrations are best-effort and skip existing columns by catching exceptions; failed migrations can silently leave legacy shape until explicitly fixed.
 - CSS corruption in `style.css` can degrade whole UI to a plain/skeleton-like view; treat top token block as critical and syntactically sensitive.
