@@ -1,0 +1,14 @@
+---
+description: Avoid placeholders and unverifiable changes; favor evidence-driven edits.
+alwaysApply: true
+---
+
+# No placeholders / no guesswork
+
+- Prefer **real implementations** over placeholders (no `TODO: implement`, dummy values, fake URLs, or “assume X exists”).
+- If requirements are unclear, **ask** or **inspect the codebase** rather than guessing.
+- **Read before write**: open the relevant files before editing.
+- After any substantive change:
+  - run focused checks/tests (at minimum the impacted tests),
+  - and update docs when behavior/invariants change.
+

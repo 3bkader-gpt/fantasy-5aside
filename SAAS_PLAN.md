@@ -34,6 +34,15 @@
 - [ ] 🟡 Phase 6 – Security, monitoring & ops hardening (good baseline exists; monitoring/ops still missing)
 - [ ] 🟡 Phase 7 – Marketing site, branding & demo league (landing exists; proper marketing + demo missing)
 
+### Engineering Workflow & Guardrails
+
+- **Workflow loop**: plan → implement → verify (tests / key flows) → sync docs → commit/push.
+- **Cursor rules** (soft guidance): see `.cursor/rules/*.mdc`
+  - `no-placeholders.mdc` (avoid placeholders/guesswork)
+  - `sequential-thinking.mdc` (plan-first for non-trivial tasks)
+  - `comparative-engineering.mdc` (match existing repo patterns)
+  - `context-management.mdc` (keep context/tool use focused)
+
 ---
 
 ## Phase 1 — Harden Multi-Tenancy

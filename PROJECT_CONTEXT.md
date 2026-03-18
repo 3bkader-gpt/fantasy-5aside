@@ -379,6 +379,7 @@ Important note:
 17. Preserve league scoping on every query/mutation path.
 
 ### 5.5 Frontend Stability
+17.1 CSP implication: do not use inline `<script>` blocks or inline event handlers; bind behaviors in `/static/js/*`.
 18. Do not “simplify” html2canvas flows without validating dark mode + table body rendering on both leaderboard and matches.
 19. Do not remove cache-busting query params from script/style includes when changing static assets.
 20. Keep RTL layout assumptions intact (alignment, ordering, labels).

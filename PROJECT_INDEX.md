@@ -613,6 +613,10 @@ http://127.0.0.1:8000
 
 ## 🔄 Workflow
 
+This repo uses **soft guardrails** for consistent changes as it grows:
+- Cursor rules live in `.cursor/rules/*.mdc`
+- Expected loop: plan → implement → verify → sync docs → commit/push
+
 ### 1. Create a new league:
 ```
 User → fills the form (name + slug + password)
@@ -1286,6 +1290,10 @@ http://127.0.0.1:8000
 ---
 
 ## 🔄 Workflow
+
+This repo uses **soft guardrails** for consistent changes as it grows:
+- Cursor rules live in `.cursor/rules/*.mdc`
+- Expected loop: plan → implement → verify → sync docs → commit/push
 
 ### 1. Create a new league:
 ```

@@ -1,0 +1,15 @@
+---
+description: Keep context and tool usage focused to reduce confusion and regression risk.
+alwaysApply: true
+---
+
+# Dynamic context management (soft guidance)
+
+- Prefer **narrow reads/searches** over scanning large parts of the repo.
+- When debugging, gather **runtime evidence** (logs, errors, repro steps) before proposing fixes.
+- Keep tool usage purposeful:
+  - pull only what’s needed,
+  - summarize findings briefly,
+  - avoid noisy outputs that bury the signal.
+- If a constraint exists (e.g., CSP blocks inline scripts), treat it as a first-class requirement.
+

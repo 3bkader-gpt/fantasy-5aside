@@ -1,0 +1,17 @@
+---
+description: Use sequential thinking for non-trivial tasks (plan, then execute with verification gates).
+alwaysApply: true
+---
+
+# Sequential thinking workflow (soft guidance)
+
+When a task has 3+ steps or touches multiple modules:
+
+- Start with a **short plan**:
+  - goal, constraints, key files, verification steps.
+- State any assumptions explicitly and validate them quickly.
+- Execute in **small diffs**; avoid “mega changes”.
+- Add **verification gates**:
+  - run `pytest` (or targeted tests) after code changes,
+  - validate key user flows when changes affect UX.
+

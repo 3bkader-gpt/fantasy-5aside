@@ -1,0 +1,18 @@
+---
+description: Before adding new code, find and match existing patterns in this repo.
+alwaysApply: true
+---
+
+# Comparative / context-driven engineering
+
+Before creating a new route/service/template/style:
+
+- Search for **similar existing functionality** and match patterns:
+  - FastAPI DI (`app/dependencies.py`)
+  - Repository interfaces + implementations (`app/repositories/*`)
+  - Service orchestration (`app/services/*`)
+  - Template layout and RTL conventions (`app/templates/*`)
+  - CSS tokens + dark mode patterns (`app/static/css/style.css`)
+  - Security constraints like CSP (no inline scripts) (`app/middleware/security_headers.py`)
+- Prefer reuse/refactor of existing helpers over introducing parallel patterns.
+
