@@ -80,6 +80,10 @@ verification_token = Column(String, nullable=True)
 GET  /register        → show registration form
 POST /register        → create User + send verification email
 POST /user/login      → authenticate user account, set user_access_token cookie
+GET  /forgot-password → show password reset request form
+POST /forgot-password → enqueue reset email (generic response to avoid enumeration)
+GET  /reset-password/{token}  → show reset form (valid token only)
+POST /reset-password/{token}  → set new password (one-time token)
 GET  /dashboard       → list leagues owned by current user (owner_user_id)
 GET  /verify/{token}  → mark user.is_verified = True and clear token
 
@@ -93,6 +97,7 @@ GET  /logout          → clears both access_token (league admin) and user_acces
 ### Implementation Checklist
 - [x] `users` table + ORM model (`app/models/user_model.py`)
 - [x] Email verification flow (`/register` + `/verify/{token}` + `User.is_verified`)
+- [x] Password reset flow (`/forgot-password` + `/reset-password/{token}` + one-time DB token table)
 - [x] Register/login routes + templates (`app/routers/accounts.py`, `auth.py`, `auth/login.html`, `auth/register.html`)
 - [x] `/dashboard` for owned leagues (basic listing; richer stats & onboarding kept for Phase 5)
 - [ ] Migration strategy for existing leagues (link by `admin_email`, then backfill `owner_user_id`)

@@ -187,6 +187,22 @@ class EmailService:
             email_type="transactional",
         )
 
+    def send_password_reset_email(self, email: str, reset_link: str) -> EmailQueue:
+        subject = "إعادة تعيين كلمة السر"
+        body = (
+            "<div dir=\"rtl\" style=\"font-family: Arial, sans-serif; line-height: 1.6;\">"
+            "<p>تم طلب إعادة تعيين كلمة السر لحسابك.</p>"
+            f"<p><a href=\"{reset_link}\">اضغط هنا لإعادة تعيين كلمة السر</a></p>"
+            "<p>إذا لم تكن أنت من طلب ذلك، تجاهل هذه الرسالة.</p>"
+            "</div>"
+        )
+        return self.enqueue_email(
+            to_email=email,
+            subject=subject,
+            body=body,
+            email_type="transactional",
+        )
+
     # --- Priority rules ---
 
     @staticmethod

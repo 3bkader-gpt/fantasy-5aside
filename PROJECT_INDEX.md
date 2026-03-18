@@ -237,6 +237,16 @@ fantasy/
 - verification_token: One-time token for `/verify/{token}`
 - created_at, updated_at: Timestamps
 ```
+
+#### 11. **password_reset_tokens** (password reset — Phase 2)
+```python
+- id: Primary key
+- user_id: FK to users.id
+- token: One-time reset token (unique)
+- expires_at: Expiry timestamp
+- used: Boolean flag (single-use)
+- created_at: Timestamp
+```
 ```python
 - id, league_id, player_id
 - from_team_id, to_team_id
@@ -410,6 +420,10 @@ GET  /logout                       → Logout
 GET  /register                     → Register page
 POST /register                     → Register user + enqueue verification email
 GET  /verify/{token}               → Verify email token
+GET  /forgot-password              → Password reset request page
+POST /forgot-password              → Enqueue reset email (generic response)
+GET  /reset-password/{token}       → Reset password page (valid token)
+POST /reset-password/{token}       → Reset password submit
 GET  /dashboard                    → Multi-league dashboard (owned leagues)
 ```
 

@@ -28,7 +28,7 @@
   - `app/routers/admin.py`: admin dashboard, match CRUD, season/cup actions, teams, transfers, imports/exports; all league operations go through league-scoped dependencies.
   - `app/routers/voting.py`: voting APIs (`status`, `live`, `closed-results`, `vote`, `open`, `close`).
   - `app/routers/auth.py`: login/logout (league admin PIN) + user account login (`POST /user/login`).
-  - `app/routers/accounts.py`: user registration + email verification + multi-league `/dashboard`.
+  - `app/routers/accounts.py`: user registration + email verification + password reset (`/forgot-password`, `/reset-password/{token}`) + multi-league `/dashboard`.
   - `app/routers/onboarding.py`: user-auth gated onboarding wizard (`/onboarding/*`) to create an owned league and add initial data.
   - `app/routers/media.py`: match image upload/delete.
   - `app/routers/notifications.py`: web push subscription endpoints.

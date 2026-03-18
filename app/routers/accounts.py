@@ -16,6 +16,7 @@ from ..core.csrf import (
     set_csrf_cookie,
     verify_csrf_token,
 )
+from ..core.rate_limit import limiter
 from sqlalchemy import func
 
 from ..models import models
@@ -88,6 +89,103 @@ def verify_email(token: str, request: Request, user_service: UserService = Depen
             context={"error": "Invalid or expired verification link", "is_admin": False},
         )
     return RedirectResponse(url="/login?msg=verified", status_code=303)
+
+
+@router.get("/forgot-password")
+def forgot_password_page(request: Request):
+    token = generate_csrf_token()
+    resp = templates.TemplateResponse(
+        request=request,
+        name="auth/forgot_password.html",
+        context={"csrf_token": token},
+    )
+    set_csrf_cookie(resp, token)
+    return resp
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/minute")
+def forgot_password_submit(
+    request: Request,
+    email: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    user_service: UserService = Depends(get_user_service),
+):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+
+    base_url = os.environ.get("BASE_URL") or request.base_url._url.rstrip("/")
+    user_service.request_password_reset(email=email, base_url=base_url)
+
+    # Always show a generic message to avoid email enumeration
+    return RedirectResponse(url="/login?msg=reset_sent", status_code=303)
+
+
+@router.get("/reset-password/{token}")
+def reset_password_page(token: str, request: Request, user_service: UserService = Depends(get_user_service)):
+    row = user_service.get_valid_password_reset_token(token)
+    if not row:
+        return templates.TemplateResponse(
+            request=request,
+            name="auth/reset_password_invalid.html",
+            context={},
+        )
+
+    csrf = generate_csrf_token()
+    resp = templates.TemplateResponse(
+        request=request,
+        name="auth/reset_password.html",
+        context={"csrf_token": csrf, "token": token},
+    )
+    set_csrf_cookie(resp, csrf)
+    return resp
+
+
+@router.post("/reset-password/{token}")
+@limiter.limit("10/minute")
+def reset_password_submit(
+    token: str,
+    request: Request,
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    user_service: UserService = Depends(get_user_service),
+):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+
+    if new_password != confirm_password:
+        csrf = generate_csrf_token()
+        resp = templates.TemplateResponse(
+            request=request,
+            name="auth/reset_password.html",
+            context={"error": "Passwords do not match", "csrf_token": csrf, "token": token},
+        )
+        set_csrf_cookie(resp, csrf)
+        return resp
+
+    try:
+        ok = user_service.reset_password(token=token, new_password=new_password)
+    except ValueError as exc:
+        csrf = generate_csrf_token()
+        resp = templates.TemplateResponse(
+            request=request,
+            name="auth/reset_password.html",
+            context={"error": str(exc), "csrf_token": csrf, "token": token},
+        )
+        set_csrf_cookie(resp, csrf)
+        return resp
+
+    if not ok:
+        return templates.TemplateResponse(
+            request=request,
+            name="auth/reset_password_invalid.html",
+            context={},
+        )
+
+    return RedirectResponse(url="/login?msg=password_reset", status_code=303)
 
 
 @router.get("/dashboard")
