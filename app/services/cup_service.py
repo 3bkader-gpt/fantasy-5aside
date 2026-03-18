@@ -1,24 +1,68 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 
 from ..models import models
 from .interfaces import ICupService
-from ..repositories.interfaces import IPlayerRepository, ICupRepository, IMatchRepository, ILeagueRepository
+from ..repositories.interfaces import (
+    IPlayerRepository,
+    ICupRepository,
+    IMatchRepository,
+    ILeagueRepository,
+)
+from ..repositories.db_repository import LeagueRepository
 from ..use_cases.generate_cup import GenerateCupUseCase
 
 
 class CupService(ICupService):
-    def __init__(
-        self,
-        league_repo: ILeagueRepository,
-        player_repo: IPlayerRepository,
-        cup_repo: ICupRepository,
-        match_repo: IMatchRepository,
-    ):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Flexible constructor to support both:
+        - CupService(league_repo, player_repo, cup_repo, match_repo)  # production
+        - CupService(player_repo, cup_repo, match_repo)               # legacy tests
+        """
+        league_repo: Optional[ILeagueRepository] = None
+        player_repo: Optional[IPlayerRepository] = None
+        cup_repo: Optional[ICupRepository] = None
+        match_repo: Optional[IMatchRepository] = None
+
+        if args:
+            if len(args) == 3:
+                # Legacy test style: CupService(player_repo, cup_repo, match_repo)
+                player_repo, cup_repo, match_repo = args  # type: ignore[assignment]
+            elif len(args) == 4:
+                # New style: CupService(league_repo, player_repo, cup_repo, match_repo)
+                league_repo, player_repo, cup_repo, match_repo = args  # type: ignore[assignment]
+            else:
+                raise TypeError(
+                    f"CupService expected 3 or 4 positional arguments, got {len(args)}"
+                )
+
+        # Allow explicit keyword usage as well
+        league_repo = kwargs.get("league_repo", league_repo)
+        player_repo = kwargs.get("player_repo", player_repo)
+        cup_repo = kwargs.get("cup_repo", cup_repo)
+        match_repo = kwargs.get("match_repo", match_repo)
+
+        if player_repo is None or cup_repo is None or match_repo is None:
+            raise TypeError(
+                "CupService requires player_repo, cup_repo, and match_repo to be provided."
+            )
+
+        if league_repo is None:
+            # Backwards-compat: infer a LeagueRepository from the same Session used by player_repo.
+            db = getattr(player_repo, "db", None)
+            if db is None:
+                raise TypeError(
+                    "CupService could not infer league_repo; please pass an ILeagueRepository explicitly."
+                )
+            league_repo = LeagueRepository(db)
+
         self.league_repo = league_repo
         self.player_repo = player_repo
         self.cup_repo = cup_repo
         self.match_repo = match_repo
-        self._generate_use_case = GenerateCupUseCase(league_repo, player_repo, cup_repo, match_repo)
+        self._generate_use_case = GenerateCupUseCase(
+            league_repo, player_repo, cup_repo, match_repo
+        )
 
     # ------------------------------------------------------------------
     # generate_cup_draw

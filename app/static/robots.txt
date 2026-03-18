@@ -1,3 +1,8 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /api/admin/
+Disallow: /auth/
+
+# Replace with your production domain if this file is served statically.
+Sitemap: https://example.com/sitemap.xml

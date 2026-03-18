@@ -1,74 +1,74 @@
-# 📋 فهرس المشروع الشامل - 5-a-Side Fantasy Football SaaS
+# 📋 Project Index - 5-a-Side Fantasy Football SaaS
 
-## 🎯 نظرة عامة على المشروع
+## 🎯 Project Overview
 
-**النوع**: تطبيق Fantasy Football متعدد المستأجرين (Multi-Tenant SaaS) مخصص لمباريات 5 ضد 5 المحلية
+**Type**: Multi-tenant Fantasy Football SaaS for local 5-a-side matches
 
-**التقنيات المستخدمة**:
+**Tech Stack**:
 - **Backend**: FastAPI + Python 3
-- **Database**: SQLite (تطوير) / PostgreSQL (إنتاج) + SQLAlchemy ORM
+- **Database**: SQLite (development) / PostgreSQL (production) + SQLAlchemy ORM
 - **Frontend**: HTML5 + CSS3 + Vanilla JavaScript + Jinja2 Templates
 - **Authentication**: JWT Tokens + Cookie-based sessions
 - **Security**: bcrypt password hashing, anti-cheat voting system
 
-**الإصدار الحالي**: v3.0
+**Current Version**: v3.0
 
 ---
 
-## 📁 الهيكل العام للمشروع
+## 📁 Project Structure
 
 ```
 fantasy/
-├── app/                          # التطبيق الرئيسي
-│   ├── main.py                  # نقطة البداية FastAPI
-│   ├── database.py              # إعدادات قاعدة البيانات
-│   ├── dependencies.py          # Dependency Injection Container
+├── app/                          # Main application
+│   ├── main.py                  # FastAPI entrypoint
+│   ├── database.py              # Database configuration
+│   ├── dependencies.py          # Dependency Injection container
 │   │
-│   ├── core/                    # الإعدادات الأساسية
-│   │   ├── config.py           # إدارة الإعدادات والبيئة
-│   │   └── security.py         # JWT + Password Hashing
+│   ├── core/                    # Core configuration
+│   │   ├── config.py           # Environment & settings management
+│   │   └── security.py         # JWT + password hashing
 │   │
-│   ├── models/                  # نماذج قاعدة البيانات (SQLAlchemy)
-│   │   └── models.py           # جميع الـ Models
+│   ├── models/                  # Database models (SQLAlchemy)
+│   │   └── models.py           # All models
 │   │
-│   ├── schemas/                 # Pydantic Schemas للـ API
-│   │   └── schemas.py          # جميع الـ Schemas
+│   ├── schemas/                 # Pydantic schemas for the API
+│   │   └── schemas.py          # All schemas
 │   │
-│   ├── repositories/            # طبقة الوصول للبيانات (Repository Pattern)
+│   ├── repositories/            # Data access layer (Repository Pattern)
 │   │   ├── interfaces.py       # Abstract interfaces
-│   │   └── db_repository.py    # التنفيذ الفعلي
+│   │   └── db_repository.py    # Concrete implementation
 │   │
-│   ├── services/                # منطق الأعمال (Business Logic)
+│   ├── services/                # Business logic layer
 │   │   ├── interfaces.py       # Service interfaces
-│   │   ├── league_service.py   # إدارة الدوريات والمواسم
-│   │   ├── match_service.py    # تسجيل وتعديل المباريات
-│   │   ├── cup_service.py      # نظام الكأس (knockout tournament)
-│   │   ├── voting_service.py   # نظام التصويت
-│   │   ├── analytics_service.py # التحليلات والإحصائيات
-│   │   ├── achievements.py     # نظام الشارات والإنجازات
-│   │   └── points.py           # حساب النقاط (Strategy Pattern)
+│   │   ├── league_service.py   # League and season management
+│   │   ├── match_service.py    # Match creation and updates
+│   │   ├── cup_service.py      # Cup system (knockout tournament)
+│   │   ├── voting_service.py   # Voting system
+│   │   ├── analytics_service.py # Analytics and statistics
+│   │   ├── achievements.py     # Badges and achievements system
+│   │   └── points.py           # Points calculation (Strategy Pattern)
 │   │
 │   ├── routers/                 # API Routes
-│   │   ├── public.py           # الصفحات العامة
-│   │   ├── admin.py            # لوحة التحكم
-│   │   ├── auth.py             # تسجيل الدخول/الخروج
-│   │   └── voting.py           # API التصويت
+│   │   ├── public.py           # Public pages
+│   │   ├── admin.py            # Admin dashboard
+│   │   ├── auth.py             # Login / logout
+│   │   └── voting.py           # Voting API
 │   │
-│   ├── templates/               # Jinja2 HTML Templates
-│   │   ├── base.html           # القالب الأساسي
-│   │   ├── landing.html        # الصفحة الرئيسية
-│   │   ├── leaderboard.html    # جدول الترتيب
-│   │   ├── matches.html        # المباريات
-│   │   ├── player.html         # ملف اللاعب
-│   │   ├── cup.html            # صفحة الكأس
-│   │   ├── hof.html            # قاعة المشاهير
+│   ├── templates/               # Jinja2 HTML templates
+│   │   ├── base.html           # Base layout
+│   │   ├── landing.html        # Landing page
+│   │   ├── leaderboard.html    # League leaderboard
+│   │   ├── matches.html        # Matches list
+│   │   ├── player.html         # Player profile
+│   │   ├── cup.html            # Cup page
+│   │   ├── hof.html            # Hall of Fame
 │   │   ├── admin/
-│   │   │   └── dashboard.html  # لوحة التحكم
+│   │   │   └── dashboard.html  # Admin dashboard
 │   │   └── auth/
-│   │       ├── login.html      # تسجيل الدخول
+│   │       ├── login.html      # Login page
 │   │       └── unauthorized.html
 │   │
-│   └── static/                  # الملفات الثابتة
+│   └── static/                  # Static assets
 │       ├── css/style.css
 │       ├── js/
 │       │   ├── main.js
@@ -78,233 +78,231 @@ fantasy/
 │       │   └── player_chart.js
 │       └── img/
 │
-├── tests/                       # الاختبارات
-│   ├── conftest.py             # إعداد الاختبارات
-│   ├── test_points.py          # اختبارات حساب النقاط
-│   ├── test_match_service.py   # اختبارات المباريات
-│   ├── test_league_service.py  # اختبارات الدوريات
-│   ├── test_cup.py             # اختبارات الكأس
-│   ├── test_voting_live.py     # اختبارات التصويت
-│   └── test_api_*.py           # اختبارات الـ API
+├── tests/                       # Tests
+│   ├── conftest.py             # Test configuration & fixtures
+│   ├── test_points.py          # Points calculation tests
+│   ├── test_match_service.py   # Match service tests
+│   ├── test_league_service.py  # League service tests
+│   ├── test_cup.py             # Cup system tests
+│   ├── test_voting_live.py     # Voting tests
+│   └── test_api_*.py           # API tests
 │
-├── data/                        # قاعدة البيانات المحلية
-│   └── fantasy.db              # SQLite DB (للتطوير)
+├── data/                        # Local database
+│   └── fantasy.db              # SQLite DB (development)
 │
-├── requirements.txt             # المتطلبات
-├── pytest.ini                   # إعدادات الاختبارات
-├── render.yaml                  # إعداد النشر على Render
-└── SAAS_PLAN.md                # خطة التحول إلى SaaS كامل
-
+├── requirements.txt             # Python dependencies
+├── pytest.ini                   # Pytest configuration
+├── render.yaml                  # Render.com deployment config
+└── SAAS_PLAN.md                # Plan to evolve into full SaaS
 ```
 
 ---
 
-## 🗄️ قاعدة البيانات (Database Schema)
+## 🗄️ Database Schema
 
-### الجداول الرئيسية:
+### Main tables:
 
-#### 1. **leagues** (الدوريات)
+#### 1. **leagues**
 ```python
-- id: معرف فريد
-- name: اسم الدوري (فريد)
-- slug: الرابط النصي (فريد)
-- admin_password: كلمة مرور مشفرة للمدير
-- current_season_matches: عدد المباريات في الموسم الحالي
-- season_number: رقم الموسم
-- team_a_label: تسمية الفريق أ
-- team_b_label: تسمية الفريق ب
-- created_at: تاريخ الإنشاء
+- id: Unique identifier
+- name: League name (unique)
+- slug: URL slug (unique)
+- admin_password: Hashed admin password
+- current_season_matches: Number of matches in the current season
+- season_number: Season number
+- team_a_label: Label for Team A
+- team_b_label: Label for Team B
+- created_at: Creation timestamp
 ```
 
-#### 2. **players** (اللاعبون)
+#### 2. **players**
 ```python
 - id, league_id (Foreign Key)
-- name: اسم اللاعب
-- team_id: الفريق المسجل فيه (اختياري)
-- default_is_gk: هل اللاعب حارس مرمى؟
+- name: Player name
+- team_id: Registered team (optional)
+- default_is_gk: Is the player a goalkeeper by default?
 
-# إحصائيات الموسم الحالي:
+# Current season stats:
 - total_points, total_goals, total_assists
 - total_saves, total_clean_sheets, total_own_goals
 - total_matches, previous_rank
 
-# إحصائيات طوال المسيرة (All-Time):
+# All-time stats:
 - all_time_points, all_time_goals, all_time_assists
 - all_time_saves, all_time_clean_sheets, all_time_own_goals
 - all_time_matches
 
-# للتراجع عن إنهاء الموسم:
+# For undoing season end:
 - last_season_points, last_season_goals, ...
 
-# للكأس:
-- is_active_in_cup: هل مشارك في الكأس الحالي؟
+# For the cup:
+- is_active_in_cup: Is the player participating in the current cup?
 ```
 
-#### 3. **teams** (الفرق المسجلة - نظام جديد)
+#### 3. **teams** (registered teams - new system)
 ```python
 - id, league_id
-- name: اسم الفريق
-- short_code: الرمز (مثل HR, IT)
-- color: اللون بصيغة hex
+- name: Team name
+- short_code: Short code (e.g. HR, IT)
+- color: Team color in hex
 ```
 
-#### 4. **matches** (المباريات)
+#### 4. **matches**
 ```python
 - id, league_id
-- date: تاريخ المباراة
-- team_a_name, team_b_name: أسماء الفرق
-- team_a_id, team_b_id: معرفات الفرق (إذا كان النظام مفعّل)
-- team_a_score, team_b_score: النتيجة
-- voting_round: حالة التصويت (0-4)
-  * 0 = غير مفتوح
-  * 1-3 = جولات التصويت
-  * 4 = مغلق
+- date: Match date
+- team_a_name, team_b_name: Team names
+- team_a_id, team_b_id: Team ids (if fixed-team system is enabled)
+- team_a_score, team_b_score: Final score
+- voting_round: Voting status (0-4)
+  * 0 = not open
+  * 1-3 = voting rounds
+  * 4 = closed
 ```
 
-#### 5. **match_stats** (إحصائيات اللاعبين في المباريات)
+#### 5. **match_stats** (per-player match stats)
 ```python
 - id, player_id, match_id
-- team: A أو B
+- team: A or B
 - goals, assists, saves, goals_conceded, own_goals
 - is_winner, is_gk, clean_sheet, mvp, is_captain
 - points_earned, bonus_points
 ```
 
-#### 6. **cup_matchups** (مواجهات الكأس)
+#### 6. **cup_matchups**
 ```python
 - id, league_id
 - player1_id, player2_id (nullable - bye)
-- round_name: اسم الجولة
-- bracket_type: "outfield" أو "goalkeeper"
-- winner_id: الفائز
-- is_active: هل المواجهة نشطة؟
-- is_revealed: هل تم الكشف عنها؟
-- match_id: المباراة التي حُسِمت فيها
+- round_name: Round name
+- bracket_type: "outfield" or "goalkeeper"
+- winner_id: Winner id
+- is_active: Is this matchup active?
+- is_revealed: Has the matchup been revealed to users?
+- match_id: Match that decided the winner
 ```
 
-#### 7. **votes** (التصويتات)
+#### 7. **votes**
 ```python
 - id, league_id, match_id
-- voter_id, candidate_id: من صوّت ولمن
-- round_number: رقم الجولة (1-3)
-- ip_address: عنوان IP (للحماية)
-- device_fingerprint: بصمة الجهاز (للحماية)
+- voter_id, candidate_id: Who voted and for whom
+- round_number: Voting round number (1-3)
+- ip_address: IP address (anti-cheat)
+- device_fingerprint: Device fingerprint (anti-cheat)
 - created_at
 ```
 
-#### 8. **hall_of_fame** (قاعة المشاهير)
+#### 8. **hall_of_fame**
 ```python
 - id, league_id, player_id
-- month_year: اسم الموسم
-- points_scored: النقاط التي فاز بها
+- month_year: Season label (e.g. "Mar 2026 - S3")
+- points_scored: Points scored in that season
 ```
 
-#### 9. **transfers** (الانتقالات بين الفرق)
+#### 9. **transfers** (team transfers)
 ```python
 - id, league_id, player_id
 - from_team_id, to_team_id
-- reason: سبب الانتقال
+- reason: Reason for transfer
 - created_at
 ```
 
 ---
 
-## 🎮 الميزات الرئيسية
+## 🎮 Core Features
 
-### 1. **Multi-Tenancy (تعدد المستأجرين)**
-- كل دوري معزول تماماً عن الآخرين
-- رابط فريد لكل دوري: `/l/{slug}`
-- كلمة مرور مستقلة لكل مدير دوري
+### 1. **Multi-Tenancy**
+- Each league is fully isolated from others
+- Unique URL per league: `/l/{slug}`
+- Separate admin password per league
 
-### 2. **نظام النقاط المتقدم** (app/services/points.py)
+### 2. **Advanced Points System** (`app/services/points.py`)
 
-استخدام **Strategy Pattern** لحساب النقاط:
+Uses the **Strategy Pattern** to calculate points:
 
-#### الاستراتيجيات:
+#### Strategies:
 ```python
-1. ParticipationPoints: +2 لمجرد المشاركة
-2. GoalPoints: +3 للهدف (+6 للحارس)
-3. AssistPoints: +2 للتمريرة الحاسمة (+4 للحارس)
-4. WinPoints: 
-   - فوز: +2
-   - تعادل: +1
-   - خسارة: -1
-5. CleanSheetPoints (للحارس):
-   - 0-2 أهداف مستقبلة: +10
-   - 3-6 أهداف: +4
-   - أكثر من 6: 0
-6. SavePoints (للحارس): كل 3 تصديات = +2
-7. GoalsConcededPenalty (للحارس): كل 4 أهداف = -1
-8. OwnGoalPenalty: هدف عكسي = -1
+1. ParticipationPoints: +2 for participation
+2. GoalPoints: +3 per goal (+6 for goalkeeper)
+3. AssistPoints: +2 per assist (+4 for goalkeeper)
+4. WinPoints:
+   - Win: +2
+   - Draw: +1
+   - Loss: -1
+5. CleanSheetPoints (for goalkeeper):
+   - 0–2 goals conceded: +10
+   - 3–6 goals conceded: +4
+   - >6 goals conceded: 0
+6. SavePoints (goalkeeper): every 3 saves = +2
+7. GoalsConcededPenalty (goalkeeper): every 4 goals conceded = -1
+8. OwnGoalPenalty: each own goal = -1
 ```
 
-### 3. **نظام الكابتن** (Captain System)
-- المدير يستطيع تعيين قائد للمباراة
-- القائد يحصل على **ضعف النقاط** (×2)
+### 3. **Captain System**
+- Admin can assign a captain per match
+- Captain receives **double points** (×2)
 
-### 4. **نظام الكأس الشهري** (Monthly Cup)
-- يتم توليد كأس تلقائي لأفضل 10 لاعبين
-- مواجهات مباشرة (Head-to-Head)
-- مسارين منفصلين: حراس vs لاعبي خط
-- الحسم التلقائي: عندما يلعب اللاعبان في نفس المباراة
-- قانون النهائي التعاوني: إذا كانا في نفس الفريق = فوز مشترك
+### 4. **Monthly Cup System**
+- Automatically generated cup for top 10 players
+- Head-to-head knockouts
+- Two brackets: goalkeepers vs outfield players
+- Automatic resolution when both players appear in the same match
+- Cooperative final rule: if both finalists are on the same team, they share the win
 
-### 5. **نظام التصويت لـ MVP** (Voting System)
-- 3 جولات تصويت بعد كل مباراة
-- كل جولة تمنح نقاط إضافية:
-  - الجولة 1: +3 نقاط
-  - الجولة 2: +2 نقاط
-  - الجولة 3: +1 نقطة
-- حماية ثلاثية من الغش:
-  1. **localStorage**: منع التصويت مرتين من نفس المتصفح
-  2. **IP Address**: حد أقصى 2 تصويت من نفس IP
-  3. **Device Fingerprint**: بصمة الجهاز الفريدة
+### 5. **MVP Voting System**
+- 3 voting rounds after each match
+- Each round grants extra points:
+  - Round 1: +3 points
+  - Round 2: +2 points
+  - Round 3: +1 point
+- Triple-layer anti-cheat:
+  1. **localStorage**: prevent duplicate votes in the same browser
+  2. **IP Address**: max 2 votes from the same IP
+  3. **Device Fingerprint**: unique device fingerprint
 
-### 6. **المواسم التلقائية** (Auto Seasons)
-- كل 4 مباريات = موسم جديد
-- يتم تلقائياً:
-  1. حفظ الفائز في قاعة المشاهير
-  2. نقل الإحصائيات الحالية إلى All-Time
-  3. إعادة تعيين الأرقام للموسم الجديد
-- إمكانية التراجع (Undo)
+### 6. **Auto Seasons**
+- Every 4 matches = new season
+- Automatically:
+  1. Save the winner to Hall of Fame
+  2. Move current stats to All-Time
+  3. Reset season counters for the new season
+- Supports undoing season end
 
-### 7. **نظام الفرق المسجلة** (Fixed Teams)
-- تسجيل فرق دائمة (مثل HR, IT, Sales...)
-- تتبع اللاعبين وانتماءاتهم
-- سجل الانتقالات بين الفرق
+### 7. **Fixed Teams System**
+- Register permanent company teams (e.g. HR, IT, Sales...)
+- Track player team memberships
+- Track transfer history between teams
 
-### 8. **نظام الشارات** (Achievements/Badges)
-شارات تلقائية على الـ Leaderboard:
-
+### 8. **Badges / Achievements**
+Automatic badges on the leaderboard:
 ```python
-- 🔫 القناص: 6 أهداف في مباراة واحدة
-- 🛡️ الحائط: 3 نظافة شباك
-- 🎯 صانع الألعاب: 15 تمريرة حاسمة
-- ⚡ الصاروخ: 5 أهداف في 3 مباريات متتالية
-- 🤡 مهرج الدفاع: سجل أهداف عكسية
-- 🔥 Hot Form: أداء ممتاز في آخر 3 مباريات
-- ❄️ Cold Form: أداء ضعيف
+- 🔫 Sniper: 6 goals in a single match
+- 🛡️ The Wall: 3 clean sheets
+- 🎯 Playmaker: 15 assists
+- ⚡ Rocket: 5 goals in 3 consecutive matches
+- 🤡 Defensive Clown: scored own goals
+- 🔥 Hot Form: excellent performance in last 3 matches
+- ❄️ Cold Form: poor performance in last 3 matches
 ```
 
-### 9. **صفحة التحليلات للاعب** (Player Analytics)
-- معدل الفوز (Win Rate %)
-- Goal Contribution per Match
-- رسم بياني للأداء عبر الزمن (Chart.js)
-- السجل الكامل للمباريات
+### 9. **Player Analytics Page**
+- Win rate (Win Rate %)
+- Goal contribution per match
+- Performance over time chart (Chart.js)
+- Full match history
 
 ---
 
-## 🔧 الأنماط المعمارية المستخدمة
+## 🔧 Architectural Patterns
 
 ### 1. **Repository Pattern**
-فصل منطق الوصول للبيانات عن منطق الأعمال:
+Separates data access logic from business logic:
 ```
-├── repositories/interfaces.py    → التعريفات (Abstract)
-└── repositories/db_repository.py → التنفيذ (Concrete)
+├── repositories/interfaces.py    → abstract definitions
+└── repositories/db_repository.py → concrete implementation
 ```
 
 ### 2. **Dependency Injection**
-جميع الـ Services والـ Repositories يتم حقنها عبر `dependencies.py`:
+All services and repositories are injected via `dependencies.py`:
 ```python
 get_league_service(...)
 get_match_service(...)
@@ -312,7 +310,7 @@ get_cup_service(...)
 ```
 
 ### 3. **Strategy Pattern**
-في حساب النقاط (`points.py`):
+Used in points calculation (`points.py`):
 ```python
 class PointsStrategy(ABC):
     @abstractmethod
@@ -321,7 +319,7 @@ class PointsStrategy(ABC):
 ```
 
 ### 4. **Service Layer Pattern**
-منطق الأعمال معزول في طبقة الـ Services:
+Business logic is isolated in the Services layer:
 - LeagueService
 - MatchService
 - CupService
@@ -330,73 +328,73 @@ class PointsStrategy(ABC):
 
 ---
 
-## 🛣️ المسارات (API Routes)
+## 🛣️ API Routes
 
 ### Public Routes (`routers/public.py`):
 ```
-GET  /                             → الصفحة الرئيسية
-POST /create-league                → إنشاء دوري جديد
-GET  /l/{slug}                     → جدول الترتيب
-GET  /l/{slug}/matches             → المباريات
-GET  /l/{slug}/cup                 → الكأس
-GET  /l/{slug}/player/{id}         → ملف اللاعب
-GET  /l/{slug}/hof                 → قاعة المشاهير
+GET  /                             → Landing page
+POST /create-league                → Create a new league
+GET  /l/{slug}                     → League leaderboard
+GET  /l/{slug}/matches             → Matches page
+GET  /l/{slug}/cup                 → Cup page
+GET  /l/{slug}/player/{id}         → Player profile
+GET  /l/{slug}/hof                 → Hall of Fame
 ```
 
-### Admin Routes (`routers/admin.py`) - تحتاج JWT:
+### Admin Routes (`routers/admin.py`) - requires JWT:
 ```
-GET  /l/{slug}/admin               → لوحة التحكم
-POST /l/{slug}/admin/match         → تسجيل مباراة
-PUT  /l/{slug}/admin/match/{id}    → تعديل مباراة
-DELETE /l/{slug}/admin/match/{id}  → حذف مباراة
-POST /l/{slug}/admin/cup/generate  → توليد الكأس
-POST /l/{slug}/admin/season/end    → إنهاء الموسم
-POST /l/{slug}/admin/season/undo   → التراجع عن إنهاء
-POST /l/{slug}/admin/settings/update → تحديث الإعدادات
-POST /l/{slug}/admin/player/add    → إضافة لاعب
-PUT  /l/{slug}/admin/player/{id}   → تعديل لاعب
-DELETE /l/{slug}/admin/player/{id} → حذف لاعب
-POST /l/{slug}/admin/team/create   → إنشاء فريق
+GET  /l/{slug}/admin                 → Admin dashboard
+POST /l/{slug}/admin/match           → Create match
+PUT  /l/{slug}/admin/match/{id}      → Update match
+DELETE /l/{slug}/admin/match/{id}    → Delete match
+POST /l/{slug}/admin/cup/generate    → Generate cup
+POST /l/{slug}/admin/season/end      → End season
+POST /l/{slug}/admin/season/undo     → Undo end season
+POST /l/{slug}/admin/settings/update → Update league settings
+POST /l/{slug}/admin/player/add      → Add player
+PUT  /l/{slug}/admin/player/{id}     → Update player
+DELETE /l/{slug}/admin/player/{id}   → Delete player
+POST /l/{slug}/admin/team/create     → Create team
 ```
 
 ### Auth Routes (`routers/auth.py`):
 ```
-GET  /login                        → صفحة تسجيل الدخول
-POST /login                        → تسجيل الدخول
-GET  /logout                       → تسجيل الخروج
+GET  /login                        → Login page
+POST /login                        → Perform login
+GET  /logout                       → Logout
 ```
 
 ### Voting API (`routers/voting.py`):
 ```
-GET  /api/voting/match/{id}/status → حالة التصويت
-GET  /api/voting/match/{id}/live   → الإحصائيات الحية
-POST /api/voting/vote              → إرسال تصويت
-POST /api/voting/{slug}/open/{id}  → فتح التصويت (Admin)
-POST /api/voting/{slug}/close/{id} → إغلاق الجولة (Admin)
+GET  /api/voting/match/{id}/status → Voting status
+GET  /api/voting/match/{id}/live   → Live voting stats
+POST /api/voting/vote              → Submit vote
+POST /api/voting/{slug}/open/{id}  → Open voting for a match (Admin)
+POST /api/voting/{slug}/close/{id} → Close voting round (Admin)
 ```
 
 ---
 
-## 🔒 الأمان (Security)
+## 🔒 Security
 
 ### 1. **JWT Authentication**
 ```python
-# في core/security.py:
-- create_access_token(): إنشاء token
-- verify_token(): التحقق من صلاحية token
-- صلاحية الـ token: 7 أيام
+# In core/security.py:
+- create_access_token(): create access token
+- verify_token(): validate token
+- Token lifetime: 7 days
 ```
 
 ### 2. **Password Hashing**
 ```python
-# استخدام passlib + bcrypt:
-- get_password_hash(): تشفير كلمة المرور
-- verify_password(): التحقق
+# Using passlib + bcrypt:
+- get_password_hash(): hash password
+- verify_password(): verify password
 ```
 
 ### 3. **Cookie-based Sessions**
 ```python
-# الـ JWT يُحفظ في cookie httpOnly:
+# JWT stored in httpOnly cookie:
 response.set_cookie(
     key="access_token",
     value=f"Bearer {token}",
@@ -405,109 +403,109 @@ response.set_cookie(
 )
 ```
 
-### 4. **Anti-Cheat في التصويت**
+### 4. **Anti-Cheat in Voting**
 ```python
-# طبقات الحماية:
-1. localStorage: منع التكرار في المتصفح
-2. IP Limit: حد أقصى 2 صوت من نفس IP
-3. Fingerprint: بصمة الجهاز الفريدة
+# Anti-cheat layers:
+1. localStorage: prevent duplicate browser votes
+2. IP Limit: max 2 votes per IP
+3. Fingerprint: unique device fingerprint
 ```
 
 ---
 
-## 🧪 الاختبارات (Tests)
+## 🧪 Tests
 
 ```
 tests/
-├── conftest.py                  → إعداد fixtures
-├── test_points.py              → اختبار حساب النقاط
-├── test_match_service.py       → اختبار تسجيل المباريات
-├── test_league_service.py      → اختبار المواسم
-├── test_cup.py                 → اختبار نظام الكأس
-├── test_voting_live.py         → اختبار التصويت
-├── test_api_admin.py           → اختبار API الإداري
-├── test_api_public.py          → اختبار API العام
-├── test_analytics_service.py   → اختبار التحليلات
-└── test_repos.py               → اختبار الـ Repositories
+├── conftest.py                  → fixtures & shared setup
+├── test_points.py              → points calculation tests
+├── test_match_service.py       → match registration tests
+├── test_league_service.py      → league / season tests
+├── test_cup.py                 → cup system tests
+├── test_voting_live.py         → voting tests
+├── test_api_admin.py           → admin API tests
+├── test_api_public.py          → public API tests
+├── test_analytics_service.py   → analytics tests
+└── test_repos.py               → repository tests
 ```
 
-### تشغيل الاختبارات:
+### Running tests:
 ```bash
-pytest                          # جميع الاختبارات
-pytest tests/test_points.py    # اختبار معين
-pytest -v                      # وضع verbose
+pytest                          # run all tests
+pytest tests/test_points.py    # run specific test file
+pytest -v                      # verbose mode
 ```
 
 ---
 
-## 📊 الإحصائيات المتاحة
+## 📊 Available Statistics
 
-### على مستوى اللاعب:
-- إحصائيات الموسم الحالي
-- إحصائيات طوال المسيرة (All-Time)
-- آخر موسم (للتراجع)
-- معدل الفوز (Win Rate)
-- مساهمة الأهداف في المباراة (GA/Match)
-- الفورم (Hot 🔥 / Cold ❄️)
+### Player-level:
+- Current season stats
+- All-time stats
+- Last season snapshot (for undo)
+- Win rate
+- Goal contribution per match (GA/Match)
+- Form (Hot 🔥 / Cold ❄️)
 
-### على مستوى المباراة:
-- النتيجة والإحصائيات التفصيلية لكل لاعب
-- MVP (من التصويت)
+### Match-level:
+- Final score and per-player detailed stats
+- MVP (from voting)
 - Captain
-- Bonus Points
+- Bonus points
 
-### على مستوى الدوري:
+### League-level:
 - Leaderboard
 - Hall of Fame
-- Cup Bracket
-- Total matches في الموسم
+- Cup bracket
+- Total matches in current season
 
 ---
 
-## 🎨 الواجهة الأمامية (Frontend)
+## 🎨 Frontend
 
-### التقنيات:
-- **Vanilla JavaScript**: بدون أي framework
-- **Chart.js**: للرسومات البيانية
-- **CSS Custom Properties**: للثيمات
-- **Font Awesome**: للأيقونات
+### Technologies:
+- **Vanilla JavaScript**: no frontend framework
+- **Chart.js**: charts and visualizations
+- **CSS Custom Properties**: theming
+- **Font Awesome**: icons
 
-### الملفات الرئيسية:
+### Main files:
 ```
 static/
-├── css/style.css               → التنسيقات
+├── css/style.css               → styles
 └── js/
-    ├── main.js                → الوظائف العامة
-    ├── admin_dashboard.js     → لوحة التحكم
-    ├── leaderboard.js         → جدول الترتيب
-    ├── matches.js             → صفحة المباريات
-    └── player_chart.js        → رسم بياني للاعب
+    ├── main.js                → shared JS logic
+    ├── admin_dashboard.js     → admin dashboard logic
+    ├── leaderboard.js         → leaderboard page logic
+    ├── matches.js             → matches page logic
+    └── player_chart.js        → player chart rendering
 ```
 
 ---
 
-## 🚀 النشر (Deployment)
+## 🚀 Deployment
 
-### التطوير المحلي:
+### Local development:
 ```bash
-# 1. إعداد البيئة
+# 1. Create virtualenv
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 2. تثبيت المتطلبات
+# 2. Install requirements
 pip install -r requirements.txt
 
-# 3. تشغيل التطبيق
+# 3. Run the app
 uvicorn app.main:app --reload
 
-# 4. الوصول
+# 4. Access
 http://127.0.0.1:8000
 ```
 
-### الإنتاج (Render.com):
-- ملف `render.yaml` جاهز
-- يتطلب PostgreSQL Database
-- متغيرات البيئة:
+### Production (Render.com):
+- `render.yaml` is ready
+- Requires PostgreSQL database
+- Environment variables:
   ```
   DATABASE_URL=postgresql://...
   SECRET_KEY=...
@@ -515,149 +513,149 @@ http://127.0.0.1:8000
 
 ---
 
-## 🔄 سير العمل (Workflow)
+## 🔄 Workflow
 
-### 1. إنشاء دوري جديد:
+### 1. Create a new league:
 ```
-المستخدم → يملأ النموذج (اسم + slug + كلمة مرور)
-         ↓
-النظام → ينشئ League في قاعدة البيانات
-         ↓
-       يُعيد التوجيه إلى /l/{slug}
-```
-
-### 2. تسجيل مباراة:
-```
-المدير → يسجل دخول بكلمة المرور
-        ↓
-      يذهب إلى /l/{slug}/admin
-        ↓
-      يضيف بيانات المباراة + الإحصائيات
-        ↓
-MatchService → ينشئ Match + MatchStats
-              يحدث إحصائيات اللاعبين
-              يحسب النقاط (PointsCalculator)
-              يحل مواجهات الكأس (CupService)
-        ↓
-      النظام يُحدث الـ Leaderboard
+User → fills the form (name + slug + password)
+      ↓
+System → creates League in the database
+      ↓
+      redirects to /l/{slug}
 ```
 
-### 3. التصويت على MVP:
+### 2. Register a match:
 ```
-المدير → يفتح التصويت للمباراة
-        ↓
-اللاعبون → يصوّتون (3 جولات)
-        ↓
-النظام → يتحقق من الغش (IP + Fingerprint)
-        يحفظ التصويت
-        ↓
-المدير → يغلق كل جولة
-        ↓
-النظام → يمنح نقاط إضافية للفائزين
+Admin → logs in with league password
+       ↓
+       goes to /l/{slug}/admin
+       ↓
+       enters match data + per-player stats
+       ↓
+MatchService → creates Match + MatchStats
+              updates player statistics
+              calculates points (PointsCalculator)
+              resolves cup matchups (CupService)
+       ↓
+System → updates leaderboard
 ```
 
-### 4. إنهاء الموسم:
+### 3. MVP voting:
 ```
-المدير → يضغط "End Season"
-        ↓
-LeagueService → يحفظ الفائز في Hall of Fame
-                ينقل الإحصائيات إلى All-Time
-                يعيد تعيين total_* إلى 0
-                يحذف الكأس الحالي
-        ↓
-      موسم جديد يبدأ تلقائياً
+Admin → opens voting for a match
+       ↓
+Players → vote (3 rounds)
+       ↓
+System → applies anti-cheat (IP + fingerprint)
+         saves vote
+       ↓
+Admin → closes each round
+       ↓
+System → grants extra points to winners
+```
+
+### 4. End season:
+```
+Admin → clicks "End Season"
+       ↓
+LeagueService → stores winner in Hall of Fame
+                moves stats to All-Time
+                resets total_* fields to 0
+                deletes current cup
+       ↓
+New season starts automatically
 ```
 
 ---
 
-## 📝 ملاحظات مهمة
+## 📝 Important Notes
 
-### 1. **تطبيع الأسماء العربية**
-في `match_service.py`:
+### 1. **Arabic name normalization**
+In `match_service.py`:
 ```python
 def normalize_name(name: str) -> str:
-    # إزالة التشكيل
-    # توحيد الألف (أ إ آ ا)
-    # توحيد الياء (ى ي)
-    # توحيد التاء المربوطة (ة ه)
+    # Remove diacritics
+    # Normalize Alef variants (أ إ آ ا)
+    # Normalize Ya / Alef-Maqsura (ى ي)
+    # Normalize Ta Marbuta (ة ه)
 ```
 
-### 2. **Migrations يدوية**
-في `main.py` → `lifespan()`:
-- يتم إضافة الأعمدة الجديدة تلقائياً عند بدء التطبيق
-- آمنة: تتجاهل الأعمدة الموجودة مسبقاً
+### 2. **Manual-style migrations**
+In `main.py` → `lifespan()`:
+- New columns are added automatically on app startup
+- Safe: ignores columns that already exist
 
-### 3. **حالات خاصة في الكأس**
-- **Bye**: إذا كان عدد اللاعبين فردي، يتأهل أحدهم مباشرة
-- **Co-op Final**: إذا لعب اللاعبان في نفس الفريق في النهائي = فوز مشترك
+### 3. **Special cup cases**
+- **Bye**: when players count is odd, one player advances automatically
+- **Co-op Final**: if both finalists play on the same team in the final = shared win
 
-### 4. **حساب Clean Sheet للحارس**
-- ≤2 أهداف مستقبلة = +10 نقاط
-- 3-6 أهداف = +4 نقاط
-- >6 أهداف = 0 نقطة
+### 4. **Goalkeeper clean sheet logic**
+- ≤2 goals conceded = +10 pts
+- 3–6 goals conceded = +4 pts
+- >6 goals conceded = 0 pts
 
 ---
 
-## 🔮 خطة المستقبل (من SAAS_PLAN.md)
+## 🔮 Future Roadmap (from `SAAS_PLAN.md`)
 
-### المرحلة الحالية:
-✅ Multi-tenant architecture جاهزة
-✅ Self-signup موجود
-✅ JWT Auth مُطبق
-✅ Slug-based routing
+### Current stage:
+✅ Multi-tenant architecture in place  
+✅ Self-signup implemented  
+✅ JWT Auth implemented  
+✅ Slug-based routing  
 
-### مطلوب للتحول الكامل إلى SaaS:
-❌ نظام المستخدمين (User Accounts)
-❌ خطط الأسعار (Pricing Plans)
-❌ فواتير (Billing)
-❌ Super Admin Dashboard
-❌ صفحة تسويقية محترفة
+### Needed for full SaaS:
+❌ User accounts system  
+❌ Pricing plans  
+❌ Billing  
+❌ Super Admin dashboard  
+❌ Marketing / landing page  
 
 ---
 
-## 🛠️ نصائح للتطوير
+## 🛠️ Development Tips
 
-### 1. إضافة ميزة جديدة:
+### 1. Adding a new feature:
 ```
-1. أضف Model في models/models.py
-2. أضف Schema في schemas/schemas.py
-3. أضف Repository methods في repositories/
-4. أضف Service logic في services/
-5. أضف Routes في routers/
-6. اكتب Tests في tests/
+1. Add Model in models/models.py
+2. Add Schema in schemas/schemas.py
+3. Add Repository methods in repositories/
+4. Add Service logic in services/
+5. Add Routes in routers/
+6. Write tests in tests/
 ```
 
-### 2. تعديل نظام النقاط:
+### 2. Modifying the points system:
 ```python
-# في services/points.py:
-# أضف Strategy جديد:
+# In services/points.py:
+# Add a new Strategy:
 class MyCustomPoints(PointsStrategy):
     def calculate(self, ctx: PointsContext) -> int:
-        # منطقك هنا
+        # your logic here
         return points
         
-# أضفه للـ calculator:
+# Register it in the calculator:
 self.strategies.append(MyCustomPoints())
 ```
 
-### 3. إضافة شارة جديدة:
+### 3. Adding a new badge:
 ```python
-# في services/achievements.py:
+# In services/achievements.py:
 class MyBadge(BadgeRule):
     def evaluate(self, player, history):
-        # شرط الحصول على الشارة
+        # condition for earning the badge
         if condition:
             return {
-                "name": "اسم الشارة",
+                "name": "Badge Name",
                 "icon": "🏅",
-                "description": "الوصف"
+                "description": "Description"
             }
         return None
 ```
 
 ---
 
-## 📚 الموارد المفيدة
+## 📚 Useful Resources
 
 - **FastAPI Docs**: https://fastapi.tiangolo.com/
 - **SQLAlchemy ORM**: https://docs.sqlalchemy.org/
@@ -666,7 +664,679 @@ class MyBadge(BadgeRule):
 
 ---
 
-**تم التحديث في**: مارس 2026  
-**الإصدار**: 3.0  
-**الحالة**: في الإنتاج ✅
+**Last updated**: March 2026  
+**Version**: 3.0  
+**Status**: In production ✅
 
+تمام، هذه نسخة `PROJECT_INDEX.md` كاملة بالإنجليزي. يمكنك استبدال محتوى الملف بهذا النص:
+
+```markdown
+# 📋 Project Index - 5-a-Side Fantasy Football SaaS
+
+## 🎯 Project Overview
+
+**Type**: Multi-tenant Fantasy Football SaaS for local 5-a-side matches
+
+**Tech Stack**:
+- **Backend**: FastAPI + Python 3
+- **Database**: SQLite (development) / PostgreSQL (production) + SQLAlchemy ORM
+- **Frontend**: HTML5 + CSS3 + Vanilla JavaScript + Jinja2 Templates
+- **Authentication**: JWT Tokens + Cookie-based sessions
+- **Security**: bcrypt password hashing, anti-cheat voting system
+
+**Current Version**: v3.0
+
+---
+
+## 📁 Project Structure
+
+```
+fantasy/
+├── app/                          # Main application
+│   ├── main.py                  # FastAPI entrypoint
+│   ├── database.py              # Database configuration
+│   ├── dependencies.py          # Dependency Injection container
+│   │
+│   ├── core/                    # Core configuration
+│   │   ├── config.py           # Environment & settings management
+│   │   └── security.py         # JWT + password hashing
+│   │
+│   ├── models/                  # Database models (SQLAlchemy)
+│   │   └── models.py           # All models
+│   │
+│   ├── schemas/                 # Pydantic schemas for the API
+│   │   └── schemas.py          # All schemas
+│   │
+│   ├── repositories/            # Data access layer (Repository Pattern)
+│   │   ├── interfaces.py       # Abstract interfaces
+│   │   └── db_repository.py    # Concrete implementation
+│   │
+│   ├── services/                # Business logic layer
+│   │   ├── interfaces.py       # Service interfaces
+│   │   ├── league_service.py   # League and season management
+│   │   ├── match_service.py    # Match creation and updates
+│   │   ├── cup_service.py      # Cup system (knockout tournament)
+│   │   ├── voting_service.py   # Voting system
+│   │   ├── analytics_service.py # Analytics and statistics
+│   │   ├── achievements.py     # Badges and achievements system
+│   │   └── points.py           # Points calculation (Strategy Pattern)
+│   │
+│   ├── routers/                 # API Routes
+│   │   ├── public.py           # Public pages
+│   │   ├── admin.py            # Admin dashboard
+│   │   ├── auth.py             # Login / logout
+│   │   └── voting.py           # Voting API
+│   │
+│   ├── templates/               # Jinja2 HTML templates
+│   │   ├── base.html           # Base layout
+│   │   ├── landing.html        # Landing page
+│   │   ├── leaderboard.html    # League leaderboard
+│   │   ├── matches.html        # Matches list
+│   │   ├── player.html         # Player profile
+│   │   ├── cup.html            # Cup page
+│   │   ├── hof.html            # Hall of Fame
+│   │   ├── admin/
+│   │   │   └── dashboard.html  # Admin dashboard
+│   │   └── auth/
+│   │       ├── login.html      # Login page
+│   │       └── unauthorized.html
+│   │
+│   └── static/                  # Static assets
+│       ├── css/style.css
+│       ├── js/
+│       │   ├── main.js
+│       │   ├── admin_dashboard.js
+│       │   ├── leaderboard.js
+│       │   ├── matches.js
+│       │   └── player_chart.js
+│       └── img/
+│
+├── tests/                       # Tests
+│   ├── conftest.py             # Test configuration & fixtures
+│   ├── test_points.py          # Points calculation tests
+│   ├── test_match_service.py   # Match service tests
+│   ├── test_league_service.py  # League service tests
+│   ├── test_cup.py             # Cup system tests
+│   ├── test_voting_live.py     # Voting tests
+│   └── test_api_*.py           # API tests
+│
+├── data/                        # Local database
+│   └── fantasy.db              # SQLite DB (development)
+│
+├── requirements.txt             # Python dependencies
+├── pytest.ini                   # Pytest configuration
+├── render.yaml                  # Render.com deployment config
+└── SAAS_PLAN.md                # Plan to evolve into full SaaS
+```
+
+---
+
+## 🗄️ Database Schema
+
+### Main tables:
+
+#### 1. **leagues**
+```python
+- id: Unique identifier
+- name: League name (unique)
+- slug: URL slug (unique)
+- admin_password: Hashed admin password
+- current_season_matches: Number of matches in the current season
+- season_number: Season number
+- team_a_label: Label for Team A
+- team_b_label: Label for Team B
+- created_at: Creation timestamp
+```
+
+#### 2. **players**
+```python
+- id, league_id (Foreign Key)
+- name: Player name
+- team_id: Registered team (optional)
+- default_is_gk: Is the player a goalkeeper by default?
+
+# Current season stats:
+- total_points, total_goals, total_assists
+- total_saves, total_clean_sheets, total_own_goals
+- total_matches, previous_rank
+
+# All-time stats:
+- all_time_points, all_time_goals, all_time_assists
+- all_time_saves, all_time_clean_sheets, all_time_own_goals
+- all_time_matches
+
+# For undoing season end:
+- last_season_points, last_season_goals, ...
+
+# For the cup:
+- is_active_in_cup: Is the player participating in the current cup?
+```
+
+#### 3. **teams** (registered teams - new system)
+```python
+- id, league_id
+- name: Team name
+- short_code: Short code (e.g. HR, IT)
+- color: Team color in hex
+```
+
+#### 4. **matches**
+```python
+- id, league_id
+- date: Match date
+- team_a_name, team_b_name: Team names
+- team_a_id, team_b_id: Team ids (if fixed-team system is enabled)
+- team_a_score, team_b_score: Final score
+- voting_round: Voting status (0-4)
+  * 0 = not open
+  * 1-3 = voting rounds
+  * 4 = closed
+```
+
+#### 5. **match_stats** (per-player match stats)
+```python
+- id, player_id, match_id
+- team: A or B
+- goals, assists, saves, goals_conceded, own_goals
+- is_winner, is_gk, clean_sheet, mvp, is_captain
+- points_earned, bonus_points
+```
+
+#### 6. **cup_matchups**
+```python
+- id, league_id
+- player1_id, player2_id (nullable - bye)
+- round_name: Round name
+- bracket_type: "outfield" or "goalkeeper"
+- winner_id: Winner id
+- is_active: Is this matchup active?
+- is_revealed: Has the matchup been revealed to users?
+- match_id: Match that decided the winner
+```
+
+#### 7. **votes**
+```python
+- id, league_id, match_id
+- voter_id, candidate_id: Who voted and for whom
+- round_number: Voting round number (1-3)
+- ip_address: IP address (anti-cheat)
+- device_fingerprint: Device fingerprint (anti-cheat)
+- created_at
+```
+
+#### 8. **hall_of_fame**
+```python
+- id, league_id, player_id
+- month_year: Season label (e.g. "Mar 2026 - S3")
+- points_scored: Points scored in that season
+```
+
+#### 9. **transfers** (team transfers)
+```python
+- id, league_id, player_id
+- from_team_id, to_team_id
+- reason: Reason for transfer
+- created_at
+```
+
+---
+
+## 🎮 Core Features
+
+### 1. **Multi-Tenancy**
+- Each league is fully isolated from others
+- Unique URL per league: `/l/{slug}`
+- Separate admin password per league
+
+### 2. **Advanced Points System** (`app/services/points.py`)
+
+Uses the **Strategy Pattern** to calculate points:
+
+#### Strategies:
+```python
+1. ParticipationPoints: +2 for participation
+2. GoalPoints: +3 per goal (+6 for goalkeeper)
+3. AssistPoints: +2 per assist (+4 for goalkeeper)
+4. WinPoints: 
+   - Win: +2
+   - Draw: +1
+   - Loss: -1
+5. CleanSheetPoints (for goalkeeper):
+   - 0–2 goals conceded: +10
+   - 3–6 goals conceded: +4
+   - >6 goals conceded: 0
+6. SavePoints (goalkeeper): every 3 saves = +2
+7. GoalsConcededPenalty (goalkeeper): every 4 goals conceded = -1
+8. OwnGoalPenalty: each own goal = -1
+```
+
+### 3. **Captain System**
+- Admin can assign a captain per match
+- Captain receives **double points** (×2)
+
+### 4. **Monthly Cup System**
+- Automatically generated cup for top 10 players
+- Head-to-head knockouts
+- Two brackets: goalkeepers vs outfield players
+- Automatic resolution when both players appear in the same match
+- Cooperative final rule: if both finalists are on the same team, they share the win
+
+### 5. **MVP Voting System**
+- 3 voting rounds after each match
+- Each round grants extra points:
+  - Round 1: +3 points
+  - Round 2: +2 points
+  - Round 3: +1 point
+- Triple-layer anti-cheat:
+  1. **localStorage**: prevent duplicate votes in the same browser
+  2. **IP Address**: max 2 votes from the same IP
+  3. **Device Fingerprint**: unique device fingerprint
+
+### 6. **Auto Seasons**
+- Every 4 matches = new season
+- Automatically:
+  1. Save the winner to Hall of Fame
+  2. Move current stats to All-Time
+  3. Reset season counters for the new season
+- Supports undoing season end
+
+### 7. **Fixed Teams System**
+- Register permanent company teams (e.g. HR, IT, Sales...)
+- Track player team memberships
+- Track transfer history between teams
+
+### 8. **Badges / Achievements**
+Automatic badges on the leaderboard:
+```python
+- 🔫 Sniper: 6 goals in a single match
+- 🛡️ The Wall: 3 clean sheets
+- 🎯 Playmaker: 15 assists
+- ⚡ Rocket: 5 goals in 3 consecutive matches
+- 🤡 Defensive Clown: scored own goals
+- 🔥 Hot Form: excellent performance in last 3 matches
+- ❄️ Cold Form: poor performance in last 3 matches
+```
+
+### 9. **Player Analytics Page**
+- Win rate (Win Rate %)
+- Goal contribution per match
+- Performance over time chart (Chart.js)
+- Full match history
+
+---
+
+## 🔧 Architectural Patterns
+
+### 1. **Repository Pattern**
+Separates data access logic from business logic:
+```
+├── repositories/interfaces.py    → abstract definitions
+└── repositories/db_repository.py → concrete implementation
+```
+
+### 2. **Dependency Injection**
+All services and repositories are injected via `dependencies.py`:
+```python
+get_league_service(...)
+get_match_service(...)
+get_cup_service(...)
+```
+
+### 3. **Strategy Pattern**
+Used in points calculation (`points.py`):
+```python
+class PointsStrategy(ABC):
+    @abstractmethod
+    def calculate(self, ctx: PointsContext) -> int:
+        pass
+```
+
+### 4. **Service Layer Pattern**
+Business logic is isolated in the Services layer:
+- LeagueService
+- MatchService
+- CupService
+- VotingService
+- AnalyticsService
+
+---
+
+## 🛣️ API Routes
+
+### Public Routes (`routers/public.py`):
+```
+GET  /                             → Landing page
+POST /create-league                → Create a new league
+GET  /l/{slug}                     → League leaderboard
+GET  /l/{slug}/matches             → Matches page
+GET  /l/{slug}/cup                 → Cup page
+GET  /l/{slug}/player/{id}         → Player profile
+GET  /l/{slug}/hof                 → Hall of Fame
+```
+
+### Admin Routes (`routers/admin.py`) - requires JWT:
+```
+GET  /l/{slug}/admin               → Admin dashboard
+POST /l/{slug}/admin/match         → Create match
+PUT  /l/{slug}/admin/match/{id}    → Update match
+DELETE /l/{slug}/admin/match/{id}  → Delete match
+POST /l/{slug}/admin/cup/generate  → Generate cup
+POST /l/{slug}/admin/season/end    → End season
+POST /l/{slug}/admin/season/undo   → Undo end season
+POST /l/{slug}/admin/settings/update → Update league settings
+POST /l/{slug}/admin/player/add    → Add player
+PUT  /l/{slug}/admin/player/{id}   → Update player
+DELETE /l/{slug}/admin/player/{id} → Delete player
+POST /l/{slug}/admin/team/create   → Create team
+```
+
+### Auth Routes (`routers/auth.py`):
+```
+GET  /login                        → Login page
+POST /login                        → Perform login
+GET  /logout                       → Logout
+```
+
+### Voting API (`routers/voting.py`):
+```
+GET  /api/voting/match/{id}/status → Voting status
+GET  /api/voting/match/{id}/live   → Live voting stats
+POST /api/voting/vote              → Submit vote
+POST /api/voting/{slug}/open/{id}  → Open voting for a match (Admin)
+POST /api/voting/{slug}/close/{id} → Close voting round (Admin)
+```
+
+---
+
+## 🔒 Security
+
+### 1. **JWT Authentication**
+```python
+# In core/security.py:
+- create_access_token(): create access token
+- verify_token(): validate token
+- Token lifetime: 7 days
+```
+
+### 2. **Password Hashing**
+```python
+# Using passlib + bcrypt:
+- get_password_hash(): hash password
+- verify_password(): verify password
+```
+
+### 3. **Cookie-based Sessions**
+```python
+# JWT stored in httpOnly cookie:
+response.set_cookie(
+    key="access_token",
+    value=f"Bearer {token}",
+    httponly=True,
+    samesite="lax"
+)
+```
+
+### 4. **Anti-Cheat in Voting**
+```python
+# Anti-cheat layers:
+1. localStorage: prevent duplicate browser votes
+2. IP Limit: max 2 votes per IP
+3. Fingerprint: unique device fingerprint
+```
+
+---
+
+## 🧪 Tests
+
+```
+tests/
+├── conftest.py                  → fixtures & shared setup
+├── test_points.py              → points calculation tests
+├── test_match_service.py       → match registration tests
+├── test_league_service.py      → league / season tests
+├── test_cup.py                 → cup system tests
+├── test_voting_live.py         → voting tests
+├── test_api_admin.py           → admin API tests
+├── test_api_public.py          → public API tests
+├── test_analytics_service.py   → analytics tests
+└── test_repos.py               → repository tests
+```
+
+### Running tests:
+```bash
+pytest                          # run all tests
+pytest tests/test_points.py    # run specific test file
+pytest -v                      # verbose mode
+```
+
+---
+
+## 📊 Available Statistics
+
+### Player-level:
+- Current season stats
+- All-time stats
+- Last season snapshot (for undo)
+- Win rate
+- Goal contribution per match (GA/Match)
+- Form (Hot 🔥 / Cold ❄️)
+
+### Match-level:
+- Final score and per-player detailed stats
+- MVP (from voting)
+- Captain
+- Bonus points
+
+### League-level:
+- Leaderboard
+- Hall of Fame
+- Cup bracket
+- Total matches in current season
+
+---
+
+## 🎨 Frontend
+
+### Technologies:
+- **Vanilla JavaScript**: no frontend framework
+- **Chart.js**: charts and visualizations
+- **CSS Custom Properties**: theming
+- **Font Awesome**: icons
+
+### Main files:
+```
+static/
+├── css/style.css               → styles
+└── js/
+    ├── main.js                → shared JS logic
+    ├── admin_dashboard.js     → admin dashboard logic
+    ├── leaderboard.js         → leaderboard page logic
+    ├── matches.js             → matches page logic
+    └── player_chart.js        → player chart rendering
+```
+
+---
+
+## 🚀 Deployment
+
+### Local development:
+```bash
+# 1. Create virtualenv
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 2. Install requirements
+pip install -r requirements.txt
+
+# 3. Run the app
+uvicorn app.main:app --reload
+
+# 4. Access
+http://127.0.0.1:8000
+```
+
+### Production (Render.com):
+- `render.yaml` is ready
+- Requires PostgreSQL database
+- Environment variables:
+  ```
+  DATABASE_URL=postgresql://...
+  SECRET_KEY=...
+  ```
+
+---
+
+## 🔄 Workflow
+
+### 1. Create a new league:
+```
+User → fills the form (name + slug + password)
+      ↓
+System → creates League in the database
+      ↓
+      redirects to /l/{slug}
+```
+
+### 2. Register a match:
+```
+Admin → logs in with league password
+       ↓
+       goes to /l/{slug}/admin
+       ↓
+       enters match data + per-player stats
+       ↓
+MatchService → creates Match + MatchStats
+              updates player statistics
+              calculates points (PointsCalculator)
+              resolves cup matchups (CupService)
+       ↓
+System → updates leaderboard
+```
+
+### 3. MVP voting:
+```
+Admin → opens voting for a match
+       ↓
+Players → vote (3 rounds)
+       ↓
+System → applies anti-cheat (IP + fingerprint)
+         saves vote
+       ↓
+Admin → closes each round
+       ↓
+System → grants extra points to winners
+```
+
+### 4. End season:
+```
+Admin → clicks "End Season"
+       ↓
+LeagueService → stores winner in Hall of Fame
+                moves stats to All-Time
+                resets total_* fields to 0
+                deletes current cup
+       ↓
+New season starts automatically
+```
+
+---
+
+## 📝 Important Notes
+
+### 1. **Arabic name normalization**
+In `match_service.py`:
+```python
+def normalize_name(name: str) -> str:
+    # Remove diacritics
+    # Normalize Alef variants (أ إ آ ا)
+    # Normalize Ya / Alef-Maqsura (ى ي)
+    # Normalize Ta Marbuta (ة ه)
+```
+
+### 2. **Manual-style migrations**
+In `main.py` → `lifespan()`:
+- New columns are added automatically on app startup
+- Safe: ignores columns that already exist
+
+### 3. **Special cup cases**
+- **Bye**: when players count is odd, one player advances automatically
+- **Co-op Final**: if both finalists play on the same team in the final = shared win
+
+### 4. **Goalkeeper clean sheet logic**
+- ≤2 goals conceded = +10 pts
+- 3–6 goals conceded = +4 pts
+- >6 goals conceded = 0 pts
+
+---
+
+## 🔮 Future Roadmap (from `SAAS_PLAN.md`)
+
+### Current stage:
+✅ Multi-tenant architecture in place  
+✅ Self-signup implemented  
+✅ JWT Auth implemented  
+✅ Slug-based routing  
+
+### Needed for full SaaS:
+❌ User accounts system  
+❌ Pricing plans  
+❌ Billing  
+❌ Super Admin dashboard  
+❌ Marketing / landing page  
+
+---
+
+## 🛠️ Development Tips
+
+### 1. Adding a new feature:
+```
+1. Add Model in models/models.py
+2. Add Schema in schemas/schemas.py
+3. Add Repository methods in repositories/
+4. Add Service logic in services/
+5. Add Routes in routers/
+6. Write tests in tests/
+```
+
+### 2. Modifying the points system:
+```python
+# In services/points.py:
+# Add a new Strategy:
+class MyCustomPoints(PointsStrategy):
+    def calculate(self, ctx: PointsContext) -> int:
+        # your logic here
+        return points
+        
+# Register it in the calculator:
+self.strategies.append(MyCustomPoints())
+```
+
+### 3. Adding a new badge:
+```python
+# In services/achievements.py:
+class MyBadge(BadgeRule):
+    def evaluate(self, player, history):
+        # condition for earning the badge
+        if condition:
+            return {
+                "name": "Badge Name",
+                "icon": "🏅",
+                "description": "Description"
+            }
+        return None
+```
+
+---
+
+## 📚 Useful Resources
+
+- **FastAPI Docs**: https://fastapi.tiangolo.com/
+- **SQLAlchemy ORM**: https://docs.sqlalchemy.org/
+- **Pydantic**: https://docs.pydantic.dev/
+- **Chart.js**: https://www.chartjs.org/
+
+---
+
+**Last updated**: March 2026  
+**Version**: 3.0  
+**Status**: In production ✅

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "analytics-mcp": {
+      "command": "python",
+      "args": ["-m", "pipx", "run", "analytics-mcp"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:\\\\Users\\\\medoo\\\\AppData\\\\Roaming\\\\gcloud\\\\application_default_credentials.json",
+        "GOOGLE_PROJECT_ID": "fantasy-490523"
+      }
+    }
+  }
+}
+

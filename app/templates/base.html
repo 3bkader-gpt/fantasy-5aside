@@ -34,6 +34,21 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/style.css?v=3.5">
+
+    {% block analytics %}
+    {% if not (is_admin | default(false)) %}
+    <!-- Web Analytics (GA4): only for non-admin visitors -->
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-81P7TKRS4V"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-81P7TKRS4V');
+    </script>
+    {% endif %}
+    {% endblock %}
 </head>
 
 <body>

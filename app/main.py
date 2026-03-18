@@ -1,10 +1,11 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request, HTTPException
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,7 +15,7 @@ from slowapi.errors import RateLimitExceeded
 
 from .core.config import settings
 from .core.rate_limit import limiter
-from .database import Base, engine
+from .database import Base, SessionLocal, engine
 from .middleware.security_headers import SecurityHeadersMiddleware
 from .routers import admin, public, auth, voting, media, notifications
 
@@ -173,9 +174,66 @@ async def health_check():
     return {"status": "ok"}
 
 @app.get("/robots.txt")
-async def robots_txt():
-    from fastapi.responses import FileResponse
-    return FileResponse("app/static/robots.txt")
+async def robots_txt(request: Request):
+    base_url = str(request.base_url).rstrip("/")
+    content = "\n".join([
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /admin/",
+        "Disallow: /api/admin/",
+        "Disallow: /auth/",
+        f"Sitemap: {base_url}/sitemap.xml",
+    ])
+    return Response(content=content + "\n", media_type="text/plain; charset=utf-8")
+
+
+@app.get("/sitemap.xml")
+async def sitemap_xml(request: Request):
+    base_url = str(request.base_url).rstrip("/")
+    now_iso = datetime.now(timezone.utc).date().isoformat()
+
+    urls = [
+        (f"{base_url}/", "daily", "1.0"),
+    ]
+
+    # Public pages for each league.
+    try:
+        with SessionLocal() as db:
+            result = db.execute(text("SELECT slug FROM leagues ORDER BY id DESC"))
+            for row in result:
+                slug = row[0]
+                if not slug:
+                    continue
+                urls.extend([
+                    (f"{base_url}/l/{slug}", "hourly", "0.9"),
+                    (f"{base_url}/l/{slug}/matches", "hourly", "0.8"),
+                    (f"{base_url}/l/{slug}/stats", "daily", "0.7"),
+                    (f"{base_url}/l/{slug}/cup", "daily", "0.7"),
+                    (f"{base_url}/l/{slug}/hof", "weekly", "0.6"),
+                ])
+    except Exception as e:
+        logger.warning(f"Failed to build full sitemap from DB: {e}")
+
+    xml_urls = []
+    for loc, changefreq, priority in urls:
+        xml_urls.append(
+            "\n".join([
+                "  <url>",
+                f"    <loc>{loc}</loc>",
+                f"    <lastmod>{now_iso}</lastmod>",
+                f"    <changefreq>{changefreq}</changefreq>",
+                f"    <priority>{priority}</priority>",
+                "  </url>",
+            ])
+        )
+
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(xml_urls)
+        + "\n</urlset>\n"
+    )
+    return Response(content=body, media_type="application/xml; charset=utf-8")
 
 
 @app.get("/static/sw.js")
