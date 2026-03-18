@@ -22,8 +22,8 @@
 ### Overall SaaS Progress
 
 - [x] Core multi-tenant fantasy engine (current repo)
-- [ ] 🟡 Phase 1 – Harden multi-tenancy (league scoping exists, but audit checklist not done)
-- [ ] ❌ Phase 2 – User accounts & email-based auth
+- [x] Phase 1 – Harden multi-tenancy (league-scoped repos + admin flows + create-league UX)
+- [ ] 🟡 Phase 2 – User accounts & email-based auth
 - [ ] ❌ Phase 3 – Plans & usage limits (Free / Pro / Unlimited)
 - [ ] ❌ Phase 4 – Billing & subscriptions (Stripe / others)
 - [ ] ❌ Phase 5 – Multi-league dashboard & onboarding
@@ -37,13 +37,13 @@
 **Goal:** Confirm zero cross-league data leakage before opening to the public.
 
 **Checklist:**
-- [ ] 🟡 Audit every query in `db_repository.py` — architecture is league-scoped, but needs an explicit audit pass
-- [ ] 🟡 Audit all admin routes — ensure edit/delete operations cannot touch other leagues
-- [ ] 🟡 Improve the `create-league` form:
-  - ❌ Add `Admin Email` (required, for future account linking)
-  - ❌ Auto-suggest the slug from the league name
-  - ❌ Real-time slug availability check (AJAX)
-- [ ] ❌ Add a confirmation page after league creation (shows `/l/{slug}` link + next steps)
+- [x] Audit every query in `db_repository.py` — league-scoped helpers added where needed
+- [x] Audit all admin/voting/media routes — destructive operations now use league-scoped lookups
+- [x] Improve the `create-league` form:
+  - ✅ Capture `admin_email` (optional for now, stored on `leagues.admin_email`)
+  - ✅ Auto-suggest the slug from the league name on the client
+  - ✅ Real-time slug availability check via `/api/slug-available`
+- [x] Add a confirmation page after league creation (`/l/{slug}/created` with share link + next steps)
 
 **Files to change:**
 
@@ -59,39 +59,43 @@
 
 **Goal:** Every league has a real owner with email + password, independent of the admin PIN.
 
-**Status:** ❌ Not implemented yet (current production auth is league admin PIN/JWT only; no user accounts).
+**Status:** 🟡 Partially implemented (user accounts, email verification, dashboard skeleton, and parallel auth flow are in place; linking flows and plan-based limits remain).
 
 ### DB Changes
 
-**New table: `users`**
+**New table: `users` (implemented)**
 ```sql
-id, email (unique), hashed_password, role (owner/superadmin), created_at
+id, email (unique), hashed_password, role (owner/superadmin), is_active, is_verified, verification_token, created_at, updated_at
 ```
 
-**Modify `leagues` table:**
+**Modify `leagues` table (implemented):**
 ```python
 owner_user_id      = Column(Integer, ForeignKey("users.id"), nullable=True)
-owner_email        = Column(String, nullable=True, index=True)   # interim field
 is_verified        = Column(Boolean, default=False)
 verification_token = Column(String, nullable=True)
 ```
 
-### New Auth Flow
+### New Auth Flow (current status)
 ```
-POST /auth/register  → create User + send verification email
-POST /auth/login     → return JWT token (replaces password-only login)
-GET  /dashboard      → show all leagues owned by this user
-GET  /verify/{token} → mark is_verified = True
+GET  /register        → show registration form
+POST /register        → create User + send verification email
+POST /user/login      → authenticate user account, set user_access_token cookie
+GET  /dashboard       → list leagues owned by current user (owner_user_id)
+GET  /verify/{token}  → mark user.is_verified = True and clear token
+
+GET  /login           → shared page for league-admin PIN login + account login
+POST /login           → existing league admin PIN login (unchanged)
+GET  /logout          → clears both access_token (league admin) and user_access_token (user)
 ```
 
 > **Warning:** Keep the current `admin_password` as a backward-compatible PIN. Do not remove it suddenly — migrate gradually.
 
 ### Implementation Checklist
-- ❌ `users` table + ORM model
-- ❌ Email verification flow
-- ❌ Register/login routes + templates
-- ❌ `/dashboard` for owned leagues (depends on Phase 5)
-- ❌ Migration strategy for existing leagues (link by `owner_email`, then backfill `owner_user_id`)
+- [x] `users` table + ORM model (`app/models/user_model.py`)
+- [x] Email verification flow (`/register` + `/verify/{token}` + `User.is_verified`)
+- [x] Register/login routes + templates (`app/routers/accounts.py`, `auth.py`, `auth/login.html`, `auth/register.html`)
+- [x] `/dashboard` for owned leagues (basic listing; richer stats & onboarding kept for Phase 5)
+- [ ] Migration strategy for existing leagues (link by `admin_email`, then backfill `owner_user_id`)
 
 ### New Files
 

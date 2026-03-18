@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-sm" style="max-width: 500px; margin-top: 5rem; text-align: right;">
+    <h1 style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-color);">إنشاء حساب جديد 👤</h1>
+    <p class="text-secondary" style="font-size: 1rem;">
+        سجّل بحساب إيميل واحد لإدارة كل دورياتك في مكان واحد.
+    </p>
+
+    {% if error %}
+    <div class="alert alert-danger mb-2"
+         style="background-color: rgba(255, 68, 68, 0.1); color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.2); padding: 1rem; border-radius: 8px;">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card mb-3" style="border-top: 5px solid var(--primary-color); padding: 1.5rem;">
+        <form action="/register" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="mb-2">
+                <label class="form-label" style="font-weight: bold;">البريد الإلكتروني:</label>
+                <input type="email" name="email" required placeholder="you@example.com"
+                       class="form-control" style="padding: 0.8rem; font-size: 1rem;">
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label" style="font-weight: bold;">كلمة المرور:</label>
+                <input type="password" name="password" required
+                       class="form-control" style="padding: 0.8rem; font-size: 1rem;">
+                <small class="text-muted">٨ أحرف على الأقل مع حروف كبيرة وصغيرة ورقم.</small>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label" style="font-weight: bold;">تأكيد كلمة المرور:</label>
+                <input type="password" name="password_confirm" required
+                       class="form-control" style="padding: 0.8rem; font-size: 1rem;">
+            </div>
+
+            <button type="submit" class="btn btn-primary"
+                    style="width: 100%; padding: 0.9rem; font-size: 1.1rem; margin-top: 1rem;">
+                إنشاء الحساب ✨
+            </button>
+        </form>
+    </div>
+
+    <div class="mt-2">
+        <a href="/login" style="color: var(--secondary-color); text-decoration: none; font-size: 0.95rem;">
+            لديك حساب بالفعل؟ تسجيل الدخول
+        </a>
+    </div>
+</div>
+{% endblock %}
+

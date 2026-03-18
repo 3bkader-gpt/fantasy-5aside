@@ -47,7 +47,8 @@ fantasy/
 │   │   └── security.py         # JWT + password hashing
 │   │
 │   ├── models/                  # Database models (SQLAlchemy)
-│   │   └── models.py           # All models
+│   │   ├── models.py           # League, players, matches, votes, etc.
+│   │   └── user_model.py       # User accounts (Phase 2)
 │   │
 │   ├── schemas/                 # Pydantic schemas for the API
 │   │   └── schemas.py          # All schemas
@@ -69,7 +70,8 @@ fantasy/
 │   ├── routers/                 # API Routes
 │   │   ├── public.py           # Public pages
 │   │   ├── admin.py            # Admin dashboard
-│   │   ├── auth.py             # Login / logout
+│   │   ├── auth.py             # League admin login/logout + account login
+│   │   ├── accounts.py         # User registration, email verification, dashboard
 │   │   └── voting.py           # Voting API
 │   │
 │   ├── templates/               # Jinja2 HTML templates
@@ -82,9 +84,11 @@ fantasy/
 │   │   ├── hof.html            # Hall of Fame
 │   │   ├── admin/
 │   │   │   └── dashboard.html  # Admin dashboard
-│   │   └── auth/
-│   │       ├── login.html      # Login page
-│   │       └── unauthorized.html
+│   │   ├── auth/
+│   │   │   ├── login.html      # League admin + user account login
+│   │   │   ├── register.html   # User registration
+│   │   │   └── unauthorized.html
+│   │   └── dashboard.html      # User-owned leagues dashboard (Phase 2/5)
 │   │
 │   └── static/                  # Static assets
 │       ├── css/style.css
@@ -126,6 +130,10 @@ fantasy/
 - name: League name (unique)
 - slug: URL slug (unique)
 - admin_password: Hashed admin password
+- admin_email: Optional admin email (for user linking / recovery)
+- owner_user_id: Optional FK to `users.id` (league owner account)
+- is_verified: Boolean flag for league/account verification status
+- verification_token: Optional token used in verification flows
 - current_season_matches: Number of matches in the current season
 - season_number: Season number
 - team_a_label: Label for Team A
@@ -217,6 +225,17 @@ fantasy/
 ```
 
 #### 9. **transfers** (team transfers)
+#### 10. **users** (account holders — Phase 2)
+```python
+- id: Primary key
+- email: Unique email (login identifier)
+- hashed_password: Password hash (PBKDF2 via `security.get_password_hash`)
+- role: "owner" / "superadmin"
+- is_active: Account active flag
+- is_verified: Has the user verified their email?
+- verification_token: One-time token for `/verify/{token}`
+- created_at, updated_at: Timestamps
+```
 ```python
 - id, league_id, player_id
 - from_team_id, to_team_id
@@ -352,11 +371,13 @@ Business logic is isolated in the Services layer:
 ```
 GET  /                             → Landing page
 POST /create-league                → Create a new league
+GET  /api/slug-available          → Check if a slug is free
 GET  /l/{slug}                     → League leaderboard
 GET  /l/{slug}/matches             → Matches page
 GET  /l/{slug}/cup                 → Cup page
 GET  /l/{slug}/player/{id}         → Player profile
 GET  /l/{slug}/hof                 → Hall of Fame
+GET  /l/{slug}/created             → League creation confirmation page
 ```
 
 ### Admin Routes (`routers/admin.py`) - requires JWT:

@@ -4,13 +4,13 @@
 <div class="container-sm text-center" style="max-width: 500px; margin-top: 5rem;">
 
     <div class="mb-2">
-        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--text-color);">تسجيل الدخول للإدارة 🔒</h1>
-        <p class="text-secondary" style="font-size: 1.1rem; line-height: 1.6;">
-            أدخل بيانات الدوري الخاص بك للوصول إلى لوحة التحكم
+        <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-color);">تسجيل الدخول 🔒</h1>
+        <p class="text-secondary" style="font-size: 1.05rem; line-height: 1.6;">
+            يمكنك الدخول كـ <strong>مدير دوري</strong> بالـ PIN أو كـ <strong>صاحب حساب</strong بالإيميل.
         </p>
     </div>
 
-    <div class="card mb-2" style="border-top: 5px solid var(--primary-color);">
+    <div class="card mb-2" style="border-top: 5px solid var(--primary-color); padding-top: 1rem;">
 
         {% if error %}
         <div class="alert alert-danger mb-2"
@@ -26,25 +26,74 @@
         </div>
         {% endif %}
 
-        <form action="/login" method="POST" style="text-align: right;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <div class="mb-2">
-                <label class="form-label" style="font-weight: bold;">اسم الدوري:</label>
-                <input type="text" name="league_name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"
-                    class="form-control" style="padding: 0.8rem; font-size: 1.1rem;">
+        {% if request.query_params.get("msg") == "check_email" %}
+        <div class="alert alert-info mb-2"
+             style="background-color: rgba(0, 123, 255, 0.06); color: #0056b3; border: 1px solid rgba(0, 123, 255, 0.2); padding: 1rem; border-radius: 8px; text-align: right;">
+            تم إنشاء الحساب، برجاء فتح رسالة التفعيل في البريد الإلكتروني.
+        </div>
+        {% endif %}
+
+        {% if request.query_params.get("msg") == "verified" %}
+        <div class="alert alert-success mb-2"
+             style="background-color: rgba(0, 200, 81, 0.1); color: #00c851; border: 1px solid rgba(0, 200, 81, 0.2); padding: 1rem; border-radius: 8px; text-align: right;">
+            تم تفعيل البريد الإلكتروني بنجاح، يمكنك تسجيل الدخول الآن.
+        </div>
+        {% endif %}
+
+        <div class="row mb-3" style="margin-top: 0.5rem;">
+            <div class="col-6">
+                <h2 style="font-size: 1.1rem; text-align: right;">تسجيل دخول مدير دوري</h2>
+                <form action="/login" method="POST" style="text-align: right;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="mb-2">
+                        <label class="form-label" style="font-weight: bold;">اسم الدوري:</label>
+                        <input type="text" name="league_name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"
+                               class="form-control" style="padding: 0.6rem; font-size: 0.95rem;">
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label" style="font-weight: bold;">كلمة سر الإدارة:</label>
+                        <input type="password" name="password" required placeholder="أدخل كلمة السر" class="form-control"
+                               style="padding: 0.6rem; font-size: 0.95rem;">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary"
+                            style="width: 100%; padding: 0.7rem; font-size: 1rem; margin-top: 0.5rem;">
+                        دخول للإدارة 🔑
+                    </button>
+                </form>
             </div>
 
-            <div class="mb-2">
-                <label class="form-label" style="font-weight: bold;">كلمة سر الإدارة:</label>
-                <input type="password" name="password" required placeholder="أدخل كلمة السر" class="form-control"
-                    style="padding: 0.8rem; font-size: 1.1rem;">
-            </div>
+            <div class="col-6">
+                <h2 style="font-size: 1.1rem; text-align: right;">تسجيل دخول بالحساب</h2>
+                <form action="/user/login" method="POST" style="text-align: right;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-            <button type="submit" class="btn btn-primary"
-                style="width: 100%; padding: 1rem; font-size: 1.2rem; margin-top: 1rem;">
-                دخول للإدارة 🔑
-            </button>
-        </form>
+                    <div class="mb-2">
+                        <label class="form-label" style="font-weight: bold;">البريد الإلكتروني:</label>
+                        <input type="email" name="email" required placeholder="you@example.com"
+                               class="form-control" style="padding: 0.6rem; font-size: 0.95rem;">
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label" style="font-weight: bold;">كلمة المرور:</label>
+                        <input type="password" name="password" required class="form-control"
+                               style="padding: 0.6rem; font-size: 0.95rem;">
+                    </div>
+
+                    <button type="submit" class="btn btn-outline-primary"
+                            style="width: 100%; padding: 0.7rem; font-size: 1rem; margin-top: 0.5rem;">
+                        دخول بالحساب 👤
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div style="text-align: right; margin-top: 0.5rem;">
+            <a href="/register" style="color: var(--secondary-color); text-decoration: none; font-size: 0.95rem;">
+                ليس لديك حساب؟ إنشاء حساب جديد
+            </a>
+        </div>
     </div>
 
     <div style="margin-top: 2rem;">

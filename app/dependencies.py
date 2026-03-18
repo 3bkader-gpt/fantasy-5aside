@@ -6,6 +6,7 @@ from .services.audit_log import log_audit
 from .core import security
 from .core.revocation import is_revoked
 from .models import models
+from .models.user_model import User
 
 from .repositories.interfaces import (
     ILeagueRepository, IPlayerRepository, IMatchRepository, 
@@ -28,6 +29,7 @@ from .services.match_service import MatchService
 from .services.analytics_service import AnalyticsService
 from .services.voting_service import VotingService
 from .services.notification_service import NotificationService
+from .services.user_service import UserService
 
 # --- Repositories ---
 def get_league_repository(db: Session = Depends(get_db)) -> ILeagueRepository:
@@ -100,7 +102,10 @@ def get_notification_service(
 ) -> INotificationService:
     return NotificationService(db)
 
-# --- Security ---
+def get_user_service(db: Session = Depends(get_db)) -> UserService:
+    return UserService(db)
+
+# --- Security (league admin + user accounts) ---
 def _get_token_payload(request: Request) -> dict | None:
     """Low-level helper: extract and verify JWT payload from cookie without raising."""
     authorization: str = request.cookies.get("access_token")
@@ -120,6 +125,36 @@ def _is_jti_revoked_raw(jti: str) -> bool:
         return is_revoked(db, jti)
     finally:
         db.close()
+
+
+def _get_user_token_payload(request: Request) -> dict | None:
+    """Helper: extract and verify JWT payload from user_access_token cookie."""
+    authorization: str = request.cookies.get("user_access_token")
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.split(" ")[1]
+    payload = security.verify_token(token)
+    return payload or None
+
+
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> User:
+    payload = _get_user_token_payload(request)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if is_revoked(db, payload.get("jti") or ""):
+        raise HTTPException(status_code=401, detail="Session expired, please login again")
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+    return user
 
 
 def get_current_admin_league(

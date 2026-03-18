@@ -17,7 +17,7 @@ from .core.config import settings
 from .core.rate_limit import limiter
 from .database import Base, SessionLocal, engine
 from .middleware.security_headers import SecurityHeadersMiddleware
-from .routers import admin, public, auth, voting, media, notifications
+from .routers import admin, public, auth, voting, media, notifications, accounts
 
 # Use Uvicorn's logger so logs appear in the same output
 logger = logging.getLogger("uvicorn.error")
@@ -67,6 +67,9 @@ async def lifespan(app: FastAPI):
             ("leagues", "team_b_label", "VARCHAR(100) DEFAULT 'فريق ب'"),
             ("players", "is_active_in_cup", "BOOLEAN DEFAULT FALSE"),
             ("leagues", "admin_email", "VARCHAR(255) DEFAULT NULL"),
+            ("leagues", "owner_user_id", "INTEGER DEFAULT NULL"),
+            ("leagues", "is_verified", "BOOLEAN DEFAULT FALSE"),
+            ("leagues", "verification_token", "VARCHAR(255) DEFAULT NULL"),
             ("cup_matchups", "bracket_type", "VARCHAR(20) DEFAULT 'outfield'"),
             ("cup_matchups", "is_revealed", "BOOLEAN DEFAULT FALSE"),
             ("cup_matchups", "match_id", "INTEGER DEFAULT NULL"),
@@ -99,14 +102,17 @@ async def lifespan(app: FastAPI):
             ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL"),
         ]
 
-        # Ensure audit_log and revoked_tokens tables exist (OWASP)
+        # Ensure audit_log, revoked_tokens, and users tables exist (OWASP + accounts)
         try:
             from app.models import models as _models
+            from app.models import user_model as _user_model
             tables = []
             if hasattr(_models, "AuditLog"):
                 tables.append(_models.AuditLog.__table__)
             if hasattr(_models, "RevokedToken"):
                 tables.append(_models.RevokedToken.__table__)
+            if hasattr(_user_model, "User"):
+                tables.append(_user_model.User.__table__)
             if tables:
                 Base.metadata.create_all(bind=engine, tables=tables)
         except Exception as e:
@@ -312,6 +318,7 @@ app.mount("/media", StaticFiles(directory="uploads"), name="media")
 
 # Include Routers
 app.include_router(auth.router)
+app.include_router(accounts.router)
 app.include_router(public.router)
 app.include_router(admin.router)
 app.include_router(voting.router)

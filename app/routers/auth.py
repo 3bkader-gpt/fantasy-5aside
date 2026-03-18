@@ -9,7 +9,8 @@ from ..core import security
 from ..core.csrf import generate_csrf_token, set_csrf_cookie, verify_csrf_token, CSRF_COOKIE_NAME
 from ..core.rate_limit import limiter
 from ..core.revocation import revoke_token
-from ..dependencies import get_league_repository, get_db, ILeagueRepository
+from ..dependencies import get_league_repository, get_db, ILeagueRepository, get_current_user
+from ..models.user_model import User
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
@@ -76,6 +77,48 @@ def login_submit(
     )
     return redirect
 
+
+@router.post("/user/login")
+@limiter.limit("10/minute")
+def user_login_submit(
+    request: Request,
+    response: Response,
+    email: str = Form(...),
+    password: str = Form(...),
+    csrf_token: str = Form(None),
+    db: "Session" = Depends(get_db),
+):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+
+    email_clean = email.strip().lower()
+    from ..models.user_model import User  # local import to avoid circulars in some tools
+
+    user: User | None = (
+        db.query(User)
+        .filter(User.email == email_clean)
+        .first()
+    )
+    if not user or not security.verify_password(password, user.hashed_password):
+        return templates.TemplateResponse(
+            request=request,
+            name="auth/login.html",
+            context={"error": "Email or password incorrect", "is_admin": False},
+        )
+
+    token = security.create_access_token(data={"sub": str(user.id), "scope": "user"})
+    redirect = RedirectResponse(url="/dashboard", status_code=303)
+    redirect.set_cookie(
+        key="user_access_token",
+        value=f"Bearer {token}",
+        httponly=True,
+        samesite="lax",
+        secure=os.environ.get("ENV") == "production",
+        max_age=security.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return redirect
+
 @router.get("/logout")
 def logout(request: Request, db: "Session" = Depends(get_db)):
     authorization = request.cookies.get("access_token")
@@ -89,4 +132,5 @@ def logout(request: Request, db: "Session" = Depends(get_db)):
             revoke_token(db, payload["jti"], expires_at)
     redirect = RedirectResponse(url="/?msg=logged_out", status_code=303)
     redirect.delete_cookie("access_token")
+    redirect.delete_cookie("user_access_token")
     return redirect

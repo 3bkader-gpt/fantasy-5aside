@@ -42,6 +42,9 @@ class League(Base):
     slug = Column(String, unique=True, index=True)
     admin_password = Column(String)
     admin_email = Column(String, nullable=True, index=True)
+    owner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    is_verified = Column(Boolean, default=False)
+    verification_token = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Automated Season Tracking

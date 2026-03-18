@@ -23,8 +23,8 @@
 - Framework: FastAPI.
 - Dependency injection through `app/dependencies.py`.
 - Router split:
-  - `app/routers/public.py`: landing, leaderboard, matches, cup, player profile, stats pages.
-  - `app/routers/admin.py`: admin dashboard, match CRUD, season/cup actions, teams, transfers, imports/exports.
+  - `app/routers/public.py`: landing, create-league flow (with admin_email + slug autosuggest/availability + confirmation page), leaderboard, matches, cup, player profile, stats pages.
+  - `app/routers/admin.py`: admin dashboard, match CRUD, season/cup actions, teams, transfers, imports/exports; all league operations go through league-scoped dependencies.
   - `app/routers/voting.py`: voting APIs (`status`, `live`, `closed-results`, `vote`, `open`, `close`).
   - `app/routers/auth.py`: login/logout.
   - `app/routers/media.py`: match image upload/delete.
