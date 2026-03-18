@@ -4,6 +4,9 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import asyncio
 
+import sentry_sdk
+from sentry_sdk.integrations.starlette import StarletteIntegration
+
 from fastapi import FastAPI, Request, HTTPException
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse, Response
@@ -18,11 +21,27 @@ from .core.config import settings
 from .core.rate_limit import limiter
 from .database import Base, SessionLocal, engine
 from .middleware.security_headers import SecurityHeadersMiddleware
-from .routers import admin, public, auth, voting, media, notifications, accounts, onboarding
+from .routers import admin, public, auth, voting, media, notifications, accounts, onboarding, superadmin
 from .services.email_service import LogEmailProvider, process_email_queue_once
 
 # Use Uvicorn's logger so logs appear in the same output
 logger = logging.getLogger("uvicorn.error")
+
+
+def _init_sentry() -> None:
+    dsn = settings.sentry_dsn
+    if not dsn:
+        return
+    sentry_sdk.init(
+        dsn=dsn,
+        environment=settings.sentry_environment or settings.env,
+        traces_sample_rate=float(settings.sentry_traces_sample_rate or 0.0),
+        integrations=[StarletteIntegration(transaction_style="endpoint")],
+        send_default_pii=False,
+    )
+
+
+_init_sentry()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -358,3 +377,4 @@ app.include_router(admin.router)
 app.include_router(voting.router)
 app.include_router(media.router)
 app.include_router(notifications.router)
+app.include_router(superadmin.router)

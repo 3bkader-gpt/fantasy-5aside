@@ -20,6 +20,7 @@ from ..dependencies import (
 from ..services.achievements import achievement_service
 from ..services.points import get_points_breakdown
 from ..queries.cup_queries import query_active_cup_for_leaderboard, query_cup_for_display
+from ..core.logging import log_event
 
 
 router = APIRouter()
@@ -119,6 +120,13 @@ def create_league(
         admin_email=admin_email_clean,
     )
     new_league = league_repo.save(new_league)
+
+    log_event(
+        "league_created",
+        league_id=new_league.id,
+        league_slug=new_league.slug,
+        has_admin_email=bool(admin_email_clean),
+    )
     
     return RedirectResponse(url=f"/l/{new_league.slug}/created", status_code=303)
 

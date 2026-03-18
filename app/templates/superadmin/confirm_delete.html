@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-shell narrow">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title" style="font-size: 1.85rem;">تأكيد حذف الدوري</h1>
+      <p class="page-subtitle">هذا الإجراء نهائي وسيحذف كل البيانات المرتبطة بالدوري.</p>
+    </div>
+    <div class="page-actions">
+      <a href="/superadmin" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-danger" style="text-align:right;">{{ error }}</div>
+  {% endif %}
+
+  <div class="card" style="padding: 1.25rem;">
+    <div class="empty-state mb-3">
+      <div style="font-weight: 900; color: var(--text-color);">{{ league.name }}</div>
+      <div class="text-muted" style="font-size: .9rem;">/l/{{ league.slug }}</div>
+    </div>
+
+    <form method="post" action="/superadmin/league/{{ league.id }}/delete" class="m-0">
+      <label class="form-label" style="display:block;">اكتب <strong>DELETE</strong> للتأكيد</label>
+      <input name="confirm" class="form-control" placeholder="DELETE" autocomplete="off">
+      <div class="wizard-actions">
+        <button type="submit" class="btn btn-danger">حذف نهائي</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

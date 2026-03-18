@@ -254,17 +254,17 @@ Step 4 → Done! Share your league link
 | Voting API | Already protected (fingerprint) |
 
 ### Logging & Monitoring
-- 🟡 Improve structured logging for: league creation, match recording, cup resolution (AuditLog exists; structured app logs still missing)
-- ❌ Integrate **Sentry** (free hobby tier) for error tracking
+- ✅ Improve structured logging for: league creation, match recording, cup generation, season end (via `log_event`)
+- ✅ Integrate **Sentry** (optional via `SENTRY_DSN`) for error tracking
 
 ### Backups
 - ✅ JSON export per league — already exists (`/admin/export/backup`)
-- ❌ Add scheduled backups for the full database (Render/Supabase)
+- 🟡 Full DB backups: handled via Supabase backups/PITR (documented); automation outside app scope for now
 
 ### Super-Admin Dashboard
-- ❌ Protected by `SUPERADMIN_SECRET` env variable
-- ❌ Shows: all leagues, owners, plans, activity stats
-- ❌ Actions: suspend / delete any league
+- ✅ Protected by `SUPERADMIN_SECRET` env variable (`X-Superadmin-Secret` header)
+- ✅ Shows: all leagues, owners, activity stats (players/matches)
+- 🟡 Actions: delete league (implemented); suspend not implemented yet
 
 ---
 
