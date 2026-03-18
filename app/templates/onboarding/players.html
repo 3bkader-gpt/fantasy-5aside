@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container" style="margin-top: 3rem; max-width: 760px;">
+<div class="page-shell narrow wizard">
   <div class="card" style="padding: 1.5rem;">
-    <div class="d-flex justify-content-between align-items-start mb-3" style="gap: 1rem; flex-wrap: wrap;">
+    <div class="wizard-steps">
+      <div class="wizard-step"><span class="num">1</span><span>الدوري</span></div>
+      <div class="wizard-step"><span class="num">2</span><span>الفرق</span></div>
+      <div class="wizard-step active"><span class="num">3</span><span>اللاعبين</span></div>
+    </div>
+
+    <div class="page-header" style="margin-bottom: .75rem;">
       <div>
-        <h1 class="mb-1" style="text-align: right; color: var(--text-color);">3) إضافة اللاعبين</h1>
-        <p class="text-muted mb-0" style="text-align: right;">
-          اكتب اسم كل لاعب في سطر، أو افصلهم بفاصلة.
-        </p>
+        <h1 class="page-title" style="font-size: 1.85rem;">إضافة اللاعبين</h1>
+        <p class="page-subtitle">اكتب اسم كل لاعب في سطر، أو افصلهم بفاصلة.</p>
       </div>
       <a href="/onboarding/teams?league_id={{ league.id }}" class="btn btn-outline-secondary">رجوع</a>
     </div>
@@ -17,9 +21,9 @@
     <div class="alert alert-danger" style="text-align: right;">{{ error }}</div>
     {% endif %}
 
-    <div class="card mb-3" style="padding: 1rem;">
-      <div style="text-align: right; color: var(--text-color); font-weight: 700;">{{ league.name }}</div>
-      <div class="text-muted" style="text-align: right; font-size: .9rem;">/l/{{ league.slug }}</div>
+    <div class="empty-state mb-3">
+      <div style="color: var(--text-color); font-weight: 800;">{{ league.name }}</div>
+      <div class="text-muted" style="font-size: .9rem;">/l/{{ league.slug }}</div>
     </div>
 
     <form method="post" action="/onboarding/players" class="m-0">
@@ -27,18 +31,16 @@
       <input type="hidden" name="league_id" value="{{ league.id }}">
 
       <div class="mb-3">
-        <label class="form-label" style="text-align: right; display:block;">أسماء اللاعبين</label>
+        <label class="form-label" style="display:block;">أسماء اللاعبين</label>
         <textarea name="players_text" class="form-control" rows="8" placeholder="مثال:
 محمد
 أحمد
 Khaled
 ..."></textarea>
-        <div class="text-muted" style="text-align:right; font-size: .9rem; margin-top: .4rem;">
-          هنشيل التكرار تلقائيًا.
-        </div>
+        <div class="text-muted" style="font-size: .9rem; margin-top: .4rem;">هنشيل التكرار تلقائيًا.</div>
       </div>
 
-      <div class="d-flex" style="gap: .5rem; justify-content: flex-end; flex-wrap: wrap;">
+      <div class="wizard-actions sticky">
         <a href="/dashboard" class="btn btn-outline-secondary">إلغاء</a>
         <button type="submit" class="btn btn-primary">إنهاء</button>
       </div>

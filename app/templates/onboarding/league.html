@@ -1,12 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container" style="margin-top: 3rem; max-width: 760px;">
+<div class="page-shell narrow wizard">
   <div class="card" style="padding: 1.5rem;">
-    <div class="d-flex justify-content-between align-items-start mb-3" style="gap: 1rem; flex-wrap: wrap;">
+    <div class="wizard-steps">
+      <div class="wizard-step active"><span class="num">1</span><span>الدوري</span></div>
+      <div class="wizard-step"><span class="num">2</span><span>الفرق</span></div>
+      <div class="wizard-step"><span class="num">3</span><span>اللاعبين</span></div>
+    </div>
+
+    <div class="page-header" style="margin-bottom: .75rem;">
       <div>
-        <h1 class="mb-1" style="text-align: right; color: var(--text-color);">1) إنشاء الدوري</h1>
-        <p class="text-muted mb-0" style="text-align: right;">اختار اسم للدوري، رابط قصير، و PIN للأدمن.</p>
+        <h1 class="page-title" style="font-size: 1.85rem;">إنشاء الدوري</h1>
+        <p class="page-subtitle">اختار اسم للدوري، رابط قصير، و PIN للأدمن.</p>
       </div>
       <a href="/onboarding/start" class="btn btn-outline-secondary">رجوع</a>
     </div>
@@ -19,28 +25,28 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
       <div class="mb-3">
-        <label class="form-label" style="text-align: right; display:block;">اسم الدوري</label>
+        <label class="form-label" style="display:block;">اسم الدوري</label>
         <input id="name" name="name" class="form-control" required placeholder="مثال: دوري الجمعة" autocomplete="off">
       </div>
 
       <div class="mb-3">
-        <label class="form-label" style="text-align: right; display:block;">رابط الدوري (Slug)</label>
+        <label class="form-label" style="display:block;">رابط الدوري (Slug)</label>
         <input id="slug" name="slug" class="form-control" required placeholder="مثال: friday-league" autocomplete="off">
-        <div id="slug-help" class="text-muted" style="text-align:right; font-size: .9rem; margin-top: .4rem;">
+        <div id="slug-help" class="text-muted" style="font-size: .9rem; margin-top: .4rem;">
           هنستخدمه في الرابط: <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">/l/slug</span>
         </div>
-        <div id="slug-status" class="text-muted" style="text-align:right; font-size: .9rem; margin-top: .2rem;"></div>
+        <div id="slug-status" class="text-muted" style="font-size: .9rem; margin-top: .2rem;"></div>
       </div>
 
       <div class="mb-3">
-        <label class="form-label" style="text-align: right; display:block;">PIN الأدمن</label>
+        <label class="form-label" style="display:block;">PIN الأدمن</label>
         <input name="admin_password" type="password" class="form-control" required placeholder="مثال: Abc12345">
-        <div class="text-muted" style="text-align:right; font-size: .9rem; margin-top: .4rem;">
+        <div class="text-muted" style="font-size: .9rem; margin-top: .4rem;">
           لازم يحتوي على حرف كبير + حرف صغير + رقم (8 أحرف أو أكثر).
         </div>
       </div>
 
-      <div class="d-flex" style="gap: .5rem; justify-content: flex-end; flex-wrap: wrap;">
+      <div class="wizard-actions sticky">
         <a href="/dashboard" class="btn btn-outline-secondary">إلغاء</a>
         <button id="submit-btn" type="submit" class="btn btn-primary">التالي</button>
       </div>
