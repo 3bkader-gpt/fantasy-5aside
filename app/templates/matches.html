@@ -3,32 +3,34 @@
 {% block content %}
 <meta name="csrf-token" content="{{ csrf_token }}">
 <div class="matches-container">
-    <h1 class="text-center mb-2">سجل المباريات</h1>
+    <div class="matches-topbar">
+        <h1 class="matches-title">سجل المباريات</h1>
 
-    {% if seasons and seasons|length > 0 %}
-    <div class="matches-season-header" role="region" aria-label="فلتر الموسم">
-        <label class="matches-season-label" for="season-select">الموسم</label>
-        <div class="matches-season-select-wrap">
-            <select id="season-select" class="matches-season-select" name="season">
-                {% for s in seasons %}
-                <option value="{{ s.number }}" {% if s.number == current_season %}selected{% endif %}>
-                    الموسم {{ s.number }}
-                </option>
-                {% endfor %}
-            </select>
+        {% if seasons and seasons|length > 0 %}
+        <div class="matches-season-header" role="region" aria-label="فلتر الموسم">
+            <label class="matches-season-label" for="season-select">الموسم</label>
+            <div class="matches-season-select-wrap">
+                <select id="season-select" class="matches-season-select" name="season">
+                    {% for s in seasons %}
+                    <option value="{{ s.number }}" {% if s.number == current_season %}selected{% endif %}>
+                        الموسم {{ s.number }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
+        <script>
+            (function () {
+                var el = document.getElementById('season-select');
+                if (!el) return;
+                el.addEventListener('change', function () {
+                    var v = el.value;
+                    window.location.href = '/l/{{ league.slug }}/matches?season=' + encodeURIComponent(v);
+                });
+            })();
+        </script>
+        {% endif %}
     </div>
-    <script>
-        (function () {
-            var el = document.getElementById('season-select');
-            if (!el) return;
-            el.addEventListener('change', function () {
-                var v = el.value;
-                window.location.href = '/l/{{ league.slug }}/matches?season=' + encodeURIComponent(v);
-            });
-        })();
-    </script>
-    {% endif %}
 
     {% if not matches %}
     <div class="empty-state">
