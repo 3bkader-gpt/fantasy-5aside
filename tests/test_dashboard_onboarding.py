@@ -131,3 +131,26 @@ def test_onboarding_happy_path_creates_league_and_players(client, db_session):
     players = db_session.query(models.Player).filter(models.Player.league_id == league_id).all()
     assert {p.name for p in players} == {"Ali", "Omar"}
 
+
+def test_onboarding_start_redirects_when_user_has_leagues(client, db_session):
+    email = f"ob2+{uuid.uuid4().hex[:8]}@example.com"
+    user = User(email=email, hashed_password=security.get_password_hash("StrongPass1"), is_verified=True)
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    league = models.League(
+        name=f"League {uuid.uuid4().hex[:6]}",
+        slug=f"league-{uuid.uuid4().hex[:6]}",
+        admin_password=security.get_password_hash("StrongPass1"),
+        admin_email=user.email,
+        owner_user_id=user.id,
+    )
+    db_session.add(league)
+    db_session.commit()
+
+    _set_user_cookie(client, user.id)
+    r = client.get("/onboarding/start", follow_redirects=False)
+    assert r.status_code in (302, 303, 307, 308)
+    assert r.headers.get("location") == "/dashboard"
+

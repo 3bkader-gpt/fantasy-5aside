@@ -34,7 +34,21 @@ def _require_owned_league(db: Session, league_id: int, current_user) -> models.L
 
 
 @router.get("/start")
-def start(request: Request, current_user=Depends(get_current_user)):
+def start(
+    request: Request,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Option B: treat onboarding as complete if user already owns a league.
+    has_owned_league = (
+        db.query(models.League.id)
+        .filter(models.League.owner_user_id == current_user.id)
+        .first()
+        is not None
+    )
+    if has_owned_league:
+        return RedirectResponse(url="/dashboard", status_code=303)
+
     token = generate_csrf_token()
     resp = templates.TemplateResponse(
         request=request,

@@ -218,7 +218,7 @@ Step 4 → Done! Share your league link
 ### Implementation Checklist
 - ✅ User-auth gated dashboard (uses user_access_token + get_current_user)
 - ✅ Onboarding wizard flow (league → teams → players → done)
-- 🟡 Persistence/state: uses `league_id` query params + ownership checks (no `User.onboarding_completed` yet)
+- ✅ Persistence/state: onboarding is state-driven — if user already owns leagues, `/onboarding/start` redirects to `/dashboard` (no DB flag).
 
 ### Files
 
