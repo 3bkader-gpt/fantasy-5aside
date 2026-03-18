@@ -18,7 +18,7 @@ from .core.config import settings
 from .core.rate_limit import limiter
 from .database import Base, SessionLocal, engine
 from .middleware.security_headers import SecurityHeadersMiddleware
-from .routers import admin, public, auth, voting, media, notifications, accounts
+from .routers import admin, public, auth, voting, media, notifications, accounts, onboarding
 from .services.email_service import LogEmailProvider, process_email_queue_once
 
 # Use Uvicorn's logger so logs appear in the same output
@@ -352,6 +352,7 @@ app.mount("/media", StaticFiles(directory="uploads"), name="media")
 # Include Routers
 app.include_router(auth.router)
 app.include_router(accounts.router)
+app.include_router(onboarding.router)
 app.include_router(public.router)
 app.include_router(admin.router)
 app.include_router(voting.router)

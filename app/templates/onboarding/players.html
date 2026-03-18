@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-shell narrow wizard">
+  <div class="card" style="padding: 1.5rem;">
+    <div class="wizard-steps">
+      <div class="wizard-step"><span class="num">1</span><span>الدوري</span></div>
+      <div class="wizard-step"><span class="num">2</span><span>الفرق</span></div>
+      <div class="wizard-step active"><span class="num">3</span><span>اللاعبين</span></div>
+    </div>
+
+    <div class="page-header" style="margin-bottom: .75rem;">
+      <div>
+        <h1 class="page-title" style="font-size: 1.85rem;">إضافة اللاعبين</h1>
+        <p class="page-subtitle">اكتب اسم كل لاعب في سطر، أو افصلهم بفاصلة.</p>
+      </div>
+      <a href="/onboarding/teams?league_id={{ league.id }}" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger" style="text-align: right;">{{ error }}</div>
+    {% endif %}
+
+    <div class="empty-state mb-3">
+      <div style="color: var(--text-color); font-weight: 800;">{{ league.name }}</div>
+      <div class="text-muted" style="font-size: .9rem;">/l/{{ league.slug }}</div>
+    </div>
+
+    <form method="post" action="/onboarding/players" class="m-0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="league_id" value="{{ league.id }}">
+
+      <div class="mb-3">
+        <label class="form-label" style="display:block;">أسماء اللاعبين</label>
+        <textarea name="players_text" class="form-control" rows="8" placeholder="مثال:
+محمد
+أحمد
+Khaled
+..."></textarea>
+        <div class="text-muted" style="font-size: .9rem; margin-top: .4rem;">هنشيل التكرار تلقائيًا.</div>
+      </div>
+
+      <div class="wizard-actions sticky">
+        <a href="/dashboard" class="btn btn-outline-secondary">إلغاء</a>
+        <button type="submit" class="btn btn-primary">إنهاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

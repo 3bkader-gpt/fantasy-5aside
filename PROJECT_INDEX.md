@@ -401,7 +401,28 @@ POST /l/{slug}/admin/team/create     → Create team
 ```
 GET  /login                        → Login page
 POST /login                        → Perform login
+POST /user/login                   → User account login
 GET  /logout                       → Logout
+```
+
+### Accounts Routes (`routers/accounts.py`):
+```
+GET  /register                     → Register page
+POST /register                     → Register user + enqueue verification email
+GET  /verify/{token}               → Verify email token
+GET  /dashboard                    → Multi-league dashboard (owned leagues)
+```
+
+### Onboarding Routes (`routers/onboarding.py`):
+```
+GET  /onboarding/start             → Wizard intro
+GET  /onboarding/league            → Step 1 page
+POST /onboarding/league            → Create owned league (owner_user_id + admin_email)
+GET  /onboarding/teams             → Step 2 page
+POST /onboarding/teams             → Update team labels
+GET  /onboarding/players           → Step 3 page
+POST /onboarding/players           → Bulk add players
+GET  /onboarding/done              → Completion summary
 ```
 
 ### Voting API (`routers/voting.py`):

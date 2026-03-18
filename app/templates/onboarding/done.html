@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-shell narrow wizard">
+  <div class="card" style="padding: 1.5rem;">
+    <div class="wizard-steps">
+      <div class="wizard-step"><span class="num">1</span><span>الدوري</span></div>
+      <div class="wizard-step"><span class="num">2</span><span>الفرق</span></div>
+      <div class="wizard-step"><span class="num">3</span><span>اللاعبين</span></div>
+    </div>
+
+    <h1 class="page-title" style="font-size: 1.85rem;">تم الإعداد ✅</h1>
+    <p class="page-subtitle mb-3">
+      الدوري جاهز! اتضاف {{ created_players }} لاعب.
+    </p>
+
+    <div class="empty-state mb-3">
+      <div style="color: var(--text-color); font-weight: 900;">{{ league.name }}</div>
+      <div class="text-muted" style="font-size: .9rem;">/l/{{ league.slug }}</div>
+    </div>
+
+    <div class="wizard-actions">
+      <a href="/l/{{ league.slug }}" class="btn btn-outline-secondary">عرض الدوري</a>
+      <a href="/l/{{ league.slug }}/admin" class="btn btn-outline-primary">لوحة الإدارة</a>
+      <a href="/dashboard" class="btn btn-primary">رجوع للوحة الحساب</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

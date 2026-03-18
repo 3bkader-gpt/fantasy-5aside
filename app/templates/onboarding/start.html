@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-shell narrow wizard">
+  <div class="card" style="padding: 1.5rem;">
+    <h1 class="page-title">الإعداد السريع</h1>
+    <p class="page-subtitle mb-3">
+      هتجهّز أول دوري ليك في 3 خطوات بسيطة.
+    </p>
+
+    <div class="wizard-steps">
+      <div class="wizard-step active"><span class="num">1</span><span>الدوري</span></div>
+      <div class="wizard-step"><span class="num">2</span><span>الفرق</span></div>
+      <div class="wizard-step"><span class="num">3</span><span>اللاعبين</span></div>
+    </div>
+
+    <div class="empty-state mb-3">
+      <div class="text-muted" style="font-size: .95rem; line-height: 1.8;">
+        <div><strong>الخطوة 1:</strong> اسم الدوري + الرابط + PIN للأدمن.</div>
+        <div><strong>الخطوة 2:</strong> أسماء الفريقين (اختياري).</div>
+        <div><strong>الخطوة 3:</strong> إضافة اللاعبين دفعة واحدة.</div>
+      </div>
+    </div>
+
+    <form method="get" action="/onboarding/league" class="m-0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="wizard-actions sticky">
+        <a href="/dashboard" class="btn btn-outline-secondary">رجوع للوحة الحساب</a>
+        <button type="submit" class="btn btn-primary">ابدأ</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

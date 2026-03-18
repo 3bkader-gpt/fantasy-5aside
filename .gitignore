@@ -27,6 +27,7 @@ dist/
 .env
 .env.*
 !.env.example
+fantasy-5aside.env
 
 # --- Databases ---
 *.db
