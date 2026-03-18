@@ -86,6 +86,23 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // =========================================
+    // Season selector (CSP-safe: no inline scripts)
+    // =========================================
+    const seasonSelect = document.getElementById('season-select');
+    if (seasonSelect) {
+        seasonSelect.addEventListener('change', function () {
+            const leagueSlug = window.LEAGUE_SLUG || '';
+            const selected = seasonSelect.value;
+            if (!leagueSlug || !selected) return;
+
+            const url = new URL(window.location.href);
+            url.pathname = `/l/${leagueSlug}/matches`;
+            url.searchParams.set('season', selected);
+            window.location.assign(url.toString());
+        });
+    }
+
     function getCsrfHeader() {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         return token ? { 'X-CSRF-Token': token } : {};

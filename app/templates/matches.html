@@ -19,16 +19,6 @@
                 </select>
             </div>
         </div>
-        <script>
-            (function () {
-                var el = document.getElementById('season-select');
-                if (!el) return;
-                el.addEventListener('change', function () {
-                    var v = el.value;
-                    window.location.href = '/l/{{ league.slug }}/matches?season=' + encodeURIComponent(v);
-                });
-            })();
-        </script>
         {% endif %}
     </div>
 
