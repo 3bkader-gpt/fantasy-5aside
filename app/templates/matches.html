@@ -6,29 +6,28 @@
     <h1 class="text-center mb-2">سجل المباريات</h1>
 
     {% if seasons and seasons|length > 0 %}
-    <div class="matches-season-header">
-        <div class="matches-season-current">
-            <span class="matches-season-label">الموسم الحالي:</span>
-            <button type="button" class="matches-season-toggle" aria-haspopup="listbox" aria-expanded="false">
-                <span>الموسم {{ current_season }}</span>
-                <span class="chevron" aria-hidden="true">▾</span>
-            </button>
-        </div>
-        <ul class="matches-season-list" role="listbox" aria-label="اختيار الموسم">
-            {% for s in seasons %}
-            <li>
-                <a
-                    href="/l/{{ league.slug }}/matches?season={{ s.number }}"
-                    class="matches-season-item {% if s.number == current_season %}is-active{% endif %}"
-                    role="option"
-                    aria-selected="{{ 'true' if s.number == current_season else 'false' }}"
-                >
+    <div class="matches-season-header" role="region" aria-label="فلتر الموسم">
+        <label class="matches-season-label" for="season-select">الموسم</label>
+        <div class="matches-season-select-wrap">
+            <select id="season-select" class="matches-season-select" name="season">
+                {% for s in seasons %}
+                <option value="{{ s.number }}" {% if s.number == current_season %}selected{% endif %}>
                     الموسم {{ s.number }}
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+                </option>
+                {% endfor %}
+            </select>
+        </div>
     </div>
+    <script>
+        (function () {
+            var el = document.getElementById('season-select');
+            if (!el) return;
+            el.addEventListener('change', function () {
+                var v = el.value;
+                window.location.href = '/l/{{ league.slug }}/matches?season=' + encodeURIComponent(v);
+            });
+        })();
+    </script>
     {% endif %}
 
     {% if not matches %}
