@@ -6,17 +6,21 @@
 
 | Already Done ✅ | Still Missing ❌ |
 |----------------|-----------------|
-| Multi-tenant DB (`league_id` on every table) | Email / User accounts |
-| Self-signup (`/create-league`) | Plan limits & Billing |
+| Multi-tenant DB (`league_id` on every table) | Plan limits & Billing |
+| Self-signup (`/create-league`) | Usage-limit enforcement (Free/Pro) |
 | Per-league JWT auth | Super-admin dashboard |
 | Slug-based routing `/l/{slug}` | Proper marketing landing page |
 | CSRF protection (double-submit cookie) | Demo league (`/l/demo`) |
 | Rate limiting (`slowapi`) | Paid subscriptions + webhooks |
-| Security headers + CSP middleware | Multi-league dashboard (per user) |
-| JWT revocation (`jti` + `revoked_tokens`) | Usage-limit enforcement (Free/Pro) |
-| Exports: CSV stats + JSON backup per league | Email verification + password reset |
-| PWA basics (manifest + `/sw.js`) | Sentry / centralized monitoring |
-| Match media upload/delete endpoints | Scheduled DB backups / restore story |
+| Security headers + CSP middleware | Sentry / centralized monitoring |
+| JWT revocation (`jti` + `revoked_tokens`) | Scheduled DB backups / restore story |
+| Exports: CSV stats + JSON backup per league | |
+| Email / User accounts | |
+| Email verification + password reset | |
+| Multi-league dashboard (per user) | |
+| Onboarding wizard | |
+| PWA basics (manifest + `/sw.js`) | |
+| Match media upload/delete endpoints | |
 | Web push subscription endpoints | |
 
 ### Overall SaaS Progress
@@ -59,7 +63,7 @@
 
 **Goal:** Every league has a real owner with email + password, independent of the admin PIN.
 
-**Status:** 🟡 Partially implemented (user accounts, email verification, dashboard skeleton, and parallel auth flow are in place; linking flows and plan-based limits remain).
+**Status:** ✅ Implemented (user accounts, email verification, password reset, and parallel auth flow are in place; legacy league claim/migration remains).
 
 ### DB Changes
 
@@ -118,7 +122,7 @@ GET  /logout          → clears both access_token (league admin) and user_acces
 
 **Goal:** Define Freemium model with enforced limits — even before real billing is live.
 
-**Status:** ❌ Not implemented yet (no user accounts/plans model in production).
+**Status:** ❌ Not implemented yet (auth exists; plan model + enforcement not implemented).
 
 ### Pricing Tiers
 
@@ -196,7 +200,7 @@ subscription_ended  → downgrade to "free"
 
 ## Phase 5 — Multi-League Dashboard & Onboarding
 
-**Status:** 🟡 Implemented (dashboard cards + onboarding wizard; no persistence flags yet).
+**Status:** ✅ Implemented (dashboard cards + onboarding wizard; no onboarding persistence flags yet).
 
 ### `/dashboard` Page (post-login)
 - ✅ Cards for each league: name, slug, player count, last match date + admin/league links
