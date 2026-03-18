@@ -57,6 +57,23 @@
   - `SUPABASE_PROJECT_URL`
   - `SUPABASE_SERVICE_ROLE_KEY`
 
+### 1.7 Email Delivery & Provider Limits
+- Outbound emails (e.g. account verification, future password reset) go through:
+  - `app/services/email_service.py` → `EmailService` + provider abstraction.
+  - DB-backed queue in `email_queue` table.
+- A background worker in `app/main.py` periodically drains the queue using `process_email_queue_once`
+  and enforces a configurable daily limit:
+  - `email_daily_limit` setting in `core/config.py` (defaults to 300, aligned with Brevo Free plan).
+- Daily usage is tracked in `email_daily_usage` table (UTC date + sent_count).
+- Priority rules:
+  - `transactional` > `system` > `notification` — higher priority emails are always sent first when
+    approaching the daily limit so that verification/OTP flows are not blocked by match notifications.
+- Current providers:
+  - `LogEmailProvider` (default in development/tests): يكتب الإيميل في الـ logs فقط.
+  - `BrevoEmailProvider` (عند ضبط `EMAIL_PROVIDER=brevo` + مفاتيح Brevo في `.env`): يرسل فعليًا عبر Brevo
+    باستخدام endpoint `/v3/smtp/email`. أي features جديدة (OTP, reset, notifications) يجب أن تمر عبر
+    نفس `EmailService` للاستفادة من الطابور وحد الإرسال اليومي.
+
 
 ## 2) Database Schema & Relationships
 

@@ -16,10 +16,10 @@ from ..core.csrf import (
     set_csrf_cookie,
     verify_csrf_token,
 )
-from ..dependencies import get_current_user, get_user_service
+from ..dependencies import get_current_user, get_user_service, get_email_service
 from ..database import get_db
 from ..services.user_service import UserService
-from ..services.email_service import send_verification_email
+from ..services.email_service import EmailService
 
 
 router = APIRouter(prefix="", tags=["accounts"])
@@ -45,8 +45,8 @@ def register_submit(
     password: str = Form(...),
     password_confirm: str = Form(...),
     csrf_token: Optional[str] = Form(None),
-    db: Session = Depends(get_db),
     user_service: UserService = Depends(get_user_service),
+    email_service: EmailService = Depends(get_email_service),
 ):
     cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
     if not verify_csrf_token(cookie_token, csrf_token):
@@ -68,10 +68,9 @@ def register_submit(
             context={"error": str(exc)},
         )
 
-    # Build verification link
     base_url = os.environ.get("BASE_URL") or request.base_url._url.rstrip("/")
     verify_link = f"{base_url}/verify/{user.verification_token}"
-    send_verification_email(user.email, verify_link)
+    email_service.send_verification_email(user.email, verify_link)
 
     return RedirectResponse(url="/login?msg=check_email", status_code=303)
 

@@ -65,7 +65,8 @@ fantasy/
 │   │   ├── voting_service.py   # Voting system
 │   │   ├── analytics_service.py # Analytics and statistics
 │   │   ├── achievements.py     # Badges and achievements system
-│   │   └── points.py           # Points calculation (Strategy Pattern)
+│   │   ├── points.py           # Points calculation (Strategy Pattern)
+│   │   └── email_service.py    # Email queue + provider abstraction (verification, transactional emails)
 │   │
 │   ├── routers/                 # API Routes
 │   │   ├── public.py           # Public pages

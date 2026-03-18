@@ -29,6 +29,7 @@ from .services.match_service import MatchService
 from .services.analytics_service import AnalyticsService
 from .services.voting_service import VotingService
 from .services.notification_service import NotificationService
+from .services.email_service import EmailService
 from .services.user_service import UserService
 
 # --- Repositories ---
@@ -104,6 +105,10 @@ def get_notification_service(
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     return UserService(db)
+
+
+def get_email_service(db: Session = Depends(get_db)) -> EmailService:
+    return EmailService(db)
 
 # --- Security (league admin + user accounts) ---
 def _get_token_payload(request: Request) -> dict | None:

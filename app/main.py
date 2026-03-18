@@ -2,6 +2,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+import asyncio
 
 from fastapi import FastAPI, Request, HTTPException
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -18,6 +19,7 @@ from .core.rate_limit import limiter
 from .database import Base, SessionLocal, engine
 from .middleware.security_headers import SecurityHeadersMiddleware
 from .routers import admin, public, auth, voting, media, notifications, accounts
+from .services.email_service import LogEmailProvider, process_email_queue_once
 
 # Use Uvicorn's logger so logs appear in the same output
 logger = logging.getLogger("uvicorn.error")
@@ -165,9 +167,40 @@ async def lifespan(app: FastAPI):
                 logger.warning(f"voting_bonus_applied type fix skipped: {e}")
     except Exception as e:
         logger.warning(f"Database startup tasks failed (app will still run): {e}")
-                
+
+    # Start background email queue worker
+    stop_event = asyncio.Event()
+
+    async def _email_worker() -> None:
+        """
+        Simple background loop that periodically processes the email queue.
+
+        Uses a dedicated DB session per tick and respects the configured daily limit.
+        """
+        interval_seconds = 30
+        while not stop_event.is_set():
+            try:
+                with SessionLocal() as db:
+                    processed = process_email_queue_once(db, provider=None)
+                    if processed:
+                        logger.info("Email worker processed %s queued emails.", processed)
+            except Exception as e:  # pragma: no cover - defensive logging
+                logger.warning(f"Email worker tick failed: {e}")
+            # Sleep with cancellation support
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=interval_seconds)
+            except asyncio.TimeoutError:
+                continue
+
+    worker_task = asyncio.create_task(_email_worker())
+
     logger.info("Application startup complete inside lifespan, handing control back to FastAPI.")
-    yield
+    try:
+        yield
+    finally:
+        # Signal the worker to stop and wait for it to finish
+        stop_event.set()
+        await worker_task
 
 
 

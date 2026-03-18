@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     vapid_public_key: str | None = None
     vapid_private_key: str | None = None
     vapid_subject: str | None = None
+    # Email / provider settings
+    email_provider: str = "log"  # "log", "brevo", etc. (override via EMAIL_PROVIDER)
+    email_daily_limit: int = 300  # Default aligned with Brevo Free plan
+    brevo_api_key: str | None = None
+    brevo_sender_email: str | None = None
+    brevo_sender_name: str | None = None
+    brevo_api_base_url: str = "https://api.brevo.com/v3"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

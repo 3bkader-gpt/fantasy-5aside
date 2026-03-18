@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..database import Base
@@ -284,3 +284,40 @@ class PushSubscription(Base):
     auth = Column(String(255), nullable=False)
     player_id = Column(Integer, ForeignKey("players.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class EmailQueue(Base):
+    """
+    Application-level email queue.
+
+    All outbound emails (verification, reset, notifications, etc.) are enqueued here
+    and picked up by a background worker that respects provider limits.
+    """
+
+    __tablename__ = "email_queue"
+
+    id = Column(Integer, primary_key=True, index=True)
+    to_email = Column(String(255), nullable=False, index=True)
+    subject = Column(String(255), nullable=False)
+    body = Column(Text, nullable=False)
+    email_type = Column(String(50), nullable=False, index=True)  # transactional/system/notification
+    priority = Column(Integer, default=1, index=True)
+    status = Column(String(32), default="pending", index=True)  # pending/sent/failed/cancelled
+    scheduled_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    retries_count = Column(Integer, default=0)
+    provider = Column(String(50), nullable=True)  # e.g. resend/brevo
+
+
+class EmailDailyUsage(Base):
+    """
+    Tracks how many emails were successfully sent on a given UTC date.
+
+    This allows the background worker to enforce daily provider limits efficiently.
+    """
+
+    __tablename__ = "email_daily_usage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, nullable=False, unique=True, index=True)
+    sent_count = Column(Integer, default=0)

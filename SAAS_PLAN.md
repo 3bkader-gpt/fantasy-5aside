@@ -103,7 +103,7 @@ GET  /logout          → clears both access_token (league admin) and user_acces
 |------|---------|
 | `app/models/user_model.py` | User ORM model |
 | `app/routers/accounts.py` | register / login / dashboard routes |
-| `app/services/email_service.py` | Verification emails via Resend API |
+| `app/services/email_service.py` | EmailService + queue-based email delivery with daily limit (Brevo/log providers) |
 | `app/templates/dashboard.html` | Multi-league dashboard |
 | `app/templates/auth/register.html` | Registration page |
 
