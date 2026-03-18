@@ -385,7 +385,7 @@ GET  /                             → Landing page
 POST /create-league                → Create a new league
 GET  /api/slug-available          → Check if a slug is free
 GET  /l/{slug}                     → League leaderboard
-GET  /l/{slug}/matches             → Matches page
+GET  /l/{slug}/matches             → Matches page (supports optional ?season=N to filter by season)
 GET  /l/{slug}/cup                 → Cup page
 GET  /l/{slug}/player/{id}         → Player profile
 GET  /l/{slug}/hof                 → Hall of Fame

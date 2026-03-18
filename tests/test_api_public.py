@@ -56,8 +56,21 @@ class TestPublicAPI:
         assert "PlayerOne" in response.text
 
     def test_read_matches(self, client, league_repo):
-        l = league_repo.create(schemas.LeagueCreate(name="L", slug="l-matches", admin_password="p"), security.get_password_hash("p"))
+        l = league_repo.create(
+            schemas.LeagueCreate(name="L", slug="l-matches", admin_password="p"),
+            security.get_password_hash("p"),
+        )
         response = client.get(f"/l/{l.slug}/matches")
+        assert response.status_code == 200
+        assert "matches-container" in response.text
+
+    def test_read_matches_with_season_param_accepts_query(self, client, league_repo):
+        l = league_repo.create(
+            schemas.LeagueCreate(name="L", slug="l-matches-season", admin_password="p"),
+            security.get_password_hash("p"),
+        )
+        # No matches yet, but the route should still handle the season param gracefully.
+        response = client.get(f"/l/{l.slug}/matches?season=1")
         assert response.status_code == 200
         assert "matches-container" in response.text
 

@@ -271,22 +271,79 @@ def read_leaderboard(
 def read_matches(
     request: Request,
     slug: str = Path(..., pattern=SLUG_PATTERN),
+    season: int | None = Query(None, ge=1),
     league_repo: ILeagueRepository = Depends(get_league_repository),
-    match_repo: IMatchRepository = Depends(get_match_repository)
+    match_repo: IMatchRepository = Depends(get_match_repository),
 ):
     league = league_repo.get_by_slug(slug)
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
     if league.slug != slug:
         return _canonical_league_redirect(request, slug, league.slug)
-        
-    matches = match_repo.get_all_for_league(league.id)
+
+    all_matches = match_repo.get_all_for_league(league.id) or []
+
+    # Determine season count and per-match season numbers.
+    # Business rule: each finished season has up to 4 matches; current season
+    # uses league.current_season_matches (fallback to min(4, total)).
+    total_matches = len(all_matches)
+    if total_matches == 0:
+        seasons = []
+        current_season = league.season_number or 1
+        filtered_matches = []
+    else:
+        # Sort by date ascending for stable season assignment; fall back to id.
+        def _match_sort_key(m: models.Match) -> tuple:
+            return (getattr(m, "date", None) or 0, m.id)
+
+        sorted_matches = sorted(all_matches, key=_match_sort_key)
+
+        league_season_number = league.season_number or 1
+        current_season_matches = (
+            league.current_season_matches
+            if getattr(league, "current_season_matches", None) is not None
+            else min(4, total_matches)
+        )
+        current_season_matches = max(0, min(current_season_matches, total_matches))
+
+        finished_seasons_match_count = max(0, total_matches - current_season_matches)
+
+        match_season_map: dict[int, int] = {}
+        for idx, m in enumerate(sorted_matches):
+            if idx < finished_seasons_match_count:
+                season_number = 1 + idx // 4
+            else:
+                season_number = league_season_number
+            # Clamp to valid range in case of inconsistent counters.
+            season_number = max(1, min(season_number, league_season_number))
+            match_season_map[m.id] = season_number
+
+        seasons = [{"number": s, "label": f"الموسم {s}"} for s in range(1, league_season_number + 1)]
+
+        # Choose effective season: explicit query param if valid, otherwise current league season.
+        requested_season = season
+        if requested_season is None or requested_season < 1 or requested_season > league_season_number:
+            current_season = league_season_number
+        else:
+            current_season = requested_season
+
+        filtered_matches = [
+            m for m in all_matches if match_season_map.get(m.id, league_season_number) == current_season
+        ]
+
     is_admin = check_admin_status(slug, request)
     token = generate_csrf_token()
     resp = templates.TemplateResponse(
         request=request,
         name="matches.html",
-        context={"league": league, "matches": matches, "is_admin": is_admin, "csrf_token": token}
+        context={
+            "league": league,
+            "matches": filtered_matches,
+            "is_admin": is_admin,
+            "csrf_token": token,
+            "seasons": seasons,
+            "current_season": current_season,
+        },
     )
     set_csrf_cookie(resp, token)
     return resp
