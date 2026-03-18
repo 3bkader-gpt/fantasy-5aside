@@ -219,6 +219,7 @@ Step 4 → Done! Share your league link
 - ✅ User-auth gated dashboard (uses user_access_token + get_current_user)
 - ✅ Onboarding wizard flow (league → teams → players → done)
 - ✅ Persistence/state: onboarding is state-driven — if user already owns leagues, `/onboarding/start` redirects to `/dashboard` (no DB flag).
+- ✅ Matches page per-season selector in the header to quickly jump between seasons without long scroll.
 
 ### Files
 

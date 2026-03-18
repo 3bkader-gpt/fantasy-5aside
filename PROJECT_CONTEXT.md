@@ -240,6 +240,12 @@ Undo season:
 - Clears snapshots.
 - Rolls back league season counters.
 
+Matches view season selector:
+- The public matches page (`/l/{slug}/matches`) derives a lightweight per-match `season_number`
+  from league counters (`season_number` and `current_season_matches`) and chronological match order.
+- Users can pass an optional `?season=N` query parameter to filter matches to a single season, and
+  the header season selector uses those computed seasons to avoid long scrolling in long-lived leagues.
+
 ### 3.4 Cup Engine (Clean Architecture)
 Primary files:
 - `app/use_cases/generate_cup.py` (`GenerateCupUseCase`)
