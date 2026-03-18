@@ -220,6 +220,7 @@ Step 4 → Done! Share your league link
 - ✅ Onboarding wizard flow (league → teams → players → done)
 - ✅ Persistence/state: onboarding is state-driven — if user already owns leagues, `/onboarding/start` redirects to `/dashboard` (no DB flag).
 - ✅ Matches page per-season selector in the header to quickly jump between seasons without long scroll.
+- ✅ Matches: fixed season membership via `matches.season_number` + immutable match date after creation.
 
 ### Files
 

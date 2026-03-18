@@ -1,6 +1,7 @@
 from app.schemas import schemas
 from app.core import security
 from app.models import models
+from datetime import datetime, timezone, timedelta
 
 class TestMatchService:
     def test_register_match_persists_stats(self, db_session, league_repo, player_repo, match_service):
@@ -28,6 +29,7 @@ class TestMatchService:
         # 3. Verify Match
         assert match.team_a_score == 2
         assert match.team_b_score == 1
+        assert match.season_number == 1
         
         # 4. Verify Stats Persistence
         stats_in_db = db_session.query(models.MatchStat).filter(models.MatchStat.match_id == match.id).all()
@@ -52,17 +54,20 @@ class TestMatchService:
             stats=[schemas.MatchStatCreate(player_name=p1.name, team="A", goals=1)]
         )
         match = match_service.register_match(league.id, match_data)
+        original_date = match.date
         
         # Update match
         update_data = schemas.MatchEditRequest(
             admin_password=password,
             team_a_name="A", team_b_name="B",
-            stats=[schemas.MatchStatCreate(player_name=p1.name, team="A", goals=3)]
+            stats=[schemas.MatchStatCreate(player_name=p1.name, team="A", goals=3)],
+            date=(datetime.now(timezone.utc) + timedelta(days=2)),
         )
         updated_match = match_service.update_match(league.id, match.id, update_data)
         
         # Verify
         assert updated_match.team_a_score == 3
+        assert updated_match.date == original_date
         db_session.refresh(p1)
         assert p1.total_goals == 3
 

@@ -245,6 +245,7 @@ class MatchService(IMatchService):
 
             db_match = models.Match(
                 league_id=league_id,
+                season_number=(league.season_number or 1),
                 team_a_name=team_a_name,
                 team_b_name=team_b_name,
                 team_a_id=match_data.team_a_id,
@@ -275,26 +276,11 @@ class MatchService(IMatchService):
         if not match or match.league_id != league_id:
             raise HTTPException(status_code=404, detail="Match not found")
 
-        original_date = match.date
-        if getattr(update_data, "date", None) is not None:
-            from datetime import timezone
-            d = update_data.date
-            if d.tzinfo is None:
-                d = d.replace(tzinfo=timezone.utc)
-            match.date = d
-        # else: keep original_date
-
-        # Is this match in a completed season? (by order: first N matches = completed, N = sum(HOF season_matches_count))
+        # Match date is immutable after creation (do NOT accept updates).
+        # Season membership is fixed via match.season_number.
         match_in_completed_season = False
-        if self.hof_repo:
-            from datetime import datetime as _dt, timezone as _tz
-            all_matches = self.match_repo.get_all_for_league(league_id)
-            order_dates = [(m.id, m.date if m.id != match.id else match.date) for m in all_matches]
-            order_dates.sort(key=lambda x: x[1] or _dt(1970, 1, 1, tzinfo=_tz.utc))
-            match_index = next((i for i, (mid, _) in enumerate(order_dates) if mid == match.id), 0)
-            hof_records = self.hof_repo.get_all_for_league(league_id)
-            completed_count = sum(h.season_matches_count or 0 for h in hof_records)
-            match_in_completed_season = match_index < completed_count
+        if getattr(match, "season_number", None) is not None and (league.season_number or 1) > 1:
+            match_in_completed_season = (match.season_number or 1) < (league.season_number or 1)
 
         try:
             self._snapshot_ranks(league_id)

@@ -119,8 +119,10 @@ async def lifespan(app: FastAPI):
             ("match_media", "file_url", "VARCHAR(512) DEFAULT NULL"),
             ("match_stats", "voting_bonus_applied", "BOOLEAN DEFAULT FALSE"),
             ("matches", "allowed_voter_ids", "TEXT DEFAULT NULL"),
+            ("matches", "season_number", "INTEGER DEFAULT NULL"),
             ("cup_matchups", "league_id", "INDEX"),
             ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL"),
+            ("matches", "season_number", "INDEX"),
         ]
 
         # Ensure audit_log, revoked_tokens, and users tables exist (OWASP + accounts)
@@ -153,6 +155,33 @@ async def lifespan(app: FastAPI):
             except Exception:
                 # Expected if column already exists
                 logger.debug(f"Skipping migration for '{col_name}' in '{table}' (likely exists).")
+
+        # Backfill matches.season_number once (idempotent):
+        # - For each league: order matches chronologically and assign 1 + (idx // 4)
+        try:
+            with engine.begin() as conn:
+                leagues = conn.execute(text("SELECT id FROM leagues ORDER BY id")).fetchall()
+                for (league_id,) in leagues:
+                    # Only backfill rows where season_number is null
+                    match_rows = conn.execute(
+                        text(
+                            "SELECT id FROM matches "
+                            "WHERE league_id = :league_id AND season_number IS NULL "
+                            "ORDER BY date ASC NULLS LAST, id ASC"
+                        ),
+                        {"league_id": league_id},
+                    ).fetchall()
+                    if not match_rows:
+                        continue
+                    for idx, (match_id,) in enumerate(match_rows):
+                        season_no = 1 + (idx // 4)
+                        conn.execute(
+                            text("UPDATE matches SET season_number = :season_no WHERE id = :match_id"),
+                            {"season_no": season_no, "match_id": match_id},
+                        )
+                logger.info("Backfill: ensured matches.season_number for existing rows.")
+        except Exception as e:
+            logger.warning(f"Backfill matches.season_number skipped: {e}")
 
         # Fix voting_bonus_applied on PostgreSQL if it was created as integer (DatatypeMismatch on INSERT)
         if engine.dialect.name == "postgresql":

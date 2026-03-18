@@ -241,10 +241,14 @@ Undo season:
 - Rolls back league season counters.
 
 Matches view season selector:
-- The public matches page (`/l/{slug}/matches`) derives a lightweight per-match `season_number`
-  from league counters (`season_number` and `current_season_matches`) and chronological match order.
+- The public matches page (`/l/{slug}/matches`) uses the persisted `matches.season_number`
+  for stable season membership (does not change when matches are deleted/edited).
 - Users can pass an optional `?season=N` query parameter to filter matches to a single season, and
-  the header season selector uses those computed seasons to avoid long scrolling in long-lived leagues.
+  the header season selector uses those stored seasons to avoid long scrolling in long-lived leagues.
+
+Invariants:
+- `Match.date` is immutable after creation (editing a match must not change its date).
+- `Match.season_number` is stamped at creation from `league.season_number` and backfilled once for older rows.
 
 ### 3.4 Cup Engine (Clean Architecture)
 Primary files:

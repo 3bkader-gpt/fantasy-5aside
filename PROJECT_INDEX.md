@@ -408,6 +408,10 @@ DELETE /l/{slug}/admin/player/{id}   → Delete player
 POST /l/{slug}/admin/team/create     → Create team
 ```
 
+Notes:
+- Matches are grouped into fixed seasons via `matches.season_number` (persisted on create + backfill).
+- Match dates are immutable after creation.
+
 ### Auth Routes (`routers/auth.py`):
 ```
 GET  /login                        → Login page

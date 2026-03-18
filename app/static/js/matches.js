@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelector('.team-a-label').textContent = matchData.team_a_name;
             document.querySelector('.team-b-label').textContent = matchData.team_b_name;
 
-            // Populate Match Date (لتصحيح مباراة انتقلت لموسم خاطئ)
+            // Populate Match Date (read-only: date is immutable after creation)
             const dateInput = document.getElementById('edit_match_date');
             if (dateInput && matchData.date) {
                 dateInput.value = matchData.date.slice(0, 10);
@@ -456,10 +456,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 stats: stats
             };
 
-            const dateInputVal = document.getElementById('edit_match_date') && document.getElementById('edit_match_date').value;
-            if (dateInputVal) {
-                payload.date = dateInputVal;
-            }
+            // Do NOT send date updates (immutable on server)
 
             const leagueSlug = window.LEAGUE_SLUG;
 

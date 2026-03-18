@@ -117,6 +117,8 @@ class Match(Base):
     id = Column(Integer, primary_key=True, index=True)
     league_id = Column(Integer, ForeignKey("leagues.id"))
     date = Column(DateTime(timezone=True), server_default=func.now())
+    # Fixed season membership for UX filtering (/matches?season=N)
+    season_number = Column(Integer, nullable=True, index=True)
     team_a_name = Column(String, default="Team A")
     team_b_name = Column(String, default="Team B")
     team_a_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
