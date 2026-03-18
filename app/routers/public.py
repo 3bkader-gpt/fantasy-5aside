@@ -283,53 +283,45 @@ def read_matches(
 
     all_matches = match_repo.get_all_for_league(league.id) or []
 
-    # Determine season count and per-match season numbers.
-    # Business rule: each finished season has up to 4 matches; current season
-    # uses league.current_season_matches (fallback to min(4, total)).
+    # Season computation for matches view:
+    # - Authoritative: chronological match order, every 4 matches = season increment (1-based).
+    # - We still *display* up to league.season_number to support the case where a new season started
+    #   but has 0 matches yet.
     total_matches = len(all_matches)
+    league_season_number = league.season_number or 1
+
     if total_matches == 0:
-        seasons = []
-        current_season = league.season_number or 1
+        seasons = [{"number": s, "label": f"الموسم {s}"} for s in range(1, league_season_number + 1)]
+        current_season = season if season and 1 <= season <= league_season_number else league_season_number
         filtered_matches = []
     else:
-        # Sort by date ascending for stable season assignment; fall back to id.
         def _match_sort_key(m: models.Match) -> tuple:
-            return (getattr(m, "date", None) or 0, m.id)
+            # Date can be None; keep stable ordering via (has_date, date, id).
+            dt = getattr(m, "date", None)
+            return (0 if dt else 1, dt, m.id)
 
         sorted_matches = sorted(all_matches, key=_match_sort_key)
-
-        league_season_number = league.season_number or 1
-        current_season_matches = (
-            league.current_season_matches
-            if getattr(league, "current_season_matches", None) is not None
-            else min(4, total_matches)
-        )
-        current_season_matches = max(0, min(current_season_matches, total_matches))
-
-        finished_seasons_match_count = max(0, total_matches - current_season_matches)
+        derived_max_season = 1 + (total_matches - 1) // 4
+        max_season = max(league_season_number, derived_max_season)
 
         match_season_map: dict[int, int] = {}
         for idx, m in enumerate(sorted_matches):
-            if idx < finished_seasons_match_count:
-                season_number = 1 + idx // 4
-            else:
-                season_number = league_season_number
-            # Clamp to valid range in case of inconsistent counters.
-            season_number = max(1, min(season_number, league_season_number))
-            match_season_map[m.id] = season_number
+            match_season_map[m.id] = 1 + idx // 4
 
-        seasons = [{"number": s, "label": f"الموسم {s}"} for s in range(1, league_season_number + 1)]
+        seasons = [{"number": s, "label": f"الموسم {s}"} for s in range(1, max_season + 1)]
 
-        # Choose effective season: explicit query param if valid, otherwise current league season.
-        requested_season = season
-        if requested_season is None or requested_season < 1 or requested_season > league_season_number:
-            current_season = league_season_number
+        # Choose effective season:
+        # - If query param valid, use it.
+        # - Else default to league_season_number, but if that season has no matches yet, show latest season with matches.
+        requested = season if season and 1 <= season <= max_season else None
+        if requested is not None:
+            current_season = requested
         else:
-            current_season = requested_season
+            current_season = league_season_number
+            if current_season > derived_max_season:
+                current_season = derived_max_season
 
-        filtered_matches = [
-            m for m in all_matches if match_season_map.get(m.id, league_season_number) == current_season
-        ]
+        filtered_matches = [m for m in all_matches if match_season_map.get(m.id) == current_season]
 
     is_admin = check_admin_status(slug, request)
     token = generate_csrf_token()
