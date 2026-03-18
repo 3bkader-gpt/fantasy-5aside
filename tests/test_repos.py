@@ -23,6 +23,14 @@ class TestRepositories:
         lb = player_repo.get_leaderboard(l.id)
         assert len(lb) == 1
         assert lb[0].name == "P1"
+
+    def test_get_by_id_for_league_blocks_cross_league(self, league_repo, player_repo):
+        l1 = league_repo.create(schemas.LeagueCreate(name="L1", slug="l1", admin_password="p"), "p")
+        l2 = league_repo.create(schemas.LeagueCreate(name="L2", slug="l2", admin_password="p"), "p")
+        p = player_repo.create("OnlyInL1", l1.id)
+
+        assert player_repo.get_by_id_for_league(l1.id, p.id) is not None
+        assert player_repo.get_by_id_for_league(l2.id, p.id) is None
         
     def test_match_stats_cascade_delete(self, db_session, league_repo, player_repo, match_repo):
         # Setup data

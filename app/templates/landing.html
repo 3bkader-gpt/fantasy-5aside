@@ -26,7 +26,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="mb-1">
                 <label class="form-label">اسم الدوري:</label>
-                <input type="text" name="name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"
+                <input id="league-name" type="text" name="name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"
                     class="form-control">
             </div>
 
@@ -34,10 +34,16 @@
                 <label class="form-label">رابط الدوري (الرابط الذي ستشاركه مع أصدقائك):</label>
                 <div class="input-group" style="direction: ltr;">
                     <span class="input-group-text">/l/</span>
-                    <input type="text" name="slug" required placeholder="ashmant-squad" pattern="[a-zA-Z0-9_-]+"
+                    <input id="league-slug" type="text" name="slug" required placeholder="ashmant-squad" pattern="[a-zA-Z0-9_-]+"
                         title="يسمح فقط بالحروف الإنجليزية والأرقام والشرطة (-)" class="form-control"
                         style="direction: ltr;">
                 </div>
+                <div id="slug-status" class="text-secondary" style="font-size: 0.95rem; margin-top: 0.35rem; text-align: right;"></div>
+            </div>
+
+            <div class="mb-1">
+                <label class="form-label">بريد الإدمن (اختياري الآن — مطلوب لاحقاً):</label>
+                <input type="email" name="admin_email" placeholder="admin@example.com" class="form-control" style="direction:ltr;">
             </div>
 
             <div class="mb-2">
@@ -54,7 +60,8 @@
 
             <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.2rem;">
                 🚀 أنشئ الدوري الآن
-            </button></form>
+            </button>
+        </form>
     </div>
 
     {% if leagues %}
@@ -72,4 +79,63 @@
     {% endif %}
 
 </div>
+
+<script>
+(() => {
+  const nameEl = document.getElementById("league-name");
+  const slugEl = document.getElementById("league-slug");
+  const statusEl = document.getElementById("slug-status");
+  if (!nameEl || !slugEl || !statusEl) return;
+
+  const slugify = (s) => (s || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\\s_-]/g, "")
+    .replace(/\\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-_]+|[-_]+$/g, "");
+
+  let lastChecked = "";
+  let timer = null;
+
+  const setStatus = (msg, color) => {
+    statusEl.textContent = msg || "";
+    statusEl.style.color = color || "";
+  };
+
+  const checkAvailability = async () => {
+    const slug = (slugEl.value || "").trim();
+    if (!slug) { setStatus("", ""); return; }
+    if (slug === lastChecked) return;
+    lastChecked = slug;
+    setStatus("جاري التحقق من توفر الرابط...", "");
+    try {
+      const res = await fetch(`/api/slug-available?slug=${encodeURIComponent(slug)}`, { credentials: "same-origin" });
+      const data = await res.json();
+      if (data && data.available === true) setStatus("الرابط متاح ✅", "#1f7a3f");
+      else setStatus("الرابط غير متاح ❌", "#b00020");
+    } catch (e) {
+      setStatus("تعذر التحقق الآن. حاول لاحقاً.", "#b00020");
+    }
+  };
+
+  nameEl.addEventListener("input", () => {
+    // Only autosuggest if user hasn't typed a custom slug yet
+    if (slugEl.dataset.touched === "1") return;
+    const suggested = slugify(nameEl.value);
+    if (suggested) slugEl.value = suggested;
+    clearTimeout(timer);
+    timer = setTimeout(checkAvailability, 300);
+  });
+
+  slugEl.addEventListener("input", () => {
+    slugEl.dataset.touched = "1";
+    clearTimeout(timer);
+    timer = setTimeout(checkAvailability, 300);
+  });
+
+  slugEl.addEventListener("blur", checkAvailability);
+})();
+</script>
 {% endblock %}

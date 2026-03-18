@@ -81,8 +81,8 @@ def open_voting(
     """
     Manually open voting for a match (starts round 1).
     """
-    match = match_repo.get_by_id(match_id)
-    if not match or match.league_id != league.id:
+    match = match_repo.get_by_id_for_league(league.id, match_id)
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found")
     result = voting_service.open_voting(match_id, allowed_voter_ids=payload.allowed_voter_ids)
     if result.get("status") == "error":
@@ -114,7 +114,7 @@ def close_round(
     """
     Close the current voting round and award points.
     """
-    match = match_repo.get_by_id(match_id)
-    if not match or match.league_id != league.id:
+    match = match_repo.get_by_id_for_league(league.id, match_id)
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found")
     return voting_service.close_round(match_id)

@@ -25,6 +25,8 @@ class IPlayerRepository(ABC):
     @abstractmethod
     def get_by_id(self, player_id: int) -> Optional[models.Player]: pass
     @abstractmethod
+    def get_by_id_for_league(self, league_id: int, player_id: int) -> Optional[models.Player]: pass
+    @abstractmethod
     def get_by_name(self, league_id: int, name: str) -> Optional[models.Player]: pass
     @abstractmethod
     def get_all_for_league(self, league_id: int) -> List[models.Player]: pass
@@ -42,6 +44,8 @@ class IPlayerRepository(ABC):
 class IMatchRepository(ABC):
     @abstractmethod
     def get_by_id(self, match_id: int) -> Optional[models.Match]: pass
+    @abstractmethod
+    def get_by_id_for_league(self, league_id: int, match_id: int) -> Optional[models.Match]: pass
     @abstractmethod
     def get_all_for_league(self, league_id: int) -> List[models.Match]: pass
     @abstractmethod
@@ -77,25 +81,27 @@ class IHallOfFameRepository(ABC):
 
 class IVotingRepository(ABC):
     @abstractmethod
-    def get_votes_for_match(self, match_id: int, round_number: int) -> List[models.Vote]: pass
+    def get_votes_for_match(self, league_id: int, match_id: int, round_number: int) -> List[models.Vote]: pass
     @abstractmethod
-    def get_vote_by_voter(self, match_id: int, voter_id: int, round_number: int) -> Optional[models.Vote]: pass
+    def get_vote_by_voter(self, league_id: int, match_id: int, voter_id: int, round_number: int) -> Optional[models.Vote]: pass
     @abstractmethod
     def save_vote(self, vote: models.Vote) -> models.Vote: pass
     @abstractmethod
-    def get_round_results(self, match_id: int, round_number: int) -> List[dict]: pass # List of {candidate_id, count}
+    def get_round_results(self, league_id: int, match_id: int, round_number: int) -> List[dict]: pass # List of {candidate_id, count}
     @abstractmethod
-    def get_votes_by_ip(self, match_id: int, ip: str, round_number: int) -> List[models.Vote]: pass
+    def get_votes_by_ip(self, league_id: int, match_id: int, ip: str, round_number: int) -> List[models.Vote]: pass
     @abstractmethod
-    def get_vote_by_fingerprint(self, match_id: int, fingerprint: str, round_number: int) -> Optional[models.Vote]: pass
+    def get_vote_by_fingerprint(self, league_id: int, match_id: int, fingerprint: str, round_number: int) -> Optional[models.Vote]: pass
     @abstractmethod
-    def delete_votes_for_round(self, match_id: int, round_number: int) -> int: pass
+    def delete_votes_for_round(self, league_id: int, match_id: int, round_number: int) -> int: pass
 
 class ITeamRepository(ABC):
     @abstractmethod
     def get_all_for_league(self, league_id: int) -> List[models.Team]: pass
     @abstractmethod
     def get_by_id(self, team_id: int) -> Optional[models.Team]: pass
+    @abstractmethod
+    def get_by_id_for_league(self, league_id: int, team_id: int) -> Optional[models.Team]: pass
     @abstractmethod
     def get_by_name(self, league_id: int, name: str) -> Optional[models.Team]: pass
     @abstractmethod
@@ -108,5 +114,7 @@ class ITeamRepository(ABC):
 class ITransferRepository(ABC):
     @abstractmethod
     def get_all_for_player(self, player_id: int) -> List[models.Transfer]: pass
+    @abstractmethod
+    def get_all_for_player_for_league(self, league_id: int, player_id: int) -> List[models.Transfer]: pass
     @abstractmethod
     def save(self, transfer: models.Transfer) -> models.Transfer: pass

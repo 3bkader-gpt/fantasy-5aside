@@ -85,8 +85,8 @@ class AnalyticsService(IAnalyticsService):
         }
 
     def get_player_analytics(self, player_id: int, league_id: int) -> Optional[Dict[str, Any]]:
-        player = self.player_repo.get_by_id(player_id)
-        if not player or player.league_id != league_id:
+        player = self.player_repo.get_by_id_for_league(league_id, player_id)
+        if not player:
             return None
 
         history = self.match_repo.get_player_history(player.id)
@@ -129,8 +129,8 @@ class AnalyticsService(IAnalyticsService):
 
     def get_player_form_and_chart_data(self, player_id: int, league_id: int, history: List[models.MatchStat] = None):
         if history is None:
-            player = self.player_repo.get_by_id(player_id)
-            if not player or player.league_id != league_id:
+            player = self.player_repo.get_by_id_for_league(league_id, player_id)
+            if not player:
                 return None
             # Chronological order for chart (Oldest to Newest)
             history = self.match_repo.get_player_history(player.id)
@@ -187,9 +187,9 @@ class AnalyticsService(IAnalyticsService):
         if player1_id == player2_id:
             return None
 
-        p1 = self.player_repo.get_by_id(player1_id)
-        p2 = self.player_repo.get_by_id(player2_id)
-        if not p1 or not p2 or p1.league_id != league_id or p2.league_id != league_id:
+        p1 = self.player_repo.get_by_id_for_league(league_id, player1_id)
+        p2 = self.player_repo.get_by_id_for_league(league_id, player2_id)
+        if not p1 or not p2:
             return None
 
         h1 = self.match_repo.get_player_history(p1.id)

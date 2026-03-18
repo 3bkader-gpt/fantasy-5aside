@@ -47,6 +47,7 @@ class LeagueBase(BaseModel):
 
 class LeagueCreate(LeagueBase):
     admin_password: str
+    admin_email: Optional[str] = None
 
 class LeagueUpdate(BaseModel):
     name: Optional[str] = None

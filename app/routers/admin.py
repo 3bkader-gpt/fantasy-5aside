@@ -434,8 +434,8 @@ def get_match_details(
     إرجاع بيانات مباراة واحدة (للـ frontend عند فتح شاشة التعديل).
     """
 
-    match = match_repo.get_by_id(match_id)
-    if not match or match.league_id != league.id:
+    match = match_repo.get_by_id_for_league(league.id, match_id)
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found")
 
     stats_payload = []
@@ -1005,8 +1005,8 @@ def reset_voting_round(
     """
     if league.slug != slug:
         raise HTTPException(status_code=400, detail="Slug mismatch for league")
-    match = match_repo.get_by_id(match_id)
-    if not match or match.league_id != league.id:
+    match = match_repo.get_by_id_for_league(league.id, match_id)
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found")
     result = voting_service.reset_current_round_votes(match_id)
     audit(league.id, "reset_voting", league.slug, {"match_id": match_id})
@@ -1025,8 +1025,8 @@ def get_votes_detail(
     """
     Admin-only: list who voted for whom in a given round (or current round if not specified).
     """
-    match = match_repo.get_by_id(match_id)
-    if not match or match.league_id != league.id:
+    match = match_repo.get_by_id_for_league(league.id, match_id)
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found")
     r = round_number if round_number is not None else match.voting_round
     if r == 0:

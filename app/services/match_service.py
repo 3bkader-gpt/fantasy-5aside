@@ -227,8 +227,8 @@ class MatchService(IMatchService):
                         status_code=422,
                         detail="يجب اختيار الفريق أ والفريق ب من قائمة الفرق المسجلة"
                     )
-                team_a_obj = self.team_repo.get_by_id(match_data.team_a_id)
-                team_b_obj = self.team_repo.get_by_id(match_data.team_b_id)
+                team_a_obj = self.team_repo.get_by_id_for_league(league_id, match_data.team_a_id)
+                team_b_obj = self.team_repo.get_by_id_for_league(league_id, match_data.team_b_id)
                 if not team_a_obj or team_a_obj.league_id != league_id:
                     raise HTTPException(status_code=400, detail="الفريق أ غير موجود في هذا الدوري")
                 if not team_b_obj or team_b_obj.league_id != league_id:

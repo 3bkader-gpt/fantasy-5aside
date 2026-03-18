@@ -1,5 +1,23 @@
 # 📋 Project Index - 5-a-Side Fantasy Football SaaS
 
+### 🔗 Quick navigation
+- **High-level context**: see `PROJECT_CONTEXT.md`
+- **Overview**: [Project Overview](#-project-overview)
+- **Structure**: [Project Structure](#-project-structure)
+- **Data model**: [Database Schema](#️-database-schema)
+- **Features**: [Core Features](#-core-features)
+- **Architecture patterns**: [Architectural Patterns](#-architectural-patterns)
+- **API**: [API Routes](#️-api-routes)
+- **Security**: [Security](#-security)
+- **Tests**: [Tests](#-tests)
+- **Stats**: [Available Statistics](#-available-statistics)
+- **Frontend**: [Frontend](#-frontend)
+- **Deployment**: [Deployment](#-deployment)
+- **Workflow**: [Workflow](#-workflow)
+- **Notes & roadmap**: [Important Notes](#-important-notes), [Future Roadmap](#-future-roadmap-from-saas_planmd), [Development Tips](#-development-tips)
+
+---
+
 ## 🎯 Project Overview
 
 **Type**: Multi-tenant Fantasy Football SaaS for local 5-a-side matches
@@ -665,8 +683,9 @@ class MyBadge(BadgeRule):
 ---
 
 **Last updated**: March 2026  
-**Version**: 3.0  
-**Status**: In production ✅
+**Version**: 3.1  
+**Status**: In production ✅  
+**Monitoring**: GA4 integrated via `base.html` analytics block (non-admin traffic only)
 
 تمام، هذه نسخة `PROJECT_INDEX.md` كاملة بالإنجليزي. يمكنك استبدال محتوى الملف بهذا النص:
 

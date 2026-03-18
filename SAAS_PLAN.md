@@ -10,6 +10,25 @@
 | Self-signup (`/create-league`) | Plan limits & Billing |
 | Per-league JWT auth | Super-admin dashboard |
 | Slug-based routing `/l/{slug}` | Proper marketing landing page |
+| CSRF protection (double-submit cookie) | Demo league (`/l/demo`) |
+| Rate limiting (`slowapi`) | Paid subscriptions + webhooks |
+| Security headers + CSP middleware | Multi-league dashboard (per user) |
+| JWT revocation (`jti` + `revoked_tokens`) | Usage-limit enforcement (Free/Pro) |
+| Exports: CSV stats + JSON backup per league | Email verification + password reset |
+| PWA basics (manifest + `/sw.js`) | Sentry / centralized monitoring |
+| Match media upload/delete endpoints | Scheduled DB backups / restore story |
+| Web push subscription endpoints | |
+
+### Overall SaaS Progress
+
+- [x] Core multi-tenant fantasy engine (current repo)
+- [ ] 🟡 Phase 1 – Harden multi-tenancy (league scoping exists, but audit checklist not done)
+- [ ] ❌ Phase 2 – User accounts & email-based auth
+- [ ] ❌ Phase 3 – Plans & usage limits (Free / Pro / Unlimited)
+- [ ] ❌ Phase 4 – Billing & subscriptions (Stripe / others)
+- [ ] ❌ Phase 5 – Multi-league dashboard & onboarding
+- [ ] 🟡 Phase 6 – Security, monitoring & ops hardening (good baseline exists; monitoring/ops still missing)
+- [ ] 🟡 Phase 7 – Marketing site, branding & demo league (landing exists; proper marketing + demo missing)
 
 ---
 
@@ -18,13 +37,13 @@
 **Goal:** Confirm zero cross-league data leakage before opening to the public.
 
 **Checklist:**
-- [ ] Audit every query in `db_repository.py` — ensure all are filtered by `league_id`
-- [ ] Audit all admin routes — ensure edit/delete operations cannot touch other leagues
-- [ ] Improve the `create-league` form:
-  - Add `Admin Email` (required, for future account linking)
-  - Auto-suggest the slug from the league name
-  - Real-time slug availability check (AJAX)
-- [ ] Add a Confirmation page after league creation (shows `/l/{slug}` link + next steps)
+- [ ] 🟡 Audit every query in `db_repository.py` — architecture is league-scoped, but needs an explicit audit pass
+- [ ] 🟡 Audit all admin routes — ensure edit/delete operations cannot touch other leagues
+- [ ] 🟡 Improve the `create-league` form:
+  - ❌ Add `Admin Email` (required, for future account linking)
+  - ❌ Auto-suggest the slug from the league name
+  - ❌ Real-time slug availability check (AJAX)
+- [ ] ❌ Add a confirmation page after league creation (shows `/l/{slug}` link + next steps)
 
 **Files to change:**
 
@@ -39,6 +58,8 @@
 ## Phase 2 — User Accounts & Authentication
 
 **Goal:** Every league has a real owner with email + password, independent of the admin PIN.
+
+**Status:** ❌ Not implemented yet (current production auth is league admin PIN/JWT only; no user accounts).
 
 ### DB Changes
 
@@ -65,6 +86,13 @@ GET  /verify/{token} → mark is_verified = True
 
 > **Warning:** Keep the current `admin_password` as a backward-compatible PIN. Do not remove it suddenly — migrate gradually.
 
+### Implementation Checklist
+- ❌ `users` table + ORM model
+- ❌ Email verification flow
+- ❌ Register/login routes + templates
+- ❌ `/dashboard` for owned leagues (depends on Phase 5)
+- ❌ Migration strategy for existing leagues (link by `owner_email`, then backfill `owner_user_id`)
+
 ### New Files
 
 | File | Purpose |
@@ -80,6 +108,8 @@ GET  /verify/{token} → mark is_verified = True
 ## Phase 3 — Plans & Usage Limits
 
 **Goal:** Define Freemium model with enforced limits — even before real billing is live.
+
+**Status:** ❌ Not implemented yet (no user accounts/plans model in production).
 
 ### Pricing Tiers
 
@@ -114,12 +144,14 @@ plan_expires_at = Column(DateTime, nullable=True)
 ```
 
 **Modify admin routes:**
-- Check limits before adding a player or starting a new match
-- Show a banner: *"You've used 80% of your monthly limit — Upgrade to Pro"*
+- ❌ Check limits before adding a player or starting a new match
+- ❌ Show a banner: *"You've used 80% of your monthly limit — Upgrade to Pro"*
 
 ---
 
 ## Phase 4 — Billing & Subscriptions
+
+**Status:** ❌ Not implemented yet.
 
 ### Payment Gateway Options
 
@@ -144,14 +176,23 @@ payment_succeeded   → update plan + plan_expires_at
 subscription_ended  → downgrade to "free"
 ```
 
+### Implementation Checklist
+- ❌ Provider selection + account setup (Stripe first)
+- ❌ Checkout/upgrade flow
+- ❌ Customer billing portal
+- ❌ Webhook signature verification + idempotency
+- ❌ Plan state updates + downgrades
+
 ---
 
 ## Phase 5 — Multi-League Dashboard & Onboarding
 
+**Status:** ❌ Not implemented yet (current admin is league-scoped).
+
 ### `/dashboard` Page (post-login)
-- Cards for each league: name, slug, player count, last match date
-- "Create New League" button
-- Current plan badge + upgrade prompt
+- ❌ Cards for each league: name, slug, player count, last match date
+- ❌ "Create New League" button
+- ❌ Current plan badge + upgrade prompt
 
 ### Onboarding Wizard (first-time users)
 ```
@@ -160,6 +201,11 @@ Step 2 → Team names + colors (Team A / Team B)
 Step 3 → Bulk-add players (comma-separated names)
 Step 4 → Done! Share your league link
 ```
+
+### Implementation Checklist
+- ❌ User-auth gated dashboard
+- ❌ Onboarding wizard flow + persistence
+- ❌ Post-create “next steps” UX (can share with Phase 1 confirmation page)
 
 ### Files
 
@@ -173,6 +219,19 @@ Step 4 → Done! Share your league link
 
 ## Phase 6 — Security, Monitoring & Ops
 
+**Status:** 🟡 Partially done (strong baseline security; monitoring/ops hardening still missing).
+
+### Production Baseline (Already in place)
+- ✅ CSRF protection (double-submit cookie)
+- ✅ Rate limiting via `slowapi` (login/vote + middleware)
+- ✅ Security headers + CSP middleware
+- ✅ JWT revocation (`jti` + `revoked_tokens`)
+- ✅ Audit log service (operational trail)
+- ✅ League backup export (`/admin/export/backup`) + CSV stats export
+- ✅ PWA basics (manifest + `/sw.js`)
+- ✅ Match media endpoints + optional Supabase storage integration
+- ✅ Web push subscription endpoints (VAPID)
+
 ### Rate Limiting (`slowapi` middleware)
 | Endpoint | Limit |
 |----------|-------|
@@ -181,37 +240,39 @@ Step 4 → Done! Share your league link
 | Voting API | Already protected (fingerprint) |
 
 ### Logging & Monitoring
-- Improve structured logging for: league creation, match recording, cup resolution
-- Integrate **Sentry** (free hobby tier) for error tracking
+- 🟡 Improve structured logging for: league creation, match recording, cup resolution (AuditLog exists; structured app logs still missing)
+- ❌ Integrate **Sentry** (free hobby tier) for error tracking
 
 ### Backups
-- JSON export per league — already exists as a feature
-- Add Supabase scheduled backups for the full database
+- ✅ JSON export per league — already exists (`/admin/export/backup`)
+- ❌ Add scheduled backups for the full database (Render/Supabase)
 
 ### Super-Admin Dashboard
-- Protected by `SUPERADMIN_SECRET` env variable
-- Shows: all leagues, owners, plans, activity stats
-- Actions: suspend / delete any league
+- ❌ Protected by `SUPERADMIN_SECRET` env variable
+- ❌ Shows: all leagues, owners, plans, activity stats
+- ❌ Actions: suspend / delete any league
 
 ---
 
 ## Phase 7 — Marketing & Branding
 
+**Status:** 🟡 Partially done (basic landing exists; marketing/demo/branding not complete).
+
 ### New Landing Page
-- **Hero:** *"Create your 5-a-side Fantasy League in 2 minutes"*
-- **Features section:** highlight the 14 features already built
-- **Screenshots** from the live league
-- **Demo League:** `/l/demo` — read-only pre-seeded league
-- **Pricing table:** Free / Pro / Unlimited
+- 🟡 Landing page exists, but needs marketing polish:
+  - **Hero:** *"Create your 5-a-side Fantasy League in 2 minutes"*
+  - **Features section:** highlight the key features already built
+  - **Screenshots** from the live league
+  - **Pricing table:** Free / Pro / Unlimited
 
 ### Demo Mode
-- Pre-seeded data in `/l/demo`
-- "Try Demo" button on the landing page
+- ❌ Pre-seeded data in `/l/demo`
+- ❌ "Try Demo" button on the landing page
 
 ### Branding
-- Logo + consistent color palette
-- Short tagline: e.g. *"Fantasy Football, your way."*
-- OG meta tags for social sharing
+- ❌ Logo + consistent color palette
+- ❌ Short tagline: e.g. *"Fantasy Football, your way."*
+- ❌ OG meta tags for social sharing
 
 ---
 
@@ -224,7 +285,7 @@ Step 4 → Done! Share your league link
 4️⃣  Free/Pro limits logic     → Phase 3  (without real billing first)
 5️⃣  Stripe integration        → Phase 4  (Billing + Webhooks)
 6️⃣  Landing page + Demo       → Phase 7  (Marketing)
-7️⃣  Observability + Ops       → Phase 6  (Rate limiting + Sentry)
+7️⃣  Observability + Ops       → Phase 6  (Sentry + backups + structured logging)
 ```
 
 ---

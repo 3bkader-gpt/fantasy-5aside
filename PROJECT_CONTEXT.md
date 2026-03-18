@@ -1,5 +1,17 @@
 # PROJECT_CONTEXT.md
 
+### 🔗 Quick navigation
+- **High-level index**: see `PROJECT_INDEX.md`
+- [1) System Architecture & Tech Stack](#1-system-architecture--tech-stack)
+- [2) Database Schema & Relationships](#2-database-schema--relationships)
+- [3) Core Business Logic & The Game Engine](#3-core-business-logic--the-game-engine-critical)
+- [4) Voting, Anti-Cheat & Security](#4-voting-anti-cheat--security)
+- [5) Frontend Behavior & UX Notes](#5-frontend-behavior--ux-notes)
+- [6) Operational Concerns](#6-operational-concerns)
+- [7) Gotchas, Edge Cases & Invariants](#7-gotchas-edge-cases--invariants)
+
+---
+
 ## 1) System Architecture & Tech Stack
 
 ### 1.1 Product Scope
@@ -22,6 +34,7 @@
 - Server-rendered Jinja2 templates (`app/templates/**`).
 - Vanilla JS modules (`app/static/js/**`).
 - CSS design-token-based styling in `app/static/css/style.css` with RTL support and dark mode.
+- Analytics slot in `app/templates/base.html` (`{% block analytics %}`) wired to GA4 (`G-81P7TKRS4V`) and disabled for admins via `is_admin` to avoid polluting product metrics.
 - No Tailwind in this codebase (custom CSS only).
 
 ### 1.4 Data Layer

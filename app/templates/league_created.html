@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-sm text-center">
+  <div class="card mb-2 hero-card" style="text-align: right;">
+    <h1 class="section-title" style="margin-bottom: 0.25rem;">تم إنشاء الدوري بنجاح ✅</h1>
+    <p class="text-secondary" style="margin-top: 0.25rem;">
+      دوري <strong>{{ league.name }}</strong> جاهز الآن.
+    </p>
+
+    <div class="mb-2" style="direction: ltr; text-align: left;">
+      <div class="input-group">
+        <span class="input-group-text">Link</span>
+        <input class="form-control" readonly value="{{ request.base_url }}l/{{ league.slug }}">
+      </div>
+    </div>
+
+    <div class="mb-2" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <a class="btn btn-primary" href="/l/{{ league.slug }}" style="flex:1; min-width: 160px;">افتح الدوري</a>
+      <a class="btn btn-secondary" href="/login" style="flex:1; min-width: 160px;">تسجيل الدخول للإدارة</a>
+    </div>
+
+    <div class="card" style="padding: 0.75rem; text-align: right;">
+      <h2 class="section-title" style="margin-bottom: 0.25rem;">الخطوات التالية</h2>
+      <ul class="text-secondary" style="margin: 0.5rem 0 0 0; padding-right: 1.25rem; line-height: 1.8;">
+        <li>شارك رابط الدوري مع أصحابك.</li>
+        <li>سجّل دخولك كإدمن من زر الإدارة.</li>
+        <li>سجّل أول مباراة من لوحة التحكم.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

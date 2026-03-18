@@ -45,19 +45,19 @@ class VotingService(IVotingService):
             return schemas.VotingStatusResponse(is_open=False, current_round=0, has_voted=False, excluded_player_ids=[], allowed_voter_ids=self._parse_allowed_voter_ids(getattr(match, "allowed_voter_ids", None)))
         
         # Check if already voted in current round
-        existing_vote = self.voting_repo.get_vote_by_voter(match_id, voter_id, match.voting_round)
+        existing_vote = self.voting_repo.get_vote_by_voter(match.league_id, match_id, voter_id, match.voting_round)
         has_voted = existing_vote is not None
         
         # Excluded players are those who won previous rounds
         excluded_ids = []
         if match.voting_round > 1:
             # Round 1 winner
-            r1_results = self.voting_repo.get_round_results(match_id, 1)
+            r1_results = self.voting_repo.get_round_results(match.league_id, match_id, 1)
             if r1_results:
                 excluded_ids.append(r1_results[0]["candidate_id"])
         if match.voting_round > 2:
             # Round 2 winner
-            r2_results = self.voting_repo.get_round_results(match_id, 2)
+            r2_results = self.voting_repo.get_round_results(match.league_id, match_id, 2)
             if r2_results:
                 excluded_ids.append(r2_results[0]["candidate_id"])
         return schemas.VotingStatusResponse(
@@ -84,18 +84,18 @@ class VotingService(IVotingService):
         # Anti-cheat: check device fingerprint
         fp = vote_in.device_fingerprint.strip() if vote_in.device_fingerprint else ""
         if fp:
-            existing_fp = self.voting_repo.get_vote_by_fingerprint(match_id, fp, match.voting_round)
+            existing_fp = self.voting_repo.get_vote_by_fingerprint(match.league_id, match_id, fp, match.voting_round)
             if existing_fp:
                 raise HTTPException(status_code=403, detail=self.CHEAT_MESSAGE)
 
         # Anti-cheat: check IP address (allow up to MAX_VOTES_PER_IP from same IP)
         if ip_address:
-            ip_votes = self.voting_repo.get_votes_by_ip(match_id, ip_address, match.voting_round)
+            ip_votes = self.voting_repo.get_votes_by_ip(match.league_id, match_id, ip_address, match.voting_round)
             if len(ip_votes) >= self.MAX_VOTES_PER_IP:
                 raise HTTPException(status_code=403, detail=self.CHEAT_MESSAGE)
 
         # Check if voter_id already voted
-        existing = self.voting_repo.get_vote_by_voter(match_id, vote_in.voter_id, match.voting_round)
+        existing = self.voting_repo.get_vote_by_voter(match.league_id, match_id, vote_in.voter_id, match.voting_round)
         if existing:
             raise HTTPException(status_code=400, detail="لقد قمت بالتصويت بالفعل في هذه الجولة")
 
@@ -146,7 +146,7 @@ class VotingService(IVotingService):
             )
 
         round_number = match.voting_round
-        results = self.voting_repo.get_round_results(match_id, round_number)
+        results = self.voting_repo.get_round_results(match.league_id, match_id, round_number)
         total_votes = sum(r["count"] for r in results) if results else 0
 
         candidates: List[schemas.LiveVotingCandidate] = []
@@ -187,7 +187,7 @@ class VotingService(IVotingService):
             closed_round_numbers = [1, 2]
         closed_rounds: List[schemas.ClosedRoundResult] = []
         for r in closed_round_numbers:
-            results = self.voting_repo.get_round_results(match_id, r)
+            results = self.voting_repo.get_round_results(match.league_id, match_id, r)
             total_votes = sum(row["count"] for row in results) if results else 0
             candidates: List[schemas.LiveVotingCandidate] = []
             for row in results:
@@ -214,7 +214,10 @@ class VotingService(IVotingService):
 
     def get_votes_detail(self, match_id: int, round_number: int) -> schemas.VotesDetailResponse:
         """Admin-only: list who voted for whom in a given round."""
-        votes = self.voting_repo.get_votes_for_match(match_id, round_number)
+        match = self.match_repo.get_by_id(match_id)
+        if not match:
+            return schemas.VotesDetailResponse(round_number=round_number, votes=[])
+        votes = self.voting_repo.get_votes_for_match(match.league_id, match_id, round_number)
         items: List[schemas.VoteDetailItem] = []
         for v in votes:
             voter = self.player_repo.get_by_id(v.voter_id) if v.voter_id else None
@@ -232,7 +235,7 @@ class VotingService(IVotingService):
         if not match or match.voting_round == 0 or match.voting_round == 4:
             return {"status": "error", "message": "التصويت غير مفتوح"}
             
-        round_results = self.voting_repo.get_round_results(match_id, match.voting_round)
+        round_results = self.voting_repo.get_round_results(match.league_id, match_id, match.voting_round)
         if not round_results:
             # No votes? Just close it or move on
             if match.voting_round < 3:
@@ -305,7 +308,7 @@ class VotingService(IVotingService):
         if not match or match.voting_round == 0 or match.voting_round == 4:
             raise HTTPException(status_code=400, detail="لا يوجد تصويت مفتوح لهذه المباراة حالياً")
 
-        deleted = self.voting_repo.delete_votes_for_round(match_id, match.voting_round)
+        deleted = self.voting_repo.delete_votes_for_round(match.league_id, match_id, match.voting_round)
         return {
             "status": "ok",
             "round": match.voting_round,

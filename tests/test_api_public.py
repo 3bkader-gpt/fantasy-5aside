@@ -15,11 +15,37 @@ class TestPublicAPI:
         data = {
             "name": "API League",
             "slug": "api-league-unique",
+            "admin_email": "admin@example.com",
             "admin_password": "Shortpass1",
             "csrf_token": csrf,
         }
         response = client.post("/create-league", data=data, follow_redirects=False)
         assert response.status_code == 303
+        assert response.headers["location"].endswith("/l/api-league-unique/created")
+
+    def test_slug_available_endpoint(self, client, league_repo):
+        # Existing league -> not available
+        league_repo.create(
+            schemas.LeagueCreate(name="L", slug="taken-slug", admin_password="p"),
+            security.get_password_hash("p"),
+        )
+        r1 = client.get("/api/slug-available?slug=taken-slug")
+        assert r1.status_code == 200
+        assert r1.json()["available"] is False
+
+        # New slug -> available
+        r2 = client.get("/api/slug-available?slug=new-slug-123")
+        assert r2.status_code == 200
+        assert r2.json()["available"] is True
+
+    def test_league_created_page(self, client, league_repo):
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Created", slug="created-league", admin_password="p"),
+            security.get_password_hash("p"),
+        )
+        r = client.get(f"/l/{league.slug}/created")
+        assert r.status_code == 200
+        assert "تم إنشاء الدوري" in r.text
 
     def test_read_leaderboard(self, client, league_repo, player_repo):
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l-api", admin_password="p"), security.get_password_hash("p"))

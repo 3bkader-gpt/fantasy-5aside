@@ -1,6 +1,6 @@
 import re
-from fastapi import APIRouter, Depends, Request, Form, HTTPException, Path
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, Path, Query
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
@@ -57,6 +57,7 @@ def create_league(
     request: Request,
     name: str = Form(...),
     slug: str = Form(...),
+    admin_email: str = Form(None),
     admin_password: str = Form(...),
     csrf_token: str = Form(None),
     league_repo: ILeagueRepository = Depends(get_league_repository)
@@ -73,6 +74,7 @@ def create_league(
         return resp
     slug = slug.strip()
     name = name.strip()
+    admin_email_clean = admin_email.strip() if admin_email else None
 
     if not re.match(SLUG_PATTERN, slug):
         return templates.TemplateResponse(
@@ -113,11 +115,42 @@ def create_league(
     new_league = models.League(
         name=name,
         slug=slug,
-        admin_password=hashed_password
+        admin_password=hashed_password,
+        admin_email=admin_email_clean,
     )
     new_league = league_repo.save(new_league)
     
-    return RedirectResponse(url=f"/l/{new_league.slug}", status_code=303)
+    return RedirectResponse(url=f"/l/{new_league.slug}/created", status_code=303)
+
+
+@router.get("/api/slug-available")
+def slug_available(
+    slug: str = Query(..., min_length=1, max_length=64),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+):
+    slug = slug.strip()
+    if not re.match(SLUG_PATTERN, slug):
+        return JSONResponse(status_code=200, content={"available": False, "reason": "invalid"})
+    existing = league_repo.get_by_slug(slug)
+    return {"available": existing is None}
+
+
+@router.get("/l/{slug}/created")
+def league_created(
+    request: Request,
+    slug: str = Path(..., pattern=SLUG_PATTERN),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+):
+    league = league_repo.get_by_slug(slug)
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    if league.slug != slug:
+        return _canonical_league_redirect(request, slug, league.slug)
+    return templates.TemplateResponse(
+        request=request,
+        name="league_created.html",
+        context={"league": league, "is_admin": False},
+    )
 
 @router.get("/l/{slug}")
 def read_leaderboard(
@@ -342,7 +375,7 @@ def read_player(
     is_admin = check_admin_status(slug, request)
     
     # Fetch transfers
-    transfers = transfer_repo.get_all_for_player(player_id)
+    transfers = transfer_repo.get_all_for_player_for_league(league.id, player_id)
 
     # Other players for H2H comparison
     all_players = player_repo.get_leaderboard(league.id)

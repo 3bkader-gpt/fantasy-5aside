@@ -13,39 +13,60 @@ from .interfaces import (
 
 class VotingRepository(IVotingRepository):
     def __init__(self, db: Session): self.db = db
-    def get_votes_for_match(self, match_id: int, round_number: int) -> List[models.Vote]:
-        return self.db.query(models.Vote).filter(models.Vote.match_id == match_id, models.Vote.round_number == round_number).all()
-    def get_vote_by_voter(self, match_id: int, voter_id: int, round_number: int) -> Optional[models.Vote]:
-        return self.db.query(models.Vote).filter(models.Vote.match_id == match_id, models.Vote.voter_id == voter_id, models.Vote.round_number == round_number).first()
+    def get_votes_for_match(self, league_id: int, match_id: int, round_number: int) -> List[models.Vote]:
+        return (
+            self.db.query(models.Vote)
+            .filter(
+                models.Vote.league_id == league_id,
+                models.Vote.match_id == match_id,
+                models.Vote.round_number == round_number,
+            )
+            .all()
+        )
+    def get_vote_by_voter(self, league_id: int, match_id: int, voter_id: int, round_number: int) -> Optional[models.Vote]:
+        return (
+            self.db.query(models.Vote)
+            .filter(
+                models.Vote.league_id == league_id,
+                models.Vote.match_id == match_id,
+                models.Vote.voter_id == voter_id,
+                models.Vote.round_number == round_number,
+            )
+            .first()
+        )
     def save_vote(self, vote: models.Vote, commit: bool = True) -> models.Vote:
         self.db.add(vote)
         if commit:
             self.db.commit()
             self.db.refresh(vote)
         return vote
-    def get_round_results(self, match_id: int, round_number: int) -> List[dict]:
+    def get_round_results(self, league_id: int, match_id: int, round_number: int) -> List[dict]:
         results = self.db.query(
             models.Vote.candidate_id, 
             func.count(models.Vote.id).label("count")
         ).filter(
+            models.Vote.league_id == league_id,
             models.Vote.match_id == match_id, 
             models.Vote.round_number == round_number
         ).group_by(models.Vote.candidate_id).order_by(func.count(models.Vote.id).desc()).all()
         return [{"candidate_id": r.candidate_id, "count": r.count} for r in results]
-    def get_votes_by_ip(self, match_id: int, ip: str, round_number: int) -> List[models.Vote]:
+    def get_votes_by_ip(self, league_id: int, match_id: int, ip: str, round_number: int) -> List[models.Vote]:
         return self.db.query(models.Vote).filter(
+            models.Vote.league_id == league_id,
             models.Vote.match_id == match_id,
             models.Vote.ip_address == ip,
             models.Vote.round_number == round_number
         ).all()
-    def get_vote_by_fingerprint(self, match_id: int, fingerprint: str, round_number: int) -> Optional[models.Vote]:
+    def get_vote_by_fingerprint(self, league_id: int, match_id: int, fingerprint: str, round_number: int) -> Optional[models.Vote]:
         return self.db.query(models.Vote).filter(
+            models.Vote.league_id == league_id,
             models.Vote.match_id == match_id,
             models.Vote.device_fingerprint == fingerprint,
             models.Vote.round_number == round_number
         ).first()
-    def delete_votes_for_round(self, match_id: int, round_number: int) -> int:
+    def delete_votes_for_round(self, league_id: int, match_id: int, round_number: int) -> int:
         q = self.db.query(models.Vote).filter(
+            models.Vote.league_id == league_id,
             models.Vote.match_id == match_id,
             models.Vote.round_number == round_number,
         )
@@ -109,6 +130,13 @@ class PlayerRepository(IPlayerRepository):
     def __init__(self, db: Session): self.db = db
     def get_by_id(self, player_id: int) -> Optional[models.Player]: 
         return self.db.query(models.Player).options(joinedload(models.Player.team)).filter(models.Player.id == player_id).first()
+    def get_by_id_for_league(self, league_id: int, player_id: int) -> Optional[models.Player]:
+        return (
+            self.db.query(models.Player)
+            .options(joinedload(models.Player.team))
+            .filter(models.Player.id == player_id, models.Player.league_id == league_id)
+            .first()
+        )
     def get_by_name(self, league_id: int, name: str) -> Optional[models.Player]:
         return self.db.query(models.Player).filter(models.Player.name == name, models.Player.league_id == league_id).first()
     def get_all_for_league(self, league_id: int) -> List[models.Player]:
@@ -169,6 +197,17 @@ class PlayerRepository(IPlayerRepository):
 class MatchRepository(IMatchRepository):
     def __init__(self, db: Session): self.db = db
     def get_by_id(self, match_id: int) -> Optional[models.Match]: return self.db.query(models.Match).filter(models.Match.id == match_id).first()
+    def get_by_id_for_league(self, league_id: int, match_id: int) -> Optional[models.Match]:
+        return (
+            self.db.query(models.Match)
+            .filter(models.Match.id == match_id, models.Match.league_id == league_id)
+            .options(
+                joinedload(models.Match.stats).joinedload(models.MatchStat.player),
+                joinedload(models.Match.team_a),
+                joinedload(models.Match.team_b),
+            )
+            .first()
+        )
     def get_all_for_league(self, league_id: int) -> List[models.Match]:
         # Oldest matches first so Match #1 remains the first ever match
         return (
@@ -279,6 +318,8 @@ class TeamRepository(ITeamRepository):
 
     def get_by_id(self, team_id: int) -> Optional[models.Team]:
         return self.db.query(models.Team).filter(models.Team.id == team_id).first()
+    def get_by_id_for_league(self, league_id: int, team_id: int) -> Optional[models.Team]:
+        return self.db.query(models.Team).filter(models.Team.id == team_id, models.Team.league_id == league_id).first()
 
     def get_by_name(self, league_id: int, name: str) -> Optional[models.Team]:
         return self.db.query(models.Team).filter(
@@ -332,6 +373,14 @@ class TransferRepository(ITransferRepository):
             joinedload(models.Transfer.from_team),
             joinedload(models.Transfer.to_team)
         ).order_by(models.Transfer.created_at.desc()).all()
+    def get_all_for_player_for_league(self, league_id: int, player_id: int) -> List[models.Transfer]:
+        return (
+            self.db.query(models.Transfer)
+            .filter(models.Transfer.league_id == league_id, models.Transfer.player_id == player_id)
+            .options(joinedload(models.Transfer.from_team), joinedload(models.Transfer.to_team))
+            .order_by(models.Transfer.created_at.desc())
+            .all()
+        )
 
     def save(self, transfer: models.Transfer, commit: bool = True) -> models.Transfer:
         self.db.add(transfer)

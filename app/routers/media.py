@@ -64,8 +64,8 @@ async def upload_match_media(
     db: Session = Depends(get_db),
 ):
     """Admin-only: upload 1–N images for a match. Uses Supabase Storage if configured, else local uploads/."""
-    match = match_repo.get_by_id(match_id)
-    if not match or match.league_id != league.id:
+    match = match_repo.get_by_id_for_league(league.id, match_id)
+    if not match:
         raise HTTPException(status_code=404, detail="Match not found")
 
     if len(files) > 5:
