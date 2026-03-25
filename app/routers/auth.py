@@ -6,7 +6,12 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from ..core import security
-from ..core.csrf import generate_csrf_token, set_csrf_cookie, verify_csrf_token, CSRF_COOKIE_NAME
+from ..core.csrf import (
+    CSRF_COOKIE_NAME,
+    get_or_create_csrf_token_from_request,
+    set_csrf_cookie,
+    verify_csrf_token,
+)
 from ..core.rate_limit import limiter
 from ..core.revocation import revoke_token
 from ..dependencies import get_league_repository, get_db, ILeagueRepository, get_current_user
@@ -27,7 +32,7 @@ def _client_ip(request: Request) -> str:
 
 @router.get("/login")
 def login_page(request: Request, msg: str = None):
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="auth/login.html",

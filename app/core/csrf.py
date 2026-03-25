@@ -48,3 +48,13 @@ async def verify_csrf(request: Request) -> None:
     header_token = request.headers.get(CSRF_HEADER_NAME)
     if not verify_csrf_token(cookie_token, header_token):
         raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+
+
+def get_or_create_csrf_token_from_request(request: Request) -> str:
+    """
+    Stabilize CSRF token values across long-lived pages:
+    - If the cookie already exists, reuse it.
+    - Otherwise, generate a new token (caller will set it via `set_csrf_cookie`).
+    """
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    return cookie_token if cookie_token else generate_csrf_token()

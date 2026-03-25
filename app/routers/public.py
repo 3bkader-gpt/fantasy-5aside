@@ -8,7 +8,13 @@ SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
 from ..models import models
 from ..schemas import schemas
 from ..core import security
-from ..core.csrf import generate_csrf_token, set_csrf_cookie, verify_csrf_token, CSRF_COOKIE_NAME
+from ..core.csrf import (
+    generate_csrf_token,
+    get_or_create_csrf_token_from_request,
+    set_csrf_cookie,
+    verify_csrf_token,
+    CSRF_COOKIE_NAME,
+)
 from ..dependencies import (
     get_league_repository, get_player_repository, get_match_repository,
     get_hof_repository, get_cup_repository, get_analytics_service,
@@ -44,7 +50,7 @@ def read_root(
     league_repo: ILeagueRepository = Depends(get_league_repository)
 ):
     leagues = league_repo.get_all()
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="landing.html", 
@@ -186,7 +192,7 @@ def read_leaderboard(
     is_admin = check_admin_status(slug, request)
 
     # CSRF token for voting (leaderboard has vote modal)
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
 
     # Check for active voting using optimized query
     active_voting_match = match_repo.get_active_voting_match(league.id)
@@ -302,7 +308,7 @@ def read_matches(
     filtered_matches = [m for m in all_matches if (m.season_number or 1) == current_season]
 
     is_admin = check_admin_status(slug, request)
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="matches.html",

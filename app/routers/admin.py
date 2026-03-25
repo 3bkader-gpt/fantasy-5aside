@@ -10,7 +10,13 @@ from fastapi.templating import Jinja2Templates
 from ..schemas import schemas
 from ..models import models
 from ..core import security
-from ..core.csrf import generate_csrf_token, set_csrf_cookie, verify_csrf_token, verify_csrf, CSRF_COOKIE_NAME
+from ..core.csrf import (
+    CSRF_COOKIE_NAME,
+    get_or_create_csrf_token_from_request,
+    set_csrf_cookie,
+    verify_csrf,
+    verify_csrf_token,
+)
 from ..database import get_db
 from sqlalchemy.orm import Session
 from ..dependencies import (
@@ -95,7 +101,7 @@ def admin_dashboard(
         for t in teams_raw
     ]
     active_voting_match = match_repo.get_active_voting_match(league.id)
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     msg = request.query_params.get("msg")
     resp = templates.TemplateResponse(
         request=request,

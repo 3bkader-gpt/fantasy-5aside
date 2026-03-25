@@ -13,6 +13,7 @@ from ..core import security
 from ..core.csrf import (
     CSRF_COOKIE_NAME,
     generate_csrf_token,
+    get_or_create_csrf_token_from_request,
     set_csrf_cookie,
     verify_csrf_token,
 )
@@ -32,7 +33,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/register")
 def register_page(request: Request):
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="auth/register.html",
@@ -93,7 +94,7 @@ def verify_email(token: str, request: Request, user_service: UserService = Depen
 
 @router.get("/forgot-password")
 def forgot_password_page(request: Request):
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="auth/forgot_password.html",
@@ -132,7 +133,7 @@ def reset_password_page(token: str, request: Request, user_service: UserService 
             context={},
         )
 
-    csrf = generate_csrf_token()
+    csrf = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="auth/reset_password.html",

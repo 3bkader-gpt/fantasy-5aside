@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ..core import security
 from ..core.csrf import (
     CSRF_COOKIE_NAME,
-    generate_csrf_token,
+    get_or_create_csrf_token_from_request,
     set_csrf_cookie,
     verify_csrf_token,
 )
@@ -49,7 +49,7 @@ def start(
     if has_owned_league:
         return RedirectResponse(url="/dashboard", status_code=303)
 
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="onboarding/start.html",
@@ -61,7 +61,7 @@ def start(
 
 @router.get("/league")
 def league_step(request: Request, current_user=Depends(get_current_user)):
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="onboarding/league.html",
@@ -143,7 +143,7 @@ def teams_step(
     db: Session = Depends(get_db),
 ):
     league = _require_owned_league(db, league_id, current_user)
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="onboarding/teams.html",
@@ -185,7 +185,7 @@ def players_step(
     db: Session = Depends(get_db),
 ):
     league = _require_owned_league(db, league_id, current_user)
-    token = generate_csrf_token()
+    token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
         request=request,
         name="onboarding/players.html",
