@@ -23,6 +23,7 @@
     </div>
 
     <form method="post" action="/superadmin/league/{{ league.id }}/delete" class="m-0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label class="form-label" style="display:block;">اكتب <strong>DELETE</strong> للتأكيد</label>
       <input name="confirm" class="form-control" placeholder="DELETE" autocomplete="off">
       <div class="wizard-actions">

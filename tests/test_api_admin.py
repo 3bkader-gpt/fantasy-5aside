@@ -13,7 +13,7 @@ def _get_csrf(client, league_slug: str) -> str:
 class TestAdminAPI:
     def test_admin_dashboard_access(self, client, league_repo):
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l", admin_password="p"), security.get_password_hash("p"))
-        token = security.create_access_token({"sub": l.slug})
+        token = security.create_access_token({"sub": l.slug, "league_id": l.id, "scope": "admin"})
         client.cookies.set("access_token", f"Bearer {token}")
         response = client.get(f"/l/{l.slug}/admin/")
         assert response.status_code == 200
@@ -31,7 +31,7 @@ class TestAdminAPI:
                 {"player_name": "P1", "team": "A", "goals": 3}
             ]
         }
-        token = security.create_access_token({"sub": l.slug})
+        token = security.create_access_token({"sub": l.slug, "league_id": l.id, "scope": "admin"})
         client.cookies.set("access_token", f"Bearer {token}")
         csrf = _get_csrf(client, l.slug)
         response = client.post(
@@ -60,7 +60,7 @@ class TestAdminAPI:
         )
         db_session.commit()
 
-        token = security.create_access_token({"sub": l.slug})
+        token = security.create_access_token({"sub": l.slug, "league_id": l.id, "scope": "admin"})
         client.cookies.set("access_token", f"Bearer {token}")
         csrf = _get_csrf(client, l.slug)
         response = client.post(
@@ -75,7 +75,7 @@ class TestAdminAPI:
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l-end", admin_password="p"), security.get_password_hash("p"))
         match = models.Match(league_id=l.id, team_a_name="A", team_b_name="B", season_number=1)
         match_repo.save(match)
-        token = security.create_access_token({"sub": l.slug})
+        token = security.create_access_token({"sub": l.slug, "league_id": l.id, "scope": "admin"})
         client.cookies.set("access_token", f"Bearer {token}")
         csrf = _get_csrf(client, l.slug)
         response = client.post(
@@ -88,7 +88,7 @@ class TestAdminAPI:
 
     def test_end_season_api_rejects_when_no_matches(self, client, league_repo):
         l = league_repo.create(schemas.LeagueCreate(name="L2", slug="l2", admin_password="p"), security.get_password_hash("p"))
-        token = security.create_access_token({"sub": l.slug})
+        token = security.create_access_token({"sub": l.slug, "league_id": l.id, "scope": "admin"})
         client.cookies.set("access_token", f"Bearer {token}")
         csrf = _get_csrf(client, l.slug)
         response = client.post(
@@ -104,7 +104,7 @@ class TestAdminAPI:
             security.get_password_hash("p"),
         )
 
-        token = security.create_access_token({"sub": league.slug})
+        token = security.create_access_token({"sub": league.slug, "league_id": league.id, "scope": "admin"})
         client.cookies.set("access_token", f"Bearer {token}")
         response = client.get("/l/elturtels/admin/", follow_redirects=False)
         assert response.status_code in (301, 308)
@@ -114,7 +114,7 @@ class TestAdminAPI:
 
     def _auth_client(self, client, league):
         from app.core import security as sec
-        token = sec.create_access_token({"sub": league.slug})
+        token = sec.create_access_token({"sub": league.slug, "league_id": league.id, "scope": "admin"})
         client.cookies.set("access_token", f"Bearer {token}")
 
     def test_add_team_api(self, client, league_repo):

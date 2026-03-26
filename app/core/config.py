@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     use_sqlite: bool = False
     # CORS: comma-separated origins, e.g. https://fantasy-5aside.onrender.com,https://yourdomain.com. Use * for dev.
     cors_origins: str = "*"
+    # Trust X-Forwarded-For for client IP extraction only behind trusted proxy.
+    trust_proxy_headers: bool = False
     # Environment: production enables HSTS and stricter defaults
     env: str = "development"
     vapid_public_key: str | None = None

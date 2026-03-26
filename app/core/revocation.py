@@ -24,3 +24,15 @@ def is_revoked(db: Session, jti: str) -> bool:
         .first()
     )
     return exists is not None
+
+
+def cleanup_expired_tokens(db: Session) -> int:
+    """Delete expired revoked tokens and return removed rows count."""
+    now = datetime.now(timezone.utc)
+    removed = (
+        db.query(models.RevokedToken)
+        .filter(models.RevokedToken.expires_at <= now)
+        .delete(synchronize_session=False)
+    )
+    db.commit()
+    return int(removed or 0)

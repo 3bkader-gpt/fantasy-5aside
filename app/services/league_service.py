@@ -1,4 +1,5 @@
 from typing import Optional
+import json
 
 from fastapi import HTTPException
 
@@ -55,6 +56,7 @@ class LeagueService(ILeagueService):
         self._cup_league_service = cup_league_service
 
     def end_current_season(self, league_id: int, month_name: str, season_matches_count: int | None = None) -> None:
+        db = self.hof_repo.db
         league = self.league_repo.get_by_id(league_id)
         if not league or (league.current_season_matches or 0) < 1:
             raise HTTPException(
@@ -62,68 +64,101 @@ class LeagueService(ILeagueService):
                 detail="لا يمكن إنهاء الموسم قبل تسجيل مباراة واحدة على الأقل في الموسم الحالي.",
             )
 
-        cup_out_winner: Optional[int] = None
-        cup_gk_winner: Optional[int] = None
-        if self._cup_league_service is not None:
-            cup_out_winner, cup_gk_winner = self._cup_league_service.finalize_incomplete_cup(league_id)
-
+        cup_state_snapshot = {
+            "players_active_flags": {},
+            "cup_matchups": [],
+        }
         players = self.player_repo.get_leaderboard(league_id)
-        if players:
-            top_player = players[0]
-            if top_player.total_points > 0:
-                top_scorer = max(players, key=lambda p: _award_key_current(p.total_goals, p))
-                top_assister = max(players, key=lambda p: _award_key_current(p.total_assists, p))
-                top_gk = (
-                    max(players, key=lambda p: _award_key_current(p.total_saves, p))
-                    if any(p.total_saves > 0 for p in players)
-                    else None
-                )
-
-                hof = models.HallOfFame(
-                    league_id=league_id,
-                    month_year=month_name,
-                    player_id=top_player.id,
-                    points_scored=top_player.total_points,
-                    season_matches_count=season_matches_count,
-                    top_scorer_id=top_scorer.id if top_scorer and top_scorer.total_goals > 0 else None,
-                    top_scorer_goals=top_scorer.total_goals if top_scorer else 0,
-                    top_assister_id=top_assister.id if top_assister and top_assister.total_assists > 0 else None,
-                    top_assister_assists=top_assister.total_assists if top_assister else 0,
-                    top_gk_id=top_gk.id if top_gk and top_gk.total_saves > 0 else None,
-                    top_gk_saves=top_gk.total_saves if top_gk else 0,
-                    cup_outfield_winner_id=cup_out_winner,
-                    cup_gk_winner_id=cup_gk_winner,
-                )
-                self.hof_repo.save(hof)
-
         for player in players:
-            player.last_season_points = player.total_points
-            player.last_season_goals = player.total_goals
-            player.last_season_assists = player.total_assists
-            player.last_season_saves = player.total_saves
-            player.last_season_clean_sheets = player.total_clean_sheets
-            player.last_season_own_goals = player.total_own_goals
-            player.last_season_matches = player.total_matches
-            player.last_season_previous_rank = player.previous_rank
+            cup_state_snapshot["players_active_flags"][str(player.id)] = bool(player.is_active_in_cup)
 
-            player.all_time_points += player.total_points
-            player.all_time_goals += player.total_goals
-            player.all_time_assists += player.total_assists
-            player.all_time_saves += player.total_saves
-            player.all_time_clean_sheets += player.total_clean_sheets
-            player.all_time_own_goals += player.total_own_goals
-            player.all_time_matches += player.total_matches
+        for matchup in self.cup_repo.get_all_for_league(league_id):
+            cup_state_snapshot["cup_matchups"].append(
+                {
+                    "id": matchup.id,
+                    "is_active": bool(matchup.is_active),
+                    "winner_id": matchup.winner_id,
+                    "winner2_id": matchup.winner2_id,
+                    "is_revealed": bool(matchup.is_revealed),
+                    "match_id": matchup.match_id,
+                }
+            )
 
-            player.total_points = 0
-            player.total_goals = 0
-            player.total_assists = 0
-            player.total_saves = 0
-            player.total_clean_sheets = 0
-            player.total_own_goals = 0
-            player.total_matches = 0
-            player.is_active_in_cup = False
-            player.previous_rank = 0
-            self.player_repo.save(player)
+        try:
+            cup_out_winner: Optional[int] = None
+            cup_gk_winner: Optional[int] = None
+            if self._cup_league_service is not None:
+                cup_out_winner, cup_gk_winner = self._cup_league_service.finalize_incomplete_cup(league_id)
+
+            if players:
+                top_player = players[0]
+                if top_player.total_points > 0:
+                    top_scorer = max(players, key=lambda p: _award_key_current(p.total_goals, p))
+                    top_assister = max(players, key=lambda p: _award_key_current(p.total_assists, p))
+                    top_gk = (
+                        max(players, key=lambda p: _award_key_current(p.total_saves, p))
+                        if any(p.total_saves > 0 for p in players)
+                        else None
+                    )
+
+                    hof = models.HallOfFame(
+                        league_id=league_id,
+                        month_year=month_name,
+                        player_id=top_player.id,
+                        points_scored=top_player.total_points,
+                        season_matches_count=season_matches_count,
+                        top_scorer_id=top_scorer.id if top_scorer and top_scorer.total_goals > 0 else None,
+                        top_scorer_goals=top_scorer.total_goals if top_scorer else 0,
+                        top_assister_id=top_assister.id if top_assister and top_assister.total_assists > 0 else None,
+                        top_assister_assists=top_assister.total_assists if top_assister else 0,
+                        top_gk_id=top_gk.id if top_gk and top_gk.total_saves > 0 else None,
+                        top_gk_saves=top_gk.total_saves if top_gk else 0,
+                        cup_outfield_winner_id=cup_out_winner,
+                        cup_gk_winner_id=cup_gk_winner,
+                    )
+                    self.hof_repo.save(hof, commit=False)
+                    db.flush()
+                    db.add(
+                        models.SeasonEndCupSnapshot(
+                            league_id=league_id,
+                            hall_of_fame_id=hof.id,
+                            snapshot_json=json.dumps(cup_state_snapshot),
+                        )
+                    )
+
+            for player in players:
+                player.last_season_points = player.total_points
+                player.last_season_goals = player.total_goals
+                player.last_season_assists = player.total_assists
+                player.last_season_saves = player.total_saves
+                player.last_season_clean_sheets = player.total_clean_sheets
+                player.last_season_own_goals = player.total_own_goals
+                player.last_season_matches = player.total_matches
+                player.last_season_previous_rank = player.previous_rank
+
+                player.all_time_points += player.total_points
+                player.all_time_goals += player.total_goals
+                player.all_time_assists += player.total_assists
+                player.all_time_saves += player.total_saves
+                player.all_time_clean_sheets += player.total_clean_sheets
+                player.all_time_own_goals += player.total_own_goals
+                player.all_time_matches += player.total_matches
+
+                player.total_points = 0
+                player.total_goals = 0
+                player.total_assists = 0
+                player.total_saves = 0
+                player.total_clean_sheets = 0
+                player.total_own_goals = 0
+                player.total_matches = 0
+                player.is_active_in_cup = False
+                player.previous_rank = 0
+                self.player_repo.save(player, commit=False)
+
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
 
     def fix_latest_hof_awards(self, league_id: int) -> None:
         """إصلاح جوائز آخر موسم في لوحة الشرف من بيانات last_season_* (مثلاً حارس الشهر بعد تعديل المنطق)."""
@@ -166,6 +201,7 @@ class LeagueService(ILeagueService):
 
         Uses the last_season_* snapshot to restore totals and correct all-time stats.
         """
+        db = self.hof_repo.db
         latest_hof = self.hof_repo.get_latest_for_league(league_id)
         if not latest_hof:
             raise HTTPException(status_code=400, detail="لا يوجد شهر منتهي يمكن التراجع عنه")
@@ -181,44 +217,79 @@ class LeagueService(ILeagueService):
                 ),
             )
 
-        self.hof_repo.delete(latest_hof.id)
+        snapshot = (
+            db.query(models.SeasonEndCupSnapshot)
+            .filter(models.SeasonEndCupSnapshot.hall_of_fame_id == latest_hof.id)
+            .first()
+        )
 
         league = self.league_repo.get_by_id(league_id)
-        if league:
-            league.current_season_matches = getattr(latest_hof, "season_matches_count", None) or 4
-            if league.season_number > 1:
-                league.season_number -= 1
-            self.league_repo.save(league)
+        try:
+            self.hof_repo.delete(latest_hof.id, commit=False)
+            if snapshot:
+                db.delete(snapshot)
 
-        for player in players:
-            player.total_points = player.last_season_points
-            player.total_goals = player.last_season_goals
-            player.total_assists = player.last_season_assists
-            player.total_saves = player.last_season_saves
-            player.total_clean_sheets = player.last_season_clean_sheets
-            player.total_own_goals = player.last_season_own_goals
-            player.total_matches = player.last_season_matches
+            if league:
+                league.current_season_matches = getattr(latest_hof, "season_matches_count", None) or 4
+                if league.season_number > 1:
+                    league.season_number -= 1
+                self.league_repo.save(league, commit=False)
 
-            player.all_time_points = max(0, player.all_time_points - player.last_season_points)
-            player.all_time_goals = max(0, player.all_time_goals - player.last_season_goals)
-            player.all_time_assists = max(0, player.all_time_assists - player.last_season_assists)
-            player.all_time_saves = max(0, player.all_time_saves - player.last_season_saves)
-            player.all_time_clean_sheets = max(0, player.all_time_clean_sheets - player.last_season_clean_sheets)
-            player.all_time_own_goals = max(0, player.all_time_own_goals - player.last_season_own_goals)
-            player.all_time_matches = max(0, player.all_time_matches - player.last_season_matches)
+            for player in players:
+                player.total_points = player.last_season_points
+                player.total_goals = player.last_season_goals
+                player.total_assists = player.last_season_assists
+                player.total_saves = player.last_season_saves
+                player.total_clean_sheets = player.last_season_clean_sheets
+                player.total_own_goals = player.last_season_own_goals
+                player.total_matches = player.last_season_matches
 
-            player.previous_rank = player.last_season_previous_rank
+                player.all_time_points = max(0, player.all_time_points - player.last_season_points)
+                player.all_time_goals = max(0, player.all_time_goals - player.last_season_goals)
+                player.all_time_assists = max(0, player.all_time_assists - player.last_season_assists)
+                player.all_time_saves = max(0, player.all_time_saves - player.last_season_saves)
+                player.all_time_clean_sheets = max(0, player.all_time_clean_sheets - player.last_season_clean_sheets)
+                player.all_time_own_goals = max(0, player.all_time_own_goals - player.last_season_own_goals)
+                player.all_time_matches = max(0, player.all_time_matches - player.last_season_matches)
 
-            player.last_season_points = 0
-            player.last_season_goals = 0
-            player.last_season_assists = 0
-            player.last_season_saves = 0
-            player.last_season_clean_sheets = 0
-            player.last_season_own_goals = 0
-            player.last_season_matches = 0
-            player.last_season_previous_rank = 0
+                player.previous_rank = player.last_season_previous_rank
 
-            self.player_repo.save(player)
+                player.last_season_points = 0
+                player.last_season_goals = 0
+                player.last_season_assists = 0
+                player.last_season_saves = 0
+                player.last_season_clean_sheets = 0
+                player.last_season_own_goals = 0
+                player.last_season_matches = 0
+                player.last_season_previous_rank = 0
+                self.player_repo.save(player, commit=False)
+
+            if snapshot and snapshot.snapshot_json:
+                payload = json.loads(snapshot.snapshot_json)
+                active_flags = payload.get("players_active_flags", {})
+                cup_rows = payload.get("cup_matchups", [])
+
+                for player in players:
+                    if str(player.id) in active_flags:
+                        player.is_active_in_cup = bool(active_flags[str(player.id)])
+                        self.player_repo.save(player, commit=False)
+
+                cup_map = {int(row.id): row for row in self.cup_repo.get_all_for_league(league_id)}
+                for row_payload in cup_rows:
+                    cup_row = cup_map.get(int(row_payload.get("id")))
+                    if not cup_row:
+                        continue
+                    cup_row.is_active = bool(row_payload.get("is_active", cup_row.is_active))
+                    cup_row.winner_id = row_payload.get("winner_id")
+                    cup_row.winner2_id = row_payload.get("winner2_id")
+                    cup_row.is_revealed = bool(row_payload.get("is_revealed", cup_row.is_revealed))
+                    cup_row.match_id = row_payload.get("match_id")
+                    db.add(cup_row)
+
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
 
     def update_settings(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[models.League]:
         return self.league_repo.update(league_id, update_data)

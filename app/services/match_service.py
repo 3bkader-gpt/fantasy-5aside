@@ -362,23 +362,40 @@ class MatchService(IMatchService):
         match = self.match_repo.get_by_id(match_id)
         if not match or match.league_id != league_id:
             raise HTTPException(status_code=404, detail="Match not found")
+        league = self.league_repo.get_by_id(league_id)
+        if not league:
+            raise HTTPException(status_code=404, detail="League not found")
             
         try:
             self._snapshot_ranks(league_id)
+            match_in_completed_season = False
+            if getattr(match, "season_number", None) is not None and (league.season_number or 1) > 1:
+                match_in_completed_season = (match.season_number or 1) < (league.season_number or 1)
                 
             for stat in match.stats:
                 player = stat.player
-                player.total_points = max(0, player.total_points - stat.points_earned)
-                player.total_goals = max(0, player.total_goals - stat.goals)
-                player.total_assists = max(0, player.total_assists - stat.assists)
-                player.total_saves = max(0, player.total_saves - stat.saves)
-                player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
-                player.total_matches = max(0, player.total_matches - 1)
-                if stat.clean_sheet:
-                    player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
+                if match_in_completed_season:
+                    player.all_time_points = max(0, player.all_time_points - stat.points_earned)
+                    player.all_time_goals = max(0, player.all_time_goals - stat.goals)
+                    player.all_time_assists = max(0, player.all_time_assists - stat.assists)
+                    player.all_time_saves = max(0, player.all_time_saves - stat.saves)
+                    player.all_time_own_goals = max(0, player.all_time_own_goals - stat.own_goals)
+                    player.all_time_matches = max(0, player.all_time_matches - 1)
+                    if stat.clean_sheet:
+                        player.all_time_clean_sheets = max(0, player.all_time_clean_sheets - 1)
+                else:
+                    player.total_points = max(0, player.total_points - stat.points_earned)
+                    player.total_goals = max(0, player.total_goals - stat.goals)
+                    player.total_assists = max(0, player.total_assists - stat.assists)
+                    player.total_saves = max(0, player.total_saves - stat.saves)
+                    player.total_own_goals = max(0, player.total_own_goals - stat.own_goals)
+                    player.total_matches = max(0, player.total_matches - 1)
+                    if stat.clean_sheet:
+                        player.total_clean_sheets = max(0, player.total_clean_sheets - 1)
                 self.player_repo.save(player, commit=False)
                 
-            self.match_repo.delete(match.id, commit=True) # Repository delete calls commit
+            self.match_repo.delete(match.id, commit=False)
+            self.match_repo.db.commit()
             return True
         except Exception:
             self.match_repo.db.rollback()

@@ -117,6 +117,47 @@ class TestLeagueService:
         assert hof.cup_gk_winner_id is None
         assert db_session.query(models.CupMatchup).filter_by(league_id=league.id).count() >= 1
 
+    def test_undo_end_season_restores_cup_state_from_snapshot(
+        self, db_session, league_repo, player_repo, league_service
+    ):
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Cup Undo", slug="cup-undo", admin_password="pass"),
+            security.get_password_hash("pass"),
+        )
+        league.current_season_matches = 2
+        league_repo.save(league)
+        p1 = player_repo.create("P1", league.id)
+        p2 = player_repo.create("P2", league.id)
+        p1.total_points = 10
+        p2.total_points = 9
+        p1.is_active_in_cup = True
+        p2.is_active_in_cup = True
+        player_repo.save(p1)
+        player_repo.save(p2)
+        cup = models.CupMatchup(
+            league_id=league.id,
+            season_number=1,
+            player1_id=p1.id,
+            player2_id=p2.id,
+            round_name="Final",
+            is_active=True,
+        )
+        db_session.add(cup)
+        db_session.commit()
+        db_session.refresh(cup)
+
+        league_service.end_current_season(league.id, "March 2026", 2)
+        db_session.refresh(cup)
+        assert cup.is_active is False or cup.winner_id is not None
+
+        league_service.undo_end_season(league.id)
+        db_session.refresh(cup)
+        db_session.refresh(p1)
+        db_session.refresh(p2)
+        assert cup.is_active is True
+        assert p1.is_active_in_cup is True
+        assert p2.is_active_in_cup is True
+
     def test_end_current_season_rejects_when_no_matches_played(self, league_repo, league_service):
         league = league_repo.create(
             schemas.LeagueCreate(name="Empty", slug="empty-season", admin_password="p"),

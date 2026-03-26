@@ -2,10 +2,10 @@ import os
 import types
 
 
-def _auth_admin(client, league_slug: str):
+def _auth_admin(client, league_slug: str, league_id: int):
     from app.core import security
 
-    token = security.create_access_token({"sub": league_slug})
+    token = security.create_access_token({"sub": league_slug, "league_id": league_id, "scope": "admin"})
     client.cookies.set("access_token", f"Bearer {token}")
 
 
@@ -66,7 +66,7 @@ def test_media_upload_failfast_in_production_when_supabase_upload_fails(client, 
     db_session.commit()
     db_session.refresh(match)
 
-    _auth_admin(client, league.slug)
+    _auth_admin(client, league.slug, league.id)
 
     # Upload should fail fast with 503, and no MatchMedia rows should be created.
     files = [("files", ("x.png", b"fakepng", "image/png"))]
@@ -101,7 +101,7 @@ def test_media_upload_local_sets_file_url_to_media_mount(client, db_session, mon
     db_session.commit()
     db_session.refresh(match)
 
-    _auth_admin(client, league.slug)
+    _auth_admin(client, league.slug, league.id)
 
     files = [("files", ("x.webp", b"fakewebp", "image/webp"))]
     r = client.post(f"/l/{league.slug}/match/{match.id}/media", files=files)
@@ -117,6 +117,41 @@ def test_media_upload_local_sets_file_url_to_media_mount(client, db_session, mon
     local_path = os.path.join("uploads", row.filename)
     if os.path.exists(local_path):
         os.remove(local_path)
+
+
+def test_media_upload_sanitizes_original_name(client, db_session, monkeypatch):
+    from app.core.config import settings
+    from app.core import security
+    from app.models import models
+
+    monkeypatch.setattr(settings, "supabase_project_url", None)
+    monkeypatch.setattr(settings, "supabase_service_role_key", None)
+
+    league = models.League(
+        name="LSan",
+        slug="l-media-sanitize",
+        admin_password=security.get_password_hash("p"),
+        admin_email="a@a.com",
+    )
+    db_session.add(league)
+    db_session.commit()
+    db_session.refresh(league)
+
+    match = models.Match(league_id=league.id, team_a_name="A", team_b_name="B", season_number=1)
+    db_session.add(match)
+    db_session.commit()
+    db_session.refresh(match)
+
+    _auth_admin(client, league.slug, league.id)
+    files = [("files", ('../<img src=x onerror=alert(1)>.png', b"img", "image/png"))]
+    r = client.post(f"/l/{league.slug}/match/{match.id}/media", files=files)
+    assert r.status_code == 200
+
+    row = db_session.query(models.MatchMedia).filter_by(match_id=match.id, league_id=league.id).first()
+    assert row is not None
+    assert ".." not in (row.original_name or "")
+    assert "<" not in (row.original_name or "")
+    assert ">" not in (row.original_name or "")
 
 
 def test_delete_match_dispatches_media_cleanup_background_task(client, db_session, monkeypatch):
@@ -154,7 +189,7 @@ def test_delete_match_dispatches_media_cleanup_background_task(client, db_sessio
 
     monkeypatch.setattr(admin_module, "_cleanup_media_files", fake_cleanup)
 
-    _auth_admin(client, league.slug)
+    _auth_admin(client, league.slug, league.id)
     csrf = _get_csrf(client, league.slug)
 
     r = client.delete(

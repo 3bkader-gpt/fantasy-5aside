@@ -27,13 +27,16 @@ There are two separate account concepts:
 ### Password hashing
 
 - Passwords are hashed with **PBKDF2-SHA256** before storage.
-- On signup, passwords must meet policy: minimum **8** characters, at least one digit, one uppercase, one lowercase.
+- Legacy plaintext league admin passwords are auto-migrated to hash format during startup.
+- On signup, passwords must meet policy: minimum **12** characters, at least one digit, one uppercase, one lowercase, and one special character.
 
 ### Sessions & JWT
 
 - Auth uses **JSON Web Tokens (JWT)** stored in **cookies**.
-- **Lifetime:** **7 days** from login.
-- **Revocation:** on logout, the token **JTI** is written to a **database blocklist** so the token cannot be reused even if its expiry has not passed.
+- The app now uses a dual-token model:
+  - short-lived access tokens (~2 hours)
+  - long-lived refresh tokens (~14 days) with rotation
+- **Revocation:** on logout, both access and refresh token JTIs are written to a database blocklist so stolen cookies cannot be replayed.
 
 ---
 
@@ -42,7 +45,7 @@ There are two separate account concepts:
 - Admin routes are guarded by the `get_current_admin_league` dependency, which ensures:
   1. A valid, non-expired token is present.
   2. The token is **not** on the revocation list.
-  3. The token’s **slug** matches the league in the URL (no cross-league admin access).
+  3. The token is bound to immutable `league_id` and must match the target league.
 
 ---
 
@@ -71,12 +74,14 @@ League admin and personal sessions use **different cookie names**, so signing in
 
 | Cookie | Purpose | Read by |
 |--------|---------|---------|
-| `access_token` | League admin JWT (`sub` = league slug) | `get_current_admin_league`, `_get_token_payload` in `app/dependencies.py` |
-| `user_access_token` | Personal user JWT (`sub` = user id, `scope: user`) | `get_current_user`, `_get_user_token_payload` in `app/dependencies.py` |
+| `access_token` | League admin access JWT (`sub` = slug, `league_id`, `scope: admin`) | `get_current_admin_league`, `_get_token_payload` in `app/dependencies.py` |
+| `refresh_token` | League admin refresh JWT | `/refresh` rotation in `app/routers/auth.py` |
+| `user_access_token` | Personal user access JWT (`sub` = user id, `scope: user`) | `get_current_user`, `_get_user_token_payload` in `app/dependencies.py` |
+| `user_refresh_token` | Personal user refresh JWT | `/refresh` rotation in `app/routers/auth.py` |
 
 Both are set from `app/routers/auth.py` after the respective login flows.
 
-**Logout behavior:** `GET /logout` (same router) revokes the **admin** token’s JTI when present, then calls `delete_cookie` on **both** `access_token` and `user_access_token`. So an admin logout also clears a concurrent personal session. There is no separate “admin-only” or “user-only” logout endpoint today; if partial logout is needed later, split endpoints would be required.
+**Logout behavior:** `GET /logout` revokes all present auth cookies (`access_token`, `refresh_token`, `user_access_token`, `user_refresh_token`) then clears them from the browser.
 
 ### Admin PIN / password rotation
 
@@ -86,12 +91,6 @@ There is no `admin_password_changed_at` (or similar) on `League`, and `get_curre
 
 **Possible hardening (not implemented):** Add `admin_password_changed_at` on `leagues`, set it whenever the admin password changes; include an `iat` claim in JWTs (`create_access_token` in `app/core/security.py` currently sets `sub`, `jti`, and `exp` only—`iat` would need to be added explicitly); reject admin tokens where `iat` is older than `admin_password_changed_at`. Bulk-revoking all active admin tokens for a league without that pattern would require tracking every issued JTI per league, which is heavier.
 
-### Revoked-token table growth (blocklist)
+### Revoked-token table cleanup
 
-Rows in `revoked_tokens` store `jti` and `expires_at`. **`is_revoked`** in `app/core/revocation.py` only treats a row as active if `expires_at > now()`, so once the original token’s lifetime has passed, the row no longer affects authorization—but the row **remains** in the database.
-
-There is **no** scheduled cleanup job in this repository. For long-running deployments, run a periodic job (cron, worker, or external maintenance) such as:
-
-`DELETE FROM revoked_tokens WHERE expires_at < now()`
-
-to keep the table size bounded and lookups cheap as logout volume grows.
+Rows in `revoked_tokens` are actively cleaned using startup maintenance (`cleanup_expired_tokens`) so expired JTIs do not grow unbounded.

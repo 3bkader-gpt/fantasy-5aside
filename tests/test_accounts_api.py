@@ -7,6 +7,7 @@ import pytest
 from app.core import security
 from app.models.models import League
 from app.models.user_model import User
+from app.models import models
 
 
 def _csrf_from_html(html: str) -> str:
@@ -30,8 +31,8 @@ def test_register_happy_path(client, db_session):
         "/register",
         data={
             "email": "user@example.com",
-            "password": "StrongPass1",
-            "password_confirm": "StrongPass1",
+            "password": "StrongPass1!",
+            "password_confirm": "StrongPass1!",
             "csrf_token": csrf,
         },
     )
@@ -56,7 +57,7 @@ def test_verify_endpoint_marks_user_verified(client, db_session):
 
     user = User(
         email=email,
-        hashed_password=security.get_password_hash("StrongPass1"),
+        hashed_password=security.get_password_hash("StrongPass1!"),
         is_verified=False,
         verification_token=token,
         verification_token_expires_at=future,
@@ -81,7 +82,7 @@ def test_verify_rejects_expired_token(client, db_session):
 
     user = User(
         email=email,
-        hashed_password=security.get_password_hash("StrongPass1"),
+        hashed_password=security.get_password_hash("StrongPass1!"),
         is_verified=False,
         verification_token=token,
         verification_token_expires_at=past,
@@ -101,7 +102,7 @@ def test_user_login_rejects_unverified(client, db_session):
     email = f"unver+{uuid.uuid4().hex[:8]}@example.com"
     user = User(
         email=email,
-        hashed_password=security.get_password_hash("StrongPass1"),
+        hashed_password=security.get_password_hash("StrongPass1!"),
         is_verified=False,
         is_active=True,
     )
@@ -111,7 +112,7 @@ def test_user_login_rejects_unverified(client, db_session):
     csrf = _login_page_csrf(client)
     resp = client.post(
         "/user/login",
-        data={"email": email, "password": "StrongPass1", "csrf_token": csrf},
+        data={"email": email, "password": "StrongPass1!", "csrf_token": csrf},
     )
     assert resp.status_code == 200
     assert "تفعيل" in resp.text
@@ -123,7 +124,7 @@ def test_resend_verification_rotates_token(client, db_session):
     old_token = f"old-{uuid.uuid4()}"
     user = User(
         email=email,
-        hashed_password=security.get_password_hash("StrongPass1"),
+        hashed_password=security.get_password_hash("StrongPass1!"),
         is_verified=False,
         is_active=True,
         verification_token=old_token,
@@ -149,7 +150,7 @@ def test_resend_verification_rotates_token(client, db_session):
 
 def test_enter_league_admin_owner_success(client, db_session):
     email = f"owner+{uuid.uuid4().hex[:8]}@example.com"
-    password = "StrongPass1"
+    password = "StrongPass1!"
     user = User(
         email=email,
         hashed_password=security.get_password_hash(password),
@@ -195,13 +196,13 @@ def test_enter_league_admin_owner_success(client, db_session):
 def test_enter_league_admin_non_owner_forbidden(client, db_session):
     owner = User(
         email=f"o+{uuid.uuid4().hex[:8]}@example.com",
-        hashed_password=security.get_password_hash("StrongPass1"),
+        hashed_password=security.get_password_hash("StrongPass1!"),
         is_verified=True,
         is_active=True,
     )
     other = User(
         email=f"x+{uuid.uuid4().hex[:8]}@example.com",
-        hashed_password=security.get_password_hash("StrongPass1"),
+        hashed_password=security.get_password_hash("StrongPass1!"),
         is_verified=True,
         is_active=True,
     )
@@ -221,7 +222,7 @@ def test_enter_league_admin_non_owner_forbidden(client, db_session):
     csrf = _login_page_csrf(client)
     client.post(
         "/user/login",
-        data={"email": other.email, "password": "StrongPass1", "csrf_token": csrf},
+        data={"email": other.email, "password": "StrongPass1!", "csrf_token": csrf},
         follow_redirects=True,
     )
     dash = client.get("/dashboard")
@@ -247,7 +248,7 @@ def test_enter_league_admin_unverified_user_forbidden(client, db_session):
     email = f"nv+{uuid.uuid4().hex[:8]}@example.com"
     user = User(
         email=email,
-        hashed_password=security.get_password_hash("StrongPass1"),
+        hashed_password=security.get_password_hash("StrongPass1!"),
         is_verified=False,
         is_active=True,
     )
@@ -277,3 +278,35 @@ def test_enter_league_admin_unverified_user_forbidden(client, db_session):
         data={"csrf_token": csrf_dash, "league_slug": slug},
     )
     assert assume.status_code == 403
+
+
+def test_logout_revokes_both_admin_and_user_tokens(client, db_session):
+    admin_token = security.create_access_token({"sub": "slug-x", "league_id": 99, "scope": "admin"})
+    user_token = security.create_access_token({"sub": "100", "scope": "user"})
+    client.cookies.set("access_token", f"Bearer {admin_token}")
+    client.cookies.set("user_access_token", f"Bearer {user_token}")
+
+    resp = client.get("/logout", follow_redirects=False)
+    assert resp.status_code == 303
+
+    rows = db_session.query(models.RevokedToken).all()
+    assert len(rows) >= 2
+
+
+def test_refresh_rotates_user_tokens(client, db_session):
+    user = User(
+        email=f"refresh+{uuid.uuid4().hex[:8]}@example.com",
+        hashed_password=security.get_password_hash("StrongPass1!"),
+        is_verified=True,
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    refresh = security.create_refresh_token({"sub": str(user.id), "scope": "user"})
+    client.cookies.set("user_refresh_token", f"Bearer {refresh}")
+
+    resp = client.post("/refresh", follow_redirects=False)
+    assert resp.status_code == 303
+    assert "user_access_token" in resp.headers.get("set-cookie", "")

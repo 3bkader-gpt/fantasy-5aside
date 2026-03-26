@@ -32,6 +32,7 @@ Admin-only images attached to a **match** for galleries or records. Router: `app
 ## 4. Data model
 
 - **`MatchMedia`**: `league_id`, `match_id`, `filename`, `original_name`, `mime_type`, `size_bytes`, `uploaded_at`, optional `file_url`.
+- `original_name` is sanitized at upload time (path separators, control chars, and HTML-special characters are stripped) before persistence.
 
 ---
 

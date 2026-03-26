@@ -33,6 +33,7 @@ Ending a season performs the following in order:
 
 1. **Guard**: If `(league.current_season_matches or 0) < 1`, the operation is rejected (HTTP 400) so an empty “season” cannot overwrite `last_season_*` snapshots or skew all-time stats.
 2. **Cup finalization**: If a `CupService` is configured on the league service, `finalize_incomplete_cup(league_id)` runs so pending brackets can be resolved administratively and **outfield / goalkeeper** cup winners are determined before snapshots are taken.
+3. **Cup snapshot capture**: Before mutating season state, the service stores player cup flags and cup matchup state in `season_end_cup_snapshots`, linked to the new HOF row.
 3. **Award calculation** (leaderboard at end of season):
    - **Winner** (`HallOfFame.player_id`): Player with the most `total_points` (existing ordering from `get_leaderboard`).
    - **Top scorer / assister / goalkeeper**: Highest primary stat (`total_goals`, `total_assists`, `total_saves`); ties break on **higher** `total_points`, then **fewer** `total_matches`, then stable `player.id`.
@@ -55,8 +56,11 @@ Allows administrators to revert the **latest** season closure:
 - Deletes the latest HOF record.
 - Restores each player’s `total_*` from `last_season_*` and subtracts the snapshot from `all_time_*`.
 - Restores `league.season_number` and `league.current_season_matches` (from the saved `season_matches_count` on the HOF row, with a fallback when needed).
+- Restores cup state from `season_end_cup_snapshots`:
+  - `is_active_in_cup` flags for players
+  - `is_active`, winners, reveal flags, and linked match IDs for cup matchups
 
-**Cup rows**: Undo does **not** delete or recreate `CupMatchup` rows. Brackets that existed for the reverted season remain in the database for that `season_number`; only the UI “current season” lens changes when `season_number` is decremented.
+**Cup rows**: Undo restores the latest cup state snapshot in-place; rows are not recreated, but their mutable fields are reverted to pre-finalization values.
 
 #### Architectural limitation: single-level undo (read this before changing undo logic)
 
@@ -87,3 +91,4 @@ The HOF is the permanent record per league for a completed season/month.
 - **Cup display**: Only the **current** `league.season_number` is used for cup list / “active” matchup queries—no automatic display of last season’s bracket once the season counter advances.
 - **Match baseline**: Manual match recording and HOF history drive the reconciled `current_season_matches`; the cup subsystem may also use league match counts per season for deadlines (e.g. auto-forfeit after N league matches since a round opened—see cup service / `implementation_plan`).
 - **Undo depth**: Only one undo per completed `end_current_season` is architecturally sound; see **§2.C — single-level undo** and the runtime guard on empty `last_season_*`.
+- **Transactional safety**: `end_current_season` and `undo_end_season` execute within explicit DB transactions to avoid partial writes (e.g., HOF written but player counters not fully updated).

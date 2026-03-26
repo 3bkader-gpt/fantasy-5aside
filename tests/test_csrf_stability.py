@@ -28,7 +28,7 @@ def test_csrf_token_stable_across_gets(client, league_repo, player_repo, match_r
     )
     db_session.commit()
 
-    access_token = security.create_access_token({"sub": l.slug})
+    access_token = security.create_access_token({"sub": l.slug, "league_id": l.id, "scope": "admin"})
     client.cookies.set("access_token", f"Bearer {access_token}")
 
     csrf1 = _get_admin_csrf_token(client, l.slug)
@@ -53,4 +53,20 @@ def test_csrf_token_stable_across_gets(client, league_repo, player_repo, match_r
         follow_redirects=False,
     )
     assert resp.status_code == 303
+
+
+def test_admin_cookie_from_other_league_rejected(client, league_repo):
+    l1 = league_repo.create(
+        schemas.LeagueCreate(name="One", slug="one", admin_password="p"),
+        security.get_password_hash("p"),
+    )
+    l2 = league_repo.create(
+        schemas.LeagueCreate(name="Two", slug="two", admin_password="p"),
+        security.get_password_hash("p"),
+    )
+    token = security.create_access_token({"sub": l1.slug, "league_id": l1.id, "scope": "admin"})
+    client.cookies.set("access_token", f"Bearer {token}")
+
+    r = client.get(f"/l/{l2.slug}/admin/")
+    assert r.status_code == 403
 

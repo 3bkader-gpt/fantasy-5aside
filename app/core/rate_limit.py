@@ -7,7 +7,7 @@ from app.core.config import settings
 
 def _get_client_ip(request) -> str:
     forwarded = getattr(request, "headers", None) and request.headers.get("x-forwarded-for")
-    if forwarded:
+    if settings.trust_proxy_headers and forwarded:
         return forwarded.split(",")[0].strip()
     return get_remote_address(request)
 

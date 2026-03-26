@@ -19,7 +19,7 @@ def _extract_csrf(html: str) -> str:
 
 def test_dashboard_shows_owned_leagues(client, db_session):
     email = f"dash+{uuid.uuid4().hex[:8]}@example.com"
-    user = User(email=email, hashed_password=security.get_password_hash("StrongPass1"), is_verified=True)
+    user = User(email=email, hashed_password=security.get_password_hash("StrongPass1!"), is_verified=True)
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -27,7 +27,7 @@ def test_dashboard_shows_owned_leagues(client, db_session):
     league = models.League(
         name=f"League {uuid.uuid4().hex[:6]}",
         slug=f"league-{uuid.uuid4().hex[:6]}",
-        admin_password=security.get_password_hash("StrongPass1"),
+        admin_password=security.get_password_hash("StrongPass1!"),
         admin_email=user.email,
         owner_user_id=user.id,
     )
@@ -49,7 +49,7 @@ def test_dashboard_shows_owned_leagues(client, db_session):
 
 def test_onboarding_happy_path_creates_league_and_players(client, db_session):
     email = f"ob+{uuid.uuid4().hex[:8]}@example.com"
-    user = User(email=email, hashed_password=security.get_password_hash("StrongPass1"), is_verified=True)
+    user = User(email=email, hashed_password=security.get_password_hash("StrongPass1!"), is_verified=True)
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -71,7 +71,7 @@ def test_onboarding_happy_path_creates_league_and_players(client, db_session):
         data={
             "name": f"Onboard {uuid.uuid4().hex[:6]}",
             "slug": slug,
-            "admin_password": "StrongPass1",
+            "admin_password": "StrongPass1!",
             "csrf_token": csrf,
         },
         follow_redirects=False,
@@ -134,7 +134,7 @@ def test_onboarding_happy_path_creates_league_and_players(client, db_session):
 
 def test_onboarding_start_redirects_when_user_has_leagues(client, db_session):
     email = f"ob2+{uuid.uuid4().hex[:8]}@example.com"
-    user = User(email=email, hashed_password=security.get_password_hash("StrongPass1"), is_verified=True)
+    user = User(email=email, hashed_password=security.get_password_hash("StrongPass1!"), is_verified=True)
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -142,7 +142,7 @@ def test_onboarding_start_redirects_when_user_has_leagues(client, db_session):
     league = models.League(
         name=f"League {uuid.uuid4().hex[:6]}",
         slug=f"league-{uuid.uuid4().hex[:6]}",
-        admin_password=security.get_password_hash("StrongPass1"),
+        admin_password=security.get_password_hash("StrongPass1!"),
         admin_email=user.email,
         owner_user_id=user.id,
     )

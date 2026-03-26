@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import re
 
 from app.core.config import settings
 from app.core import security
@@ -64,9 +65,17 @@ def test_superadmin_soft_delete_sets_deleted_at(client, db_session, league_repo,
     db_session.commit()
     db_session.refresh(stat)
 
+    confirm_page = client.get(
+        f"/superadmin/league/{league.id}/delete",
+        headers={"x-superadmin-secret": "secret123"},
+    )
+    assert confirm_page.status_code == 200
+    csrf_match = re.search(r'name="csrf_token" value="([^"]+)"', confirm_page.text)
+    assert csrf_match
+
     resp = client.post(
         f"/superadmin/league/{league.id}/delete",
-        data={"confirm": "delete"},
+        data={"confirm": "delete", "csrf_token": csrf_match.group(1)},
         headers={"x-superadmin-secret": "secret123"},
         follow_redirects=False,
     )
@@ -82,4 +91,20 @@ def test_superadmin_soft_delete_sets_deleted_at(client, db_session, league_repo,
 
     # Active-only repository hides soft-deleted leagues.
     assert league_repo.get_by_id(league.id) is None
+
+
+def test_superadmin_delete_rejects_missing_csrf(client, db_session, monkeypatch):
+    monkeypatch.setattr(settings, "superadmin_secret", "secret123")
+    league = models.League(name="L4", slug="l4", admin_password=security.get_password_hash("pin"))
+    db_session.add(league)
+    db_session.commit()
+    db_session.refresh(league)
+
+    resp = client.post(
+        f"/superadmin/league/{league.id}/delete",
+        data={"confirm": "delete"},
+        headers={"x-superadmin-secret": "secret123"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 403
 

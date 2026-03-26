@@ -228,6 +228,16 @@ class HallOfFame(Base):
     cup_gk_winner = relationship("Player", foreign_keys=[cup_gk_winner_id])
 
 
+class SeasonEndCupSnapshot(Base):
+    __tablename__ = "season_end_cup_snapshots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False, index=True)
+    hall_of_fame_id = Column(Integer, ForeignKey("hall_of_fame.id"), nullable=False, unique=True, index=True)
+    snapshot_json = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class Vote(Base):
     __tablename__ = "votes"
 

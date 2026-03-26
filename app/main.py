@@ -18,7 +18,9 @@ from sqlalchemy import text
 from slowapi.errors import RateLimitExceeded
 
 from .core.config import settings
+from .core import security
 from .core.rate_limit import limiter
+from .core.revocation import cleanup_expired_tokens
 from .database import Base, SessionLocal, engine
 from .middleware.security_headers import SecurityHeadersMiddleware
 from .routers import admin, public, auth, voting, media, notifications, accounts, onboarding, superadmin
@@ -56,6 +58,11 @@ async def lifespan(app: FastAPI):
     
     try:
         Base.metadata.create_all(bind=engine)
+        with SessionLocal() as db:
+            migrated = security.migrate_legacy_plaintext_admin_passwords(db)
+            if migrated:
+                logger.warning("Security migration: hashed %s legacy plaintext admin passwords.", migrated)
+            cleanup_expired_tokens(db)
         
         logger.info("Starting application lifespan: running manual schema migrations.")
         # Manual schema migrations

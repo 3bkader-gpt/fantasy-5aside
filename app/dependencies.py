@@ -161,6 +161,8 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Not authenticated")
     if is_revoked(db, payload.get("jti") or ""):
         raise HTTPException(status_code=401, detail="Session expired, please login again")
+    if payload.get("token_type") not in (None, "access"):
+        raise HTTPException(status_code=401, detail="Invalid token type")
 
     user_id = payload.get("sub")
     if not user_id:
@@ -190,9 +192,18 @@ def get_current_admin_league(
         )
     if is_revoked(db, payload.get("jti") or ""):
         raise HTTPException(status_code=401, detail="تم تسجيل الخروج من هذه الجلسة، يرجى تسجيل الدخول مجدداً")
+    if payload.get("token_type") not in (None, "access"):
+        raise HTTPException(status_code=403, detail="جلسة المشرف غير صالحة")
 
-    token_slug = (payload.get("sub") or "").strip().lower()
-    if token_slug != (league.slug or "").strip().lower():
+    token_league_id = payload.get("league_id")
+    if token_league_id is None:
+        raise HTTPException(status_code=403, detail="جلسة المشرف غير صالحة")
+    try:
+        token_league_id = int(token_league_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=403, detail="جلسة المشرف غير صالحة")
+
+    if token_league_id != int(league.id):
         raise HTTPException(status_code=403, detail="غير مصرح لك بإدارة هذا الدوري")
 
     return league
@@ -213,4 +224,19 @@ def check_admin_status(
         return False
     if _is_jti_revoked_raw(payload.get("jti") or ""):
         return False
-    return (payload.get("sub") or "").strip().lower() == slug.strip().lower()
+    db = SessionLocal()
+    try:
+        league = (
+            db.query(models.League)
+            .filter(models.League.slug == slug, models.League.deleted_at.is_(None))
+            .first()
+        )
+        if not league:
+            return False
+        token_league_id = payload.get("league_id")
+        try:
+            return int(token_league_id) == int(league.id)
+        except (TypeError, ValueError):
+            return False
+    finally:
+        db.close()

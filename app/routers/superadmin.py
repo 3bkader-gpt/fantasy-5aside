@@ -11,6 +11,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..core.config import settings
+from ..core.csrf import (
+    CSRF_COOKIE_NAME,
+    get_or_create_csrf_token_from_request,
+    set_csrf_cookie,
+    verify_csrf_token,
+)
 from ..database import get_db
 from ..models import models
 
@@ -115,11 +121,14 @@ def confirm_delete(
     )
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
-    return templates.TemplateResponse(
+    csrf_token = get_or_create_csrf_token_from_request(request)
+    response = templates.TemplateResponse(
         request=request,
         name="superadmin/confirm_delete.html",
-        context={"league": league, "is_admin": True},
+        context={"league": league, "is_admin": True, "csrf_token": csrf_token},
     )
+    set_csrf_cookie(response, csrf_token)
+    return response
 
 
 @router.post("/league/{league_id}/delete")
@@ -127,11 +136,17 @@ def delete_league(
     league_id: int,
     request: Request,
     confirm: str = Form(""),
+    csrf_token: str = Form(None),
     db: Session = Depends(get_db),
     _: None = Depends(require_superadmin),
 ):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+
     if confirm.strip().lower() != "delete":
-        return templates.TemplateResponse(
+        fresh_csrf = get_or_create_csrf_token_from_request(request)
+        response = templates.TemplateResponse(
             request=request,
             name="superadmin/confirm_delete.html",
             context={
@@ -142,9 +157,12 @@ def delete_league(
                     .first()
                 ),
                 "is_admin": True,
+                "csrf_token": fresh_csrf,
             },
             status_code=400,
         )
+        set_csrf_cookie(response, fresh_csrf)
+        return response
 
     league = (
         db.query(models.League)

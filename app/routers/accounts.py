@@ -231,7 +231,12 @@ def enter_league_admin(
     if league.owner_user_id != current_user.id:
         raise HTTPException(status_code=403, detail="غير مصرح لك بإدارة هذا الدوري")
 
-    admin_token = security.create_access_token(data={"sub": league.slug})
+    admin_token = security.create_access_token(
+        data={"sub": league.slug, "league_id": league.id, "scope": "admin"}
+    )
+    admin_refresh_token = security.create_refresh_token(
+        data={"sub": league.slug, "league_id": league.id, "scope": "admin"}
+    )
     redirect = RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
     redirect.set_cookie(
         key="access_token",
@@ -240,6 +245,14 @@ def enter_league_admin(
         samesite="lax",
         secure=os.environ.get("ENV") == "production",
         max_age=security.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    redirect.set_cookie(
+        key="refresh_token",
+        value=f"Bearer {admin_refresh_token}",
+        httponly=True,
+        samesite="lax",
+        secure=os.environ.get("ENV") == "production",
+        max_age=security.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
     )
     return redirect
 

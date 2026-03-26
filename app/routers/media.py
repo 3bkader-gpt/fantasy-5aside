@@ -1,5 +1,7 @@
 import os
 import uuid
+import re
+from pathlib import PurePath
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -62,6 +64,17 @@ def _supabase_storage_remove(storage_path: str) -> bool:
         return False
 
 
+def _sanitize_original_name(filename: str | None) -> str:
+    """Normalize user-provided file names before persistence."""
+    candidate = (filename or "").strip()
+    if not candidate:
+        return "unnamed-file"
+    base_name = PurePath(candidate).name
+    base_name = re.sub(r"[\x00-\x1f\x7f]+", "", base_name)
+    sanitized = base_name.replace("<", "").replace(">", "").replace('"', "").replace("'", "")
+    return sanitized[:255] or "unnamed-file"
+
+
 @router.post("/l/{slug}/match/{match_id}/media")
 async def upload_match_media(
     slug: str,
@@ -113,7 +126,7 @@ async def upload_match_media(
                     league_id=league.id,
                     match_id=match.id,
                     filename=storage_path,
-                    original_name=f.filename,
+                    original_name=_sanitize_original_name(f.filename),
                     mime_type=f.content_type,
                     size_bytes=len(raw),
                     file_url=public_url,
@@ -141,7 +154,7 @@ async def upload_match_media(
                     league_id=league.id,
                     match_id=match.id,
                     filename=filename,
-                    original_name=f.filename,
+                    original_name=_sanitize_original_name(f.filename),
                     mime_type=f.content_type,
                     size_bytes=len(raw),
                     file_url=f"/media/{filename}",
@@ -155,7 +168,7 @@ async def upload_match_media(
                 league_id=league.id,
                 match_id=match.id,
                 filename=filename,
-                original_name=f.filename,
+                original_name=_sanitize_original_name(f.filename),
                 mime_type=f.content_type,
                 size_bytes=len(raw),
                 file_url=f"/media/{filename}",

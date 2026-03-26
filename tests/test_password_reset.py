@@ -69,13 +69,13 @@ def test_password_reset_token_created_and_can_reset_password(client: TestClient,
     # POST new password
     r_post = client.post(
         f"/reset-password/{row.token}",
-        data={"new_password": "NewStrong1", "confirm_password": "NewStrong1", "csrf_token": csrf},
+        data={"new_password": "NewStrongPass1!", "confirm_password": "NewStrongPass1!", "csrf_token": csrf},
     )
     assert r_post.status_code in (200, 303)
 
     refreshed = db_session.query(User).filter(User.id == user.id).first()
     assert refreshed is not None
-    assert security.verify_password("NewStrong1", refreshed.hashed_password)
+    assert security.verify_password("NewStrongPass1!", refreshed.hashed_password)
 
     used_row = db_session.query(PasswordResetToken).filter(PasswordResetToken.id == row.id).first()
     assert used_row is not None

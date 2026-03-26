@@ -22,6 +22,7 @@ Operational **cross-league** tools protected by a **shared secret** (not end-use
   - sets `leagues.deleted_at = now()`
   - hides the league from normal repository queries
   - does not cascade-delete related rows
+  - requires a valid CSRF token from the confirmation page
 
 ---
 
@@ -29,6 +30,7 @@ Operational **cross-league** tools protected by a **shared secret** (not end-use
 
 - Treat the secret like a root password: rotate if leaked, use only over HTTPS in production.
 - This is **separate** from league admin PIN and from `users.role` — there is no end-user role check here, only the shared secret auth.
+- Destructive POST actions are CSRF-protected even when Basic Auth is used.
 
 ---
 

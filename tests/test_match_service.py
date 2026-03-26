@@ -90,3 +90,46 @@ class TestMatchService:
         # Verify
         db_session.refresh(p1)
         assert p1.total_goals == 0
+
+    def test_delete_match_completed_season_updates_all_time(self, db_session, league_repo, player_repo, match_service):
+        password = "pass"
+        league_in = schemas.LeagueCreate(name="Seasoned", slug="seasoned", admin_password=password)
+        league = league_repo.create(league_in, security.get_password_hash(password))
+        league.season_number = 3
+        league_repo.save(league)
+        p1 = player_repo.create("PX", league.id)
+        p1.all_time_points = 50
+        p1.all_time_goals = 7
+        p1.all_time_matches = 3
+        player_repo.save(p1)
+
+        match = models.Match(
+            league_id=league.id,
+            season_number=2,
+            team_a_name="A",
+            team_b_name="B",
+            team_a_score=1,
+            team_b_score=0,
+        )
+        db_session.add(match)
+        db_session.commit()
+        db_session.refresh(match)
+        stat = models.MatchStat(
+            player_id=p1.id,
+            match_id=match.id,
+            team="A",
+            goals=2,
+            assists=0,
+            saves=0,
+            own_goals=0,
+            clean_sheet=False,
+            points_earned=6,
+        )
+        db_session.add(stat)
+        db_session.commit()
+
+        match_service.delete_match(match.id, league.id)
+        db_session.refresh(p1)
+        assert p1.all_time_points == 44
+        assert p1.all_time_goals == 5
+        assert p1.all_time_matches == 2
