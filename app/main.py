@@ -446,7 +446,12 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, __):
-    return templates.TemplateResponse("errors/404.html", {"request": request}, status_code=404)
+    return templates.TemplateResponse(
+        request=request,
+        name="errors/404.html",
+        context={},
+        status_code=404,
+    )
 
 @app.exception_handler(500)
 async def custom_500_handler(request: Request, exc: Exception):
@@ -461,7 +466,12 @@ async def custom_500_handler(request: Request, exc: Exception):
         )
 
     # For normal pages, show HTML error template
-    return templates.TemplateResponse("errors/500.html", {"request": request}, status_code=500)
+    return templates.TemplateResponse(
+        request=request,
+        name="errors/500.html",
+        context={},
+        status_code=500,
+    )
 
 # CORS: use allowlist from config; credentials only when not wildcard
 _cors_origins = settings.cors_origins_list
