@@ -17,6 +17,7 @@ from ..core.csrf import (
 from ..database import get_db
 from ..dependencies import get_current_user, get_league_repository, get_player_repository, ILeagueRepository, IPlayerRepository
 from ..models import models
+from app.core.rate_limit import limiter
 
 
 SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
@@ -96,6 +97,7 @@ def league_step(request: Request, current_user=Depends(get_current_user)):
 
 
 @router.post("/league")
+@limiter.limit("5/minute")
 def league_submit(
     request: Request,
     name: str = Form(...),
@@ -112,6 +114,21 @@ def league_submit(
 
     name = (name or "").strip()
     slug = (slug or "").strip()
+
+    if len(name) > 100:
+        return templates.TemplateResponse(
+            request=request,
+            name="onboarding/league.html",
+            context={"error": "اسم الدوري طويل جداً (الحد الأقصى 100 حرف)", "user": current_user},
+            status_code=400,
+        )
+    if len(slug) > 50:
+        return templates.TemplateResponse(
+            request=request,
+            name="onboarding/league.html",
+            context={"error": "الرابط طويل جداً (الحد الأقصى 50 حرف)", "user": current_user},
+            status_code=400,
+        )
 
     if not name:
         return templates.TemplateResponse(
@@ -184,6 +201,7 @@ def teams_step(
 
 
 @router.post("/teams")
+@limiter.limit("5/minute")
 def teams_submit(
     request: Request,
     league_id: int = Form(...),
@@ -198,8 +216,10 @@ def teams_submit(
         raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
 
     league = _require_owned_league(db, league_id, current_user)
-    league.team_a_label = (team_a_label or "").strip() or "فريق أ"
-    league.team_b_label = (team_b_label or "").strip() or "فريق ب"
+    team_a_label = (team_a_label or "").strip()[:50] or "فريق أ"
+    team_b_label = (team_b_label or "").strip()[:50] or "فريق ب"
+    league.team_a_label = team_a_label
+    league.team_b_label = team_b_label
     db.add(league)
     db.commit()
     db.refresh(league)
@@ -226,6 +246,7 @@ def players_step(
 
 
 @router.post("/players")
+@limiter.limit("5/minute")
 def players_submit(
     request: Request,
     league_id: int = Form(...),
@@ -242,6 +263,15 @@ def players_submit(
     league = _require_owned_league(db, league_id, current_user)
 
     raw = players_text or ""
+
+    if len(raw) > 5000:
+        return templates.TemplateResponse(
+            request=request,
+            name="onboarding/players.html",
+            context={"error": "النص طويل جداً (الحد الأقصى 5000 حرف).", "user": current_user, "league": league},
+            status_code=400,
+        )
+
     names = []
     for line in re.split(r"[\n,]+", raw):
         n = line.strip()
@@ -253,6 +283,14 @@ def players_submit(
             request=request,
             name="onboarding/players.html",
             context={"error": "اكتب أسماء اللاعبين (سطر لكل لاعب أو مفصول بفاصلة).", "user": current_user, "league": league},
+            status_code=400,
+        )
+
+    if len(names) > 50:
+         return templates.TemplateResponse(
+            request=request,
+            name="onboarding/players.html",
+            context={"error": "لا يمكن إضافة أكثر من 50 لاعب في المرة الواحدة.", "user": current_user, "league": league},
             status_code=400,
         )
 

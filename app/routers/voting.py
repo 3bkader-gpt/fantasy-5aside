@@ -1,6 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from ..core.csrf import verify_csrf
-from ..core.rate_limit import limiter
+from app.core.rate_limit import limiter
 from ..schemas import schemas
 from ..dependencies import get_voting_service, get_current_admin_league, get_match_repository, get_notification_service
 from ..repositories.interfaces import IMatchRepository

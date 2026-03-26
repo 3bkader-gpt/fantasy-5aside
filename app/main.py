@@ -446,6 +446,11 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, __):
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Not found"},
+        )
     return templates.TemplateResponse(
         request=request,
         name="errors/404.html",

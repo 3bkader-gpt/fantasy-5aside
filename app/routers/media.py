@@ -4,7 +4,7 @@ import re
 from pathlib import PurePath
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlalchemy.orm import Session
 
 import logging
@@ -12,6 +12,7 @@ from ..core.config import settings
 from ..database import get_db
 from ..models import models
 from ..dependencies import get_current_admin_league, get_match_repository, IMatchRepository
+from app.core.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,9 @@ def _sanitize_original_name(filename: str | None) -> str:
 
 
 @router.post("/l/{slug}/match/{match_id}/media")
+@limiter.limit("10/minute")
 async def upload_match_media(
+    request: Request,
     slug: str,
     match_id: int,
     files: List[UploadFile] = File(...),
@@ -182,7 +185,9 @@ async def upload_match_media(
 
 
 @router.delete("/l/{slug}/media/{media_id}")
+@limiter.limit("10/minute")
 async def delete_match_media(
+    request: Request,
     slug: str,
     media_id: int,
     league: models.League = Depends(get_current_admin_league),

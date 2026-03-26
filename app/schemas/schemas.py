@@ -4,9 +4,9 @@ from datetime import datetime
 
 # --- Team Schemas ---
 class TeamBase(BaseModel):
-    name: str
-    short_code: Optional[str] = None
-    color: Optional[str] = None
+    name: str = Field(..., max_length=100)
+    short_code: Optional[str] = Field(None, max_length=10)
+    color: Optional[str] = Field(None, max_length=20)
 
 class TeamCreate(TeamBase):
     pass
@@ -26,7 +26,7 @@ class TeamResponse(TeamBase):
 # --- Transfer Schemas ---
 class TransferCreate(BaseModel):
     to_team_id: Optional[int] = None  # None / omit = release to free agent
-    reason: Optional[str] = None
+    reason: Optional[str] = Field(None, max_length=512)
 
 class TransferResponse(BaseModel):
     id: int
@@ -42,20 +42,20 @@ class TransferResponse(BaseModel):
 
 # --- League Schemas ---
 class LeagueBase(BaseModel):
-    name: str
-    slug: str
+    name: str = Field(..., max_length=100)
+    slug: str = Field(..., max_length=50)
 
 class LeagueCreate(LeagueBase):
-    admin_password: str
-    admin_email: Optional[str] = None
+    admin_password: str = Field(..., max_length=128)
+    admin_email: Optional[str] = Field(None, max_length=255)
 
 class LeagueUpdate(BaseModel):
-    name: Optional[str] = None
-    slug: Optional[str] = None
-    new_password: Optional[str] = None
-    current_admin_password: Optional[str] = None
-    team_a_label: Optional[str] = None
-    team_b_label: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=100)
+    slug: Optional[str] = Field(None, max_length=50)
+    new_password: Optional[str] = Field(None, max_length=128)
+    current_admin_password: Optional[str] = Field(None, max_length=128)
+    team_a_label: Optional[str] = Field(None, max_length=50)
+    team_b_label: Optional[str] = Field(None, max_length=50)
 
 class LeagueResponse(LeagueBase):
     id: int
@@ -64,7 +64,7 @@ class LeagueResponse(LeagueBase):
 
 # --- Player Schemas ---
 class PlayerBase(BaseModel):
-    name: str
+    name: str = Field(..., max_length=100)
     team_id: Optional[int] = None
     default_is_gk: bool = False
     total_points: int = 0
@@ -87,7 +87,7 @@ class PlayerResponse(PlayerBase):
 
 # --- MatchStat Schemas ---
 class MatchStatBase(BaseModel):
-    player_name: str
+    player_name: str = Field(..., max_length=100)
     team: Literal["A", "B"]
     goals: int = Field(default=0, ge=0)
     assists: int = Field(default=0, ge=0)
@@ -116,8 +116,8 @@ class MatchStatResponse(MatchStatBase):
 
 # --- Match Schemas ---
 class MatchBase(BaseModel):
-    team_a_name: str = "Team A"
-    team_b_name: str = "Team B"
+    team_a_name: str = Field("Team A", max_length=50)
+    team_b_name: str = Field("Team B", max_length=50)
 
 class MatchCreate(MatchBase):
     league_id: Optional[int] = None
@@ -178,7 +178,7 @@ class VoteCreate(BaseModel):
     voter_id: int
     candidate_id: int
     round_number: int  # 1, 2, or 3
-    device_fingerprint: str = ""
+    device_fingerprint: str = Field("", max_length=255)
 
 class VoteResponse(BaseModel):
     id: int
@@ -300,15 +300,15 @@ class BackupImportPayload(BaseModel):
 # --- Web Push Schemas ---
 
 class PushSubscriptionRequest(BaseModel):
-    league_slug: str
-    endpoint: str
-    p256dh: str
-    auth: str
+    league_slug: str = Field(..., max_length=50)
+    endpoint: str = Field(..., max_length=512)
+    p256dh: str = Field(..., max_length=255)
+    auth: str = Field(..., max_length=128)
     player_id: Optional[int] = None
 
 
 class PushUnsubscribeRequest(BaseModel):
-    endpoint: str
+    endpoint: str = Field(..., max_length=512)
 
 
 class PushPublicKeyResponse(BaseModel):

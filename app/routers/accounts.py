@@ -17,7 +17,7 @@ from ..core.csrf import (
     set_csrf_cookie,
     verify_csrf_token,
 )
-from ..core.rate_limit import limiter
+from app.core.rate_limit import limiter
 from sqlalchemy import func
 
 from ..models import models
@@ -78,6 +78,7 @@ def register_page(request: Request):
 
 
 @router.post("/register")
+@limiter.limit("5/minute")
 def register_submit(
     request: Request,
     background_tasks: BackgroundTasks,

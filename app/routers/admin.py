@@ -38,6 +38,8 @@ from ..dependencies import (
 )
 from ..services.achievements import achievement_service
 from ..core.logging import log_event
+from app.core.rate_limit import limiter
+print(f"DEBUG: admin.py loaded, limiter: {limiter}")
 
 router = APIRouter(prefix="/l/{slug}/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -178,6 +180,7 @@ def admin_dashboard(
     return resp
 
 @router.post("/match")
+@limiter.limit("10/minute")
 def create_match(
     request: Request,
     match_data: schemas.MatchCreate,
@@ -221,6 +224,7 @@ def create_match(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/cup/generate")
+@limiter.limit("2/minute")
 def generate_cup(
     request: Request,
     csrf_token: str = Form(None),
@@ -259,6 +263,7 @@ def delete_cup_for_current_season(
     return RedirectResponse(url=f"/l/{league.slug}/admin?msg=cup_deleted", status_code=303)
 
 @router.post("/season/end")
+@limiter.limit("2/minute")
 def end_season(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -313,6 +318,7 @@ def end_season(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/season/undo")
+@limiter.limit("2/minute")
 def undo_end_season(
     request: Request,
     csrf_token: str = Form(None),
@@ -353,6 +359,7 @@ def fix_latest_hof_awards(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/settings/update")
+@limiter.limit("5/minute")
 def update_league_settings(
     request: Request,
     name: str = Form(None),
@@ -409,7 +416,9 @@ def update_league_settings(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/settings/delete")
+@limiter.limit("5/minute")
 def delete_league_entirely(
+    request: Request,
     _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
     league_service: ILeagueService = Depends(get_league_service),
@@ -426,6 +435,7 @@ def delete_league_entirely(
 
 
 @router.post("/recompute-totals")
+@limiter.limit("5/minute")
 def recompute_player_totals_from_matches(
     request: Request,
     csrf_token: str = Form(None),
@@ -570,7 +580,9 @@ def get_match_details(
     }
 
 @router.post("/match/{match_id}/edit")
+@limiter.limit("10/minute")
 def edit_match(
+    request: Request,
     match_id: int,
     payload: schemas.MatchEditRequest,
     _csrf: None = Depends(verify_csrf),
@@ -731,7 +743,9 @@ def export_league_backup(
 
 
 @router.post("/import/backup")
+@limiter.limit("2/minute")
 async def import_league_backup(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     _csrf: None = Depends(verify_csrf),
@@ -923,6 +937,7 @@ def update_player_name(
     return {"success": True, "player": {"id": player.id, "name": player.name}}
 
 @router.post("/player/add")
+@limiter.limit("10/minute")
 def add_player(
     request: Request,
     name: str = Form(...),

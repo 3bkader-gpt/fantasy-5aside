@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from ..schemas import schemas
 from ..dependencies import get_notification_service, get_league_repository
@@ -6,6 +6,7 @@ from ..services.interfaces import INotificationService
 from ..repositories.interfaces import ILeagueRepository
 from ..core.config import settings
 from ..core.vapid import normalize_vapid_key, is_vapid_public_key_valid
+from app.core.rate_limit import limiter
 
 
 router = APIRouter(tags=["notifications"])
@@ -31,7 +32,9 @@ def get_public_key():
 
 
 @router.post("/api/notifications/subscribe")
+@limiter.limit("5/minute")
 def subscribe(
+    request: Request,
     payload: schemas.PushSubscriptionRequest,
     notification_service: INotificationService = Depends(get_notification_service),
     league_repo: ILeagueRepository = Depends(get_league_repository),
@@ -51,7 +54,9 @@ def subscribe(
 
 
 @router.post("/api/notifications/unsubscribe")
+@limiter.limit("5/minute")
 def unsubscribe(
+    request: Request,
     payload: schemas.PushUnsubscribeRequest,
     notification_service: INotificationService = Depends(get_notification_service),
 ):
