@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+import hashlib
+import secrets
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
@@ -14,18 +18,52 @@ from ..models import models
 router = APIRouter(prefix="/superadmin", tags=["superadmin"])
 templates = Jinja2Templates(directory="app/templates")
 
+_basic_scheme = HTTPBasic(auto_error=False)
 
-def require_superadmin(request: Request) -> None:
+
+def _digest_equal(provided: str | None, expected: str | None) -> bool:
+    if not provided or not expected:
+        return False
+    provided_digest = hashlib.sha256(provided.encode("utf-8")).digest()
+    expected_digest = hashlib.sha256(expected.encode("utf-8")).digest()
+    return secrets.compare_digest(provided_digest, expected_digest)
+
+
+def require_superadmin(
+    request: Request,
+    credentials: HTTPBasicCredentials | None = Depends(_basic_scheme),
+) -> None:
     expected = settings.superadmin_secret
-    provided = request.headers.get("x-superadmin-secret")
-    if not expected or not provided or provided != expected:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    header_secret = request.headers.get("x-superadmin-secret")
+
+    # Accept secret header for non-browser clients (scripts, curl, etc.)
+    if _digest_equal(header_secret, expected):
+        return
+
+    # Browser-friendly auth: HTTP Basic prompts the user via popup.
+    if not expected or not credentials:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+
+    username_ok = _digest_equal(credentials.username, "superadmin")
+    password_ok = _digest_equal(credentials.password, expected)
+
+    if not (username_ok and password_ok):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
 
 @router.get("/")
 def index(request: Request, db: Session = Depends(get_db), _: None = Depends(require_superadmin)):
     leagues = (
         db.query(models.League)
+        .filter(models.League.deleted_at.is_(None))
         .order_by(models.League.created_at.desc())
         .all()
     )
@@ -70,7 +108,11 @@ def confirm_delete(
     db: Session = Depends(get_db),
     _: None = Depends(require_superadmin),
 ):
-    league = db.query(models.League).filter(models.League.id == league_id).first()
+    league = (
+        db.query(models.League)
+        .filter(models.League.id == league_id, models.League.deleted_at.is_(None))
+        .first()
+    )
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
     return templates.TemplateResponse(
@@ -92,14 +134,29 @@ def delete_league(
         return templates.TemplateResponse(
             request=request,
             name="superadmin/confirm_delete.html",
-            context={"error": "اكتب DELETE للتأكيد", "league": db.query(models.League).filter(models.League.id == league_id).first(), "is_admin": True},
+            context={
+                "error": "اكتب DELETE للتأكيد",
+                "league": (
+                    db.query(models.League)
+                    .filter(models.League.id == league_id, models.League.deleted_at.is_(None))
+                    .first()
+                ),
+                "is_admin": True,
+            },
             status_code=400,
         )
 
-    league = db.query(models.League).filter(models.League.id == league_id).first()
+    league = (
+        db.query(models.League)
+        .filter(models.League.id == league_id, models.League.deleted_at.is_(None))
+        .first()
+    )
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
-    db.delete(league)
+
+    # Soft delete: keep data for auditing/undo, hide from normal queries.
+    league.deleted_at = datetime.now(timezone.utc)
+    db.add(league)
     db.commit()
     return RedirectResponse(url="/superadmin", status_code=303)
 

@@ -17,6 +17,12 @@
       <a href="/onboarding/teams?league_id={{ league.id }}" class="btn btn-outline-secondary">رجوع</a>
     </div>
 
+    {% if request.query_params.get("resumed") == "1" %}
+    <div class="alert alert-info mb-3" style="text-align:right;">
+      يبدو أنك توقفت قبل إضافة اللاعبين. اكمّل الآن الإعداد من نفس الخطوة.
+    </div>
+    {% endif %}
+
     {% if error %}
     <div class="alert alert-danger" style="text-align: right;">{{ error }}</div>
     {% endif %}

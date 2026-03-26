@@ -2,13 +2,13 @@
 
 ### 🔗 Quick navigation
 - **High-level index**: see `PROJECT_INDEX.md`
-- [1) System Architecture & Tech Stack](#1-system-architecture--tech-stack)
-- [2) Database Schema & Relationships](#2-database-schema--relationships)
-- [3) Core Business Logic & The Game Engine](#3-core-business-logic--the-game-engine-critical)
-- [4) Voting, Anti-Cheat & Security](#4-voting-anti-cheat--security)
-- [5) Frontend Behavior & UX Notes](#5-frontend-behavior--ux-notes)
-- [6) Operational Concerns](#6-operational-concerns)
-- [7) Gotchas, Edge Cases & Invariants](#7-gotchas-edge-cases--invariants)
+- 1) System Architecture & Tech Stack
+- 2) Database Schema & Relationships
+- 3) Core Business Logic & The Game Engine
+- 4) Frontend Quirks & UI Workarounds
+- 5) Strict Rules for Future AI Agents
+- 6) Dependency Map
+- 7) Known Operational Caveats
 
 ---
 
@@ -24,15 +24,15 @@
 - Framework: FastAPI.
 - Dependency injection through `app/dependencies.py`.
 - Router split:
-  - `app/routers/public.py`: landing, create-league flow (with admin_email + slug autosuggest/availability + confirmation page), leaderboard, matches, cup, player profile, stats pages.
+  - `app/routers/public.py`: landing (no public league creation), slug availability (`/api/slug-available`), league public pages (leaderboard, matches, cup, player profile, stats, HOF), and post-create confirmation page (`/l/{slug}/created`). League creation is account-centric via onboarding (`app/routers/onboarding.py`).
   - `app/routers/admin.py`: admin dashboard, match CRUD, season/cup actions, teams, transfers, imports/exports; all league operations go through league-scoped dependencies.
   - `app/routers/voting.py`: voting APIs (`status`, `live`, `closed-results`, `vote`, `open`, `close`).
   - `app/routers/auth.py`: login/logout (league admin PIN) + user account login (`POST /user/login`).
   - `app/routers/accounts.py`: user registration + email verification + password reset (`/forgot-password`, `/reset-password/{token}`) + multi-league `/dashboard`.
   - `app/routers/onboarding.py`: user-auth gated onboarding wizard (`/onboarding/*`) to create an owned league and add initial data.
   - `app/routers/superadmin.py`: platform-level admin dashboard (requires `SUPERADMIN_SECRET` and `X-Superadmin-Secret` header).
-  - `app/routers/media.py`: match image upload/delete.
-  - `app/routers/notifications.py`: web push subscription endpoints.
+  - `app/routers/media.py`: match image upload/delete. Storage behavior: Supabase-first when configured; in production, Supabase upload failures fail-fast (no local fallback). Local dev uses `uploads/` and serves URLs under `/media/...`. Match delete / backup import run best-effort bulk cleanup of associated media files via background tasks.
+  - `app/routers/notifications.py`: web push subscription endpoints. Delivery is dispatched via FastAPI `BackgroundTasks` (fresh DB session) and is isolated per subscriber: a single bad endpoint must not abort the loop; expired endpoints are deleted.
 
 ### 1.3 Frontend
 - Server-rendered Jinja2 templates (`app/templates/**`).
@@ -73,7 +73,7 @@
 
 ### 1.6 Deployment
 - Render blueprint in `render.yaml`.
-- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"`.
 - Optional Supabase Storage integration for persistent match media via env vars:
   - `SUPABASE_PROJECT_URL`
   - `SUPABASE_SERVICE_ROLE_KEY`
@@ -81,19 +81,17 @@
 ### 1.7 Email Delivery & Provider Limits
 - Outbound emails (e.g. account verification, future password reset) go through:
   - `app/services/email_service.py` → `EmailService` + provider abstraction.
-  - DB-backed queue in `email_queue` table.
-- A background worker in `app/main.py` periodically drains the queue using `process_email_queue_once`
-  and enforces a configurable daily limit:
+- DB-backed queue in `email_queue` table with in-flight tracking (`processing_started_at`) and per-day quota coordination via `email_daily_usage.reserved_count`.
+- Queue processing uses `process_email_queue_once(...)` with a 3-phase flow: **claim (short txn + reserve quota)** → **send (no locks)** → **finalize (short txn)**.
+- Transactional emails (verification/reset) are enqueued then fast-pathed via FastAPI `BackgroundTasks` from the accounts flows; the periodic worker focuses on non-transactional backlog (`system` / `notification`) and enforces a configurable daily limit:
   - `email_daily_limit` setting in `core/config.py` (defaults to 300, aligned with Brevo Free plan).
 - Daily usage is tracked in `email_daily_usage` table (UTC date + sent_count).
 - Priority rules:
   - `transactional` > `system` > `notification` — higher priority emails are always sent first when
     approaching the daily limit so that verification/OTP flows are not blocked by match notifications.
 - Current providers:
-  - `LogEmailProvider` (default in development/tests): يكتب الإيميل في الـ logs فقط.
-  - `BrevoEmailProvider` (عند ضبط `EMAIL_PROVIDER=brevo` + مفاتيح Brevo في `.env`): يرسل فعليًا عبر Brevo
-    باستخدام endpoint `/v3/smtp/email`. أي features جديدة (OTP, reset, notifications) يجب أن تمر عبر
-    نفس `EmailService` للاستفادة من الطابور وحد الإرسال اليومي.
+  - `LogEmailProvider` (default in development/tests): writes email output to logs only.
+  - `BrevoEmailProvider` (when `EMAIL_PROVIDER=brevo` is configured with Brevo keys in `.env`): sends real emails via the `/v3/smtp/email` endpoint. Any new email feature (OTP, reset, notifications) should use the same `EmailService` to benefit from queueing and daily send limits.
 
 
 ## 2) Database Schema & Relationships
@@ -210,7 +208,7 @@ Pipeline:
 8. Auto-resolve cup fixtures for this match.
 
 Constraints:
-- Duplicate player in same submitted match is rejected (`400 لاعب مكرر في التشكيلة`).
+- Duplicate player in the same submitted match is rejected (`400 duplicate player in lineup`).
 - GK clean sheet can be auto-enabled for `goals_conceded <= 6`.
 
 ### 3.3 Automated Season Engine
@@ -253,10 +251,16 @@ Invariants:
 ### 3.4 Cup Engine (Clean Architecture)
 Primary files:
 - `app/use_cases/generate_cup.py` (`GenerateCupUseCase`)
-- `app/domain/season_boundary.py`
+- `app/domain/season_boundary.py` (`get_active_cup_season`)
 - `app/domain/standings.py`
 - `app/domain/cup_seeding.py`
 - `app/services/cup_service.py`
+
+Season Resolution Protocol:
+- Both display and resolution logic use `get_active_cup_season` to identify the correct target:
+  - Primary: `league.season_number`.
+  - Fallback (if no active matchups and season > 1): `league.season_number - 1`.
+  - This ensures a Cup remains functional during league transitions to new seasons.
 
 Generation flow:
 1. Determine target season and standings scope with `determine_cup_season_target`:
@@ -272,9 +276,12 @@ Generation flow:
 
 Resolution flow (`auto_resolve_cups`):
 - Triggered after each match save/update.
-- Only resolves fixtures where both cup players participated in same match.
-- Winner is by match points (`points_earned`), then overall points tie-breaker, then deterministic fallback to `player1`.
-- Loser deactivated (`is_active_in_cup=False`).
+- Identifies target season via `get_active_cup_season`.
+- Resolves fixtures if at least one cup player participated in the match (Single Player Presence).
+- Winner is determined by match points (`points_earned`).
+- If only one player is present, they win automatically (opponent scores 0).
+- If both present and tied: 1) match winner (`is_winner`), 2) leaderboard rank (points then goals).
+- Loser(s) deactivated (`is_active_in_cup=False`).
 - Fixture marked inactive/revealed and linked to resolving match id.
 
 Co-op final edge case:

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from ..core.csrf import verify_csrf
 from ..core.rate_limit import limiter
 from ..schemas import schemas
@@ -6,6 +6,9 @@ from ..dependencies import get_voting_service, get_current_admin_league, get_mat
 from ..repositories.interfaces import IMatchRepository
 from ..services.interfaces import IVotingService, INotificationService
 from ..models.models import League
+from ..core.config import settings
+from ..database import SessionLocal
+from ..services.notification_service import NotificationService
 
 router = APIRouter(prefix="/api/voting", tags=["Voting"])
 
@@ -15,6 +18,24 @@ def _get_client_ip(request: Request) -> str:
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else ""
+
+
+def _notify_league_background(league_id: int, title: str, body: str, url: str) -> None:
+    """Best-effort background push delivery.
+
+    Uses a fresh DB session because request-scoped sessions are closed after the response.
+    """
+    try:
+        with SessionLocal() as db:
+            NotificationService(db).notify_league(
+                league_id=league_id,
+                title=title,
+                body=body,
+                url=url,
+            )
+    except Exception:
+        # Notifications should never break the core admin workflow.
+        pass
 
 
 @router.get("/match/{match_id}/status", response_model=schemas.VotingStatusResponse)
@@ -69,6 +90,7 @@ def submit_vote(
 @router.post("/{slug}/open/{match_id}")
 def open_voting(
     request: Request,
+    background_tasks: BackgroundTasks,
     slug: str,
     match_id: int,
     payload: schemas.VotingOpenRequest,
@@ -89,12 +111,22 @@ def open_voting(
         raise HTTPException(status_code=400, detail=result.get("message", "التصويت انتهى لهذه المباراة"))
 
     try:
-        notification_service.notify_league(
-            league_id=league.id,
-            title="التصويت مفتوح الآن 🗳️",
-            body=f"تم فتح التصويت لمباراة {match.team_a_name} ضد {match.team_b_name}.",
-            url=f"/l/{league.slug}#voting-banner",
-        )
+        if getattr(settings, "testing", False):
+            # In tests, keep it inline to avoid background timing flakiness.
+            notification_service.notify_league(
+                league_id=league.id,
+                title="التصويت مفتوح الآن 🗳️",
+                body=f"تم فتح التصويت لمباراة {match.team_a_name} ضد {match.team_b_name}.",
+                url=f"/l/{league.slug}#voting-banner",
+            )
+        else:
+            background_tasks.add_task(
+                _notify_league_background,
+                league.id,
+                "التصويت مفتوح الآن 🗳️",
+                f"تم فتح التصويت لمباراة {match.team_a_name} ضد {match.team_b_name}.",
+                f"/l/{league.slug}#voting-banner",
+            )
     except Exception:
         # Notifications are best-effort; don't break admin flow
         pass

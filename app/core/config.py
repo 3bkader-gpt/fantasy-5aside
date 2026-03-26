@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     # Superadmin (Phase 6)
     superadmin_secret: str | None = None
 
+    # Email verification link TTL (hours); token stored on User with expiry
+    user_verify_token_ttl_hours: int = 24
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property

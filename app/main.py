@@ -91,11 +91,13 @@ async def lifespan(app: FastAPI):
             ("leagues", "owner_user_id", "INTEGER DEFAULT NULL"),
             ("leagues", "is_verified", "BOOLEAN DEFAULT FALSE"),
             ("leagues", "verification_token", "VARCHAR(255) DEFAULT NULL"),
+            ("leagues", "deleted_at", "TIMESTAMP WITH TIME ZONE DEFAULT NULL"),
             ("cup_matchups", "bracket_type", "VARCHAR(20) DEFAULT 'outfield'"),
             ("cup_matchups", "is_revealed", "BOOLEAN DEFAULT FALSE"),
             ("cup_matchups", "match_id", "INTEGER DEFAULT NULL"),
             ("cup_matchups", "season_number", "INTEGER DEFAULT 1"),
             ("cup_matchups", "winner2_id", "INTEGER DEFAULT NULL"),
+            ("cup_matchups", "league_match_count_baseline", "INTEGER DEFAULT NULL"),
             # Team system migrations
             ("players", "team_id", "INTEGER DEFAULT NULL"),
             ("matches", "team_a_id", "INTEGER DEFAULT NULL"),
@@ -107,6 +109,8 @@ async def lifespan(app: FastAPI):
             ("hall_of_fame", "top_assister_assists", "INTEGER DEFAULT 0"),
             ("hall_of_fame", "top_gk_id", "INTEGER DEFAULT NULL"),
             ("hall_of_fame", "top_gk_saves", "INTEGER DEFAULT 0"),
+            ("hall_of_fame", "cup_outfield_winner_id", "INTEGER DEFAULT NULL"),
+            ("hall_of_fame", "cup_gk_winner_id", "INTEGER DEFAULT NULL"),
             # Indexing for performance
             ("players", "league_id", "INDEX"),
             ("matches", "league_id", "INDEX"),
@@ -123,6 +127,9 @@ async def lifespan(app: FastAPI):
             ("cup_matchups", "league_id", "INDEX"),
             ("hall_of_fame", "season_matches_count", "INTEGER DEFAULT NULL"),
             ("matches", "season_number", "INDEX"),
+            ("users", "verification_token_expires_at", "TIMESTAMP WITH TIME ZONE DEFAULT NULL"),
+            ("email_queue", "processing_started_at", "TIMESTAMP WITH TIME ZONE DEFAULT NULL"),
+            ("email_daily_usage", "reserved_count", "INTEGER DEFAULT 0"),
         ]
 
         # Ensure audit_log, revoked_tokens, and users tables exist (OWASP + accounts)
@@ -213,6 +220,61 @@ async def lifespan(app: FastAPI):
                         logger.info("Migration: converted match_stats.voting_bonus_applied to boolean.")
             except Exception as e:
                 logger.warning(f"voting_bonus_applied type fix skipped: {e}")
+
+        # Allow transfers.to_team_id NULL (release / free agent) on existing DBs
+        if engine.dialect.name == "postgresql":
+            try:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE transfers ALTER COLUMN to_team_id DROP NOT NULL"))
+                    logger.info("Migration: transfers.to_team_id is nullable (PostgreSQL).")
+            except Exception:
+                logger.debug("transfers.to_team_id nullable migration skipped (already applied or no table).")
+        elif engine.dialect.name == "sqlite":
+            try:
+                with engine.begin() as conn:
+                    exists = conn.execute(
+                        text("SELECT 1 FROM sqlite_master WHERE type='table' AND name='transfers'")
+                    ).fetchone()
+                    if exists:
+                        cols = conn.execute(text("PRAGMA table_info(transfers)")).fetchall()
+                        to_col = next((c for c in cols if c[1] == "to_team_id"), None)
+                        # PRAGMA notnull: 1 = NOT NULL — rebuild only when release rows would be rejected
+                        if to_col is not None and to_col[3] == 1:
+                            conn.execute(
+                                text(
+                                    """
+                                    CREATE TABLE transfers__new (
+                                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                                        league_id INTEGER NOT NULL,
+                                        player_id INTEGER NOT NULL,
+                                        from_team_id INTEGER,
+                                        to_team_id INTEGER,
+                                        reason TEXT,
+                                        created_at DATETIME,
+                                        FOREIGN KEY(league_id) REFERENCES leagues (id),
+                                        FOREIGN KEY(player_id) REFERENCES players (id),
+                                        FOREIGN KEY(from_team_id) REFERENCES teams (id),
+                                        FOREIGN KEY(to_team_id) REFERENCES teams (id)
+                                    )
+                                    """
+                                )
+                            )
+                            conn.execute(
+                                text(
+                                    """
+                                    INSERT INTO transfers__new (
+                                        id, league_id, player_id, from_team_id, to_team_id, reason, created_at
+                                    )
+                                    SELECT id, league_id, player_id, from_team_id, to_team_id, reason, created_at
+                                    FROM transfers
+                                    """
+                                )
+                            )
+                            conn.execute(text("DROP TABLE transfers"))
+                            conn.execute(text("ALTER TABLE transfers__new RENAME TO transfers"))
+                            logger.info("Migration: rebuilt transfers with nullable to_team_id (SQLite).")
+            except Exception as e:
+                logger.warning(f"transfers.to_team_id SQLite migration skipped: {e}")
     except Exception as e:
         logger.warning(f"Database startup tasks failed (app will still run): {e}")
 
@@ -229,9 +291,22 @@ async def lifespan(app: FastAPI):
         while not stop_event.is_set():
             try:
                 with SessionLocal() as db:
-                    processed = process_email_queue_once(db, provider=None)
-                    if processed:
-                        logger.info("Email worker processed %s queued emails.", processed)
+                    # Transactional emails (verification / password reset) are fastpathed
+                    # from the request-response cycle, so keep the periodic worker focused
+                    # on backlog / non-transactional work.
+                    processed_total = 0
+                    for _email_type in ("system", "notification"):
+                        processed_total += process_email_queue_once(
+                            db,
+                            provider=None,
+                            email_type=_email_type,
+                            batch_limit=25,
+                        )
+                    if processed_total:
+                        logger.info(
+                            "Email worker processed %s queued non-transactional emails.",
+                            processed_total,
+                        )
             except Exception as e:  # pragma: no cover - defensive logging
                 logger.warning(f"Email worker tick failed: {e}")
             # Sleep with cancellation support
@@ -240,7 +315,11 @@ async def lifespan(app: FastAPI):
             except asyncio.TimeoutError:
                 continue
 
-    worker_task = asyncio.create_task(_email_worker())
+    worker_task = None
+    if not getattr(settings, "testing", False):
+        worker_task = asyncio.create_task(_email_worker())
+    else:
+        logger.info("Email queue worker disabled in testing mode.")
 
     logger.info("Application startup complete inside lifespan, handing control back to FastAPI.")
     try:
@@ -248,7 +327,8 @@ async def lifespan(app: FastAPI):
     finally:
         # Signal the worker to stop and wait for it to finish
         stop_event.set()
-        await worker_task
+        if worker_task is not None:
+            await worker_task
 
 
 

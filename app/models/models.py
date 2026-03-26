@@ -24,7 +24,7 @@ class Transfer(Base):
     league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False)
     player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
     from_team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
-    to_team_id = Column(Integer, ForeignKey("teams.id"), nullable=False)
+    to_team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)  # NULL = released (free agent)
     reason = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -46,6 +46,7 @@ class League(Base):
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
     
     # Automated Season Tracking
     current_season_matches = Column(Integer, default=0)
@@ -188,6 +189,8 @@ class CupMatchup(Base):
     bracket_type = Column(String(20), default="outfield")  # "outfield" or "goalkeeper"
     is_revealed = Column(Boolean, default=False)
     match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
+    # League matches counted (same season as cup) when this round was opened — for stale H2H forfeit (>=4 new matches)
+    league_match_count_baseline = Column(Integer, nullable=True)
 
     league = relationship("League", back_populates="cup_matchups")
     player1 = relationship("Player", foreign_keys=[player1_id])
@@ -213,12 +216,16 @@ class HallOfFame(Base):
     top_assister_assists = Column(Integer, default=0)
     top_gk_id = Column(Integer, ForeignKey("players.id"), nullable=True)
     top_gk_saves = Column(Integer, default=0)
+    cup_outfield_winner_id = Column(Integer, ForeignKey("players.id"), nullable=True)
+    cup_gk_winner_id = Column(Integer, ForeignKey("players.id"), nullable=True)
 
     league = relationship("League", back_populates="hall_of_fame_records")
     player = relationship("Player", foreign_keys=[player_id])
     top_scorer = relationship("Player", foreign_keys=[top_scorer_id])
     top_assister = relationship("Player", foreign_keys=[top_assister_id])
     top_gk = relationship("Player", foreign_keys=[top_gk_id])
+    cup_outfield_winner = relationship("Player", foreign_keys=[cup_outfield_winner_id])
+    cup_gk_winner = relationship("Player", foreign_keys=[cup_gk_winner_id])
 
 
 class Vote(Base):
@@ -304,9 +311,12 @@ class EmailQueue(Base):
     body = Column(Text, nullable=False)
     email_type = Column(String(50), nullable=False, index=True)  # transactional/system/notification
     priority = Column(Integer, default=1, index=True)
-    status = Column(String(32), default="pending", index=True)  # pending/sent/failed/cancelled
+    # pending/processing/sent/failed/cancelled
+    status = Column(String(32), default="pending", index=True)
     scheduled_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     sent_at = Column(DateTime(timezone=True), nullable=True)
+    # Set when a worker atomically claims the row (before network send).
+    processing_started_at = Column(DateTime(timezone=True), nullable=True)
     retries_count = Column(Integer, default=0)
     provider = Column(String(50), nullable=True)  # e.g. resend/brevo
 
@@ -323,6 +333,8 @@ class EmailDailyUsage(Base):
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False, unique=True, index=True)
     sent_count = Column(Integer, default=0)
+    # Emails reserved for sending but not finalized yet.
+    reserved_count = Column(Integer, default=0)
 
 
 class PasswordResetToken(Base):

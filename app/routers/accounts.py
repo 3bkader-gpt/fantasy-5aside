@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -21,14 +21,48 @@ from ..core.rate_limit import limiter
 from sqlalchemy import func
 
 from ..models import models
-from ..dependencies import get_current_user, get_user_service, get_email_service
+from ..models.user_model import User
+from ..dependencies import (
+    get_current_user,
+    get_user_service,
+    get_email_service,
+    get_league_repository,
+    ILeagueRepository,
+)
 from ..database import get_db
+from ..database import SessionLocal
+from ..core.config import settings
 from ..services.user_service import UserService
-from ..services.email_service import EmailService
+from ..services.email_service import EmailService, process_email_queue_once
 
 
 router = APIRouter(prefix="", tags=["accounts"])
 templates = Jinja2Templates(directory="app/templates")
+
+
+def _process_transactional_email_fastpath(db: Session | None = None) -> None:
+    """
+    Best-effort fast delivery for transactional emails.
+
+    In production, runs after the HTTP response via FastAPI BackgroundTasks using a fresh DB session.
+    In tests (SQLite), we pass the request/session DB to avoid cross-connection write locks.
+    """
+    if db is None:
+        with SessionLocal() as local_db:
+            process_email_queue_once(
+                local_db,
+                provider=None,
+                email_type="transactional",
+                batch_limit=10,
+            )
+        return
+
+    process_email_queue_once(
+        db,
+        provider=None,
+        email_type="transactional",
+        batch_limit=10,
+    )
 
 
 @router.get("/register")
@@ -46,10 +80,12 @@ def register_page(request: Request):
 @router.post("/register")
 def register_submit(
     request: Request,
+    background_tasks: BackgroundTasks,
     email: str = Form(...),
     password: str = Form(...),
     password_confirm: str = Form(...),
     csrf_token: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
     user_service: UserService = Depends(get_user_service),
     email_service: EmailService = Depends(get_email_service),
 ):
@@ -76,6 +112,11 @@ def register_submit(
     base_url = os.environ.get("BASE_URL") or request.base_url._url.rstrip("/")
     verify_link = f"{base_url}/verify/{user.verification_token}"
     email_service.send_verification_email(user.email, verify_link)
+    if getattr(settings, "testing", False):
+        # In SQLite tests, running the fastpath in a separate thread can cause "database is locked".
+        _process_transactional_email_fastpath(db)
+    else:
+        background_tasks.add_task(_process_transactional_email_fastpath)
 
     return RedirectResponse(url="/login?msg=check_email", status_code=303)
 
@@ -108,8 +149,10 @@ def forgot_password_page(request: Request):
 @limiter.limit("5/minute")
 def forgot_password_submit(
     request: Request,
+    background_tasks: BackgroundTasks,
     email: str = Form(...),
     csrf_token: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
     user_service: UserService = Depends(get_user_service),
 ):
     cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
@@ -118,9 +161,87 @@ def forgot_password_submit(
 
     base_url = os.environ.get("BASE_URL") or request.base_url._url.rstrip("/")
     user_service.request_password_reset(email=email, base_url=base_url)
+    if getattr(settings, "testing", False):
+        _process_transactional_email_fastpath(db)
+    else:
+        background_tasks.add_task(_process_transactional_email_fastpath)
 
     # Always show a generic message to avoid email enumeration
     return RedirectResponse(url="/login?msg=reset_sent", status_code=303)
+
+
+@router.get("/resend-verification")
+def resend_verification_page(request: Request, email: Optional[str] = None):
+    token = get_or_create_csrf_token_from_request(request)
+    resp = templates.TemplateResponse(
+        request=request,
+        name="auth/resend_verification.html",
+        context={"csrf_token": token, "email": (email or "").strip()},
+    )
+    set_csrf_cookie(resp, token)
+    return resp
+
+
+@router.post("/resend-verification")
+@limiter.limit("5/minute")
+def resend_verification_submit(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    email: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service),
+):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+
+    base_url = os.environ.get("BASE_URL") or request.base_url._url.rstrip("/")
+    user_service.resend_verification_email(email=email, base_url=base_url)
+    if getattr(settings, "testing", False):
+        _process_transactional_email_fastpath(db)
+    else:
+        background_tasks.add_task(_process_transactional_email_fastpath)
+
+    return RedirectResponse(url="/login?msg=verification_resent", status_code=303)
+
+
+@router.post("/enter-league-admin")
+@limiter.limit("30/minute")
+def enter_league_admin(
+    request: Request,
+    league_slug: str = Form(...),
+    csrf_token: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+):
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    if not verify_csrf_token(cookie_token, csrf_token):
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token")
+
+    if not current_user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="يجب تفعيل البريد الإلكتروني قبل الدخول كمدير للدوري",
+        )
+
+    league = league_repo.get_by_slug(league_slug.strip())
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    if league.owner_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="غير مصرح لك بإدارة هذا الدوري")
+
+    admin_token = security.create_access_token(data={"sub": league.slug})
+    redirect = RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
+    redirect.set_cookie(
+        key="access_token",
+        value=f"Bearer {admin_token}",
+        httponly=True,
+        samesite="lax",
+        secure=os.environ.get("ENV") == "production",
+        max_age=security.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return redirect
 
 
 @router.get("/reset-password/{token}")
@@ -237,9 +358,17 @@ def dashboard(
             }
         )
 
-    return templates.TemplateResponse(
+    csrf = get_or_create_csrf_token_from_request(request)
+    resp = templates.TemplateResponse(
         request=request,
         name="dashboard.html",
-        context={"user": current_user, "league_cards": league_cards, "leagues": leagues},
+        context={
+            "user": current_user,
+            "league_cards": league_cards,
+            "leagues": leagues,
+            "csrf_token": csrf,
+        },
     )
+    set_csrf_cookie(resp, csrf)
+    return resp
 

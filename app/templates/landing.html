@@ -16,52 +16,15 @@
     <div class="card mb-2 hero-card">
         <h2 class="section-title">إنشاء دوري جديد الآن</h2>
 
-        {% if error %}
-        <div class="alert alert-danger">
-            {{ error }}
+        <div class="alert alert-info" style="text-align: right;">
+            إنشاء دوري جديد يتطلب تسجيل الدخول كـ <strong>صاحب حساب</strong> أولاً لضمان وجود <strong>Owner</strong> للدوري وحماية من الـ spam.
         </div>
-        {% endif %}
 
-        <form action="/create-league" method="POST" style="text-align: right;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <div class="mb-1">
-                <label class="form-label">اسم الدوري:</label>
-                <input id="league-name" type="text" name="name" required placeholder="مثال: دوري الأبطال أصدقاء أشمنت"
-                    class="form-control">
-            </div>
-
-            <div class="mb-1">
-                <label class="form-label">رابط الدوري (الرابط الذي ستشاركه مع أصدقائك):</label>
-                <div class="input-group" style="direction: ltr;">
-                    <span class="input-group-text">/l/</span>
-                    <input id="league-slug" type="text" name="slug" required placeholder="ashmant-squad" pattern="[a-zA-Z0-9_-]+"
-                        title="يسمح فقط بالحروف الإنجليزية والأرقام والشرطة (-)" class="form-control"
-                        style="direction: ltr;">
-                </div>
-                <div id="slug-status" class="text-secondary" style="font-size: 0.95rem; margin-top: 0.35rem; text-align: right;"></div>
-            </div>
-
-            <div class="mb-1">
-                <label class="form-label">بريد الإدمن (اختياري الآن — مطلوب لاحقاً):</label>
-                <input type="email" name="admin_email" placeholder="admin@example.com" class="form-control" style="direction:ltr;">
-            </div>
-
-            <div class="mb-2">
-                <label class="form-label">كلمة سر الإدارة (للإدمن فقط):</label>
-                <input type="password" name="admin_password" required placeholder="اختر كلمة سر قوية"
-                    class="form-control">
-                <ul class="password-requirements text-muted" style="font-size: 1rem; font-weight: 700; margin: 0.5rem 0 0 0; padding-right: 1.25rem; text-align: right; line-height: 1.6;">
-                    <li>كلمة المرور يجب أن تكون 8 أحرف على الأقل</li>
-                    <li>كلمة المرور يجب أن تحتوي على رقم واحد على الأقل</li>
-                    <li>كلمة المرور يجب أن تحتوي على حرف إنجليزي كبير واحد على الأقل</li>
-                    <li>كلمة المرور يجب أن تحتوي على حرف إنجليزي صغير واحد على الأقل</li>
-                </ul>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.2rem;">
-                🚀 أنشئ الدوري الآن
-            </button>
-        </form>
+        <div class="mt-2">
+            <a href="/login" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.2rem;">
+                ابدأ من هنا
+            </a>
+        </div>
     </div>
 
     {% if leagues %}

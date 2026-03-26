@@ -1,0 +1,83 @@
+site_name: Fantasy 5-a-Side Docs
+site_description: Technical documentation for the Fantasy 5-a-Side SaaS.
+site_url: https://3bkader-gpt.github.io/fantasy-5aside/
+
+repo_name: 3bkader-gpt/fantasy-5aside
+repo_url: https://github.com/3bkader-gpt/fantasy-5aside
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: green
+      accent: green
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: README.md
+  - "Auth & Security":
+      - Logic: auth/logic.md
+  - Accounts:
+      - Logic: accounts/logic.md
+  - Onboarding:
+      - Logic: onboarding/logic.md
+  - Email:
+      - Logic: email/logic.md
+  - Notifications:
+      - Logic: notifications/logic.md
+  - Media:
+      - Logic: media/logic.md
+  - "League & Seasons":
+      - Logic: league/logic.md
+  - "Matches & Scoring":
+      - Logic: match/logic.md
+  - Points:
+      - Logic: points/logic.md
+  - "Player Stats":
+      - Logic: player/logic.md
+  - "Cup Engine":
+      - Logic: cup/logic.md
+  - Transfers:
+      - Logic: transfers/logic.md
+  - Superadmin:
+      - Logic: superadmin/logic.md
+  - Deployment:
+      - Logic: deployment/logic.md
+  - Project:
+      - Architecture: project/context.md
+      - Index: project/index.md
+      - SaaS Plan: project/saas_plan.md

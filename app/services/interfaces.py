@@ -22,7 +22,7 @@ class ILeagueService(ABC):
 
 class ICupService(ABC):
     @abstractmethod
-    def generate_cup_draw(self, league_id: int) -> bool:
+    def generate_cup_draw(self, league_id: int) -> List[models.CupMatchup]:
         pass
 
     @abstractmethod
@@ -31,6 +31,10 @@ class ICupService(ABC):
 
     @abstractmethod
     def auto_resolve_cups(self, league_id: int, match_id: int) -> None:
+        pass
+
+    @abstractmethod
+    def finalize_incomplete_cup(self, league_id: int) -> tuple[Optional[int], Optional[int]]:
         pass
 
 class IMatchService(ABC):

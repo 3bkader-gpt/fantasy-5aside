@@ -18,6 +18,14 @@ BUCKET_MATCH_MEDIA = "match-media"
 
 router = APIRouter(tags=["media"])
 
+def _is_production() -> bool:
+    return (os.environ.get("ENV") == "production") or (settings.env or "").lower() == "production"
+
+
+def _is_supabase_storage_path(filename: str) -> bool:
+    # Supabase storage path is like "{league_id}/{match_id}/{uuid}.ext"
+    return "/" in (filename or "")
+
 
 def _ensure_upload_dir() -> None:
     if not os.path.exists(UPLOAD_DIR):
@@ -85,6 +93,7 @@ async def upload_match_media(
         _ensure_upload_dir()
 
     created_items: list[models.MatchMedia] = []
+    uploaded_supabase_paths: list[str] = []
 
     for f in files:
         if f.content_type not in allowed_types:
@@ -99,6 +108,7 @@ async def upload_match_media(
             result = _supabase_storage_upload(league.id, match.id, raw, ext, f.content_type)
             if result:
                 storage_path, public_url = result
+                uploaded_supabase_paths.append(storage_path)
                 media = models.MatchMedia(
                     league_id=league.id,
                     match_id=match.id,
@@ -110,8 +120,19 @@ async def upload_match_media(
                 )
                 logger.info(f"Uploaded to Supabase: {public_url}")
             else:
-                # Fallback to local if Supabase upload failed
+                if _is_production():
+                    # Fail-fast in production: do not lie to users with ephemeral local storage.
+                    # Best-effort cleanup for any files uploaded earlier in this request.
+                    for p in uploaded_supabase_paths:
+                        _supabase_storage_remove(p)
+                    raise HTTPException(
+                        status_code=503,
+                        detail="تعذر رفع الصورة إلى خدمة التخزين. برجاء المحاولة لاحقاً.",
+                    )
+
+                # Dev-only fallback to local if Supabase upload failed
                 logger.warning(f"Supabase upload failed for {f.filename}, falling back to local storage")
+                _ensure_upload_dir()
                 filename = f"{uuid.uuid4().hex}{ext}"
                 path = os.path.join(UPLOAD_DIR, filename)
                 with open(path, "wb") as out:
@@ -123,6 +144,7 @@ async def upload_match_media(
                     original_name=f.filename,
                     mime_type=f.content_type,
                     size_bytes=len(raw),
+                    file_url=f"/media/{filename}",
                 )
         else:
             filename = f"{uuid.uuid4().hex}{ext}"
@@ -136,6 +158,7 @@ async def upload_match_media(
                 original_name=f.filename,
                 mime_type=f.content_type,
                 size_bytes=len(raw),
+                file_url=f"/media/{filename}",
             )
         db.add(media)
         created_items.append(media)
@@ -157,7 +180,7 @@ async def delete_match_media(
     if not media:
         raise HTTPException(status_code=404, detail="الصورة غير موجودة.")
 
-    if media.file_url:
+    if _is_supabase_storage_path(media.filename):
         _supabase_storage_remove(media.filename)
     else:
         path = os.path.join(UPLOAD_DIR, media.filename)

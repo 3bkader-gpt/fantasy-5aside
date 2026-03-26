@@ -1,5 +1,6 @@
 from app.schemas import schemas
 from app.core import security
+from app.models import models
 
 
 def _get_csrf(client, league_slug: str) -> str:
@@ -41,12 +42,24 @@ class TestAdminAPI:
         assert response.status_code == 200
         assert response.json()["message"] == "Match registered successfully"
 
-    def test_generate_cup_api(self, client, league_repo, player_repo):
+    def test_generate_cup_api(self, client, league_repo, player_repo, match_repo, db_session):
         l = league_repo.create(schemas.LeagueCreate(name="L", slug="l", admin_password="p"), security.get_password_hash("p"))
-        # Need 2+ players for cup
-        player_repo.create("P1", l.id)
-        player_repo.create("P2", l.id)
-        
+        p1 = player_repo.create("P1", l.id)
+        p2 = player_repo.create("P2", l.id)
+        match = models.Match(league_id=l.id, team_a_name="A", team_b_name="B", season_number=1)
+        match_repo.save(match)
+        db_session.add(
+            models.MatchStat(
+                match_id=match.id, player_id=p1.id, team="A", goals=0, points_earned=1
+            )
+        )
+        db_session.add(
+            models.MatchStat(
+                match_id=match.id, player_id=p2.id, team="B", goals=0, points_earned=1
+            )
+        )
+        db_session.commit()
+
         token = security.create_access_token({"sub": l.slug})
         client.cookies.set("access_token", f"Bearer {token}")
         csrf = _get_csrf(client, l.slug)
@@ -58,8 +71,10 @@ class TestAdminAPI:
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"
 
-    def test_end_season_api(self, client, league_repo):
-        l = league_repo.create(schemas.LeagueCreate(name="L", slug="l", admin_password="p"), security.get_password_hash("p"))
+    def test_end_season_api(self, client, league_repo, match_repo):
+        l = league_repo.create(schemas.LeagueCreate(name="L", slug="l-end", admin_password="p"), security.get_password_hash("p"))
+        match = models.Match(league_id=l.id, team_a_name="A", team_b_name="B", season_number=1)
+        match_repo.save(match)
         token = security.create_access_token({"sub": l.slug})
         client.cookies.set("access_token", f"Bearer {token}")
         csrf = _get_csrf(client, l.slug)
@@ -70,6 +85,18 @@ class TestAdminAPI:
         )
         assert response.status_code == 303
         assert response.headers["location"] == f"/l/{l.slug}/admin"
+
+    def test_end_season_api_rejects_when_no_matches(self, client, league_repo):
+        l = league_repo.create(schemas.LeagueCreate(name="L2", slug="l2", admin_password="p"), security.get_password_hash("p"))
+        token = security.create_access_token({"sub": l.slug})
+        client.cookies.set("access_token", f"Bearer {token}")
+        csrf = _get_csrf(client, l.slug)
+        response = client.post(
+            f"/l/{l.slug}/admin/season/end",
+            data={"month_name": "Bad", "csrf_token": csrf},
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
 
     def test_canonical_slug_redirect_admin(self, client, league_repo):
         league = league_repo.create(

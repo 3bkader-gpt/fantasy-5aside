@@ -66,7 +66,7 @@ class TestPointsCalculation:
         points = self.calculator.calculate_player_points(match_data)
         assert points == 7
 
-    def test_minimum_zero_points(self):
+    def test_strategy_sum_can_be_negative(self):
         match_data = MatchCreate(
             score=-1,  # Loss
             goals=0,

@@ -2,6 +2,9 @@
 
 {% block content %}
 <div class="page-shell">
+    <form id="dashboard-csrf-holder" class="d-none" aria-hidden="true">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    </form>
     <div class="page-header">
         <div style="min-width: 240px;">
             <h1 class="page-title">لوحة الحساب</h1>
@@ -50,7 +53,11 @@
 
             <div class="league-card__cta">
                 <a href="/l/{{ league.slug }}" class="btn btn-sm btn-outline-secondary">عرض الدوري</a>
-                <a href="/l/{{ league.slug }}/admin" class="btn btn-sm btn-primary">لوحة الإدارة</a>
+                <form action="/enter-league-admin" method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="league_slug" value="{{ league.slug }}">
+                    <button type="submit" class="btn btn-sm btn-primary">لوحة الإدارة</button>
+                </form>
             </div>
         </div>
         {% endfor %}

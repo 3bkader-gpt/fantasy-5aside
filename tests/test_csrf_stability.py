@@ -1,5 +1,6 @@
 from app.core import security
 from app.schemas import schemas
+from app.models import models
 
 
 def _get_admin_csrf_token(client, league_slug: str) -> str:
@@ -8,15 +9,24 @@ def _get_admin_csrf_token(client, league_slug: str) -> str:
     return r.cookies.get("csrf_token", "")
 
 
-def test_csrf_token_stable_across_gets(client, league_repo, player_repo):
+def test_csrf_token_stable_across_gets(client, league_repo, player_repo, match_repo, db_session):
     # Arrange: create a league + enough players for cup generation
     password = "p"
     l = league_repo.create(
         schemas.LeagueCreate(name="League", slug="league-stability", admin_password=password),
         security.get_password_hash(password),
     )
-    player_repo.create("P1", l.id)
-    player_repo.create("P2", l.id)
+    p1 = player_repo.create("P1", l.id)
+    p2 = player_repo.create("P2", l.id)
+    match = models.Match(league_id=l.id, team_a_name="A", team_b_name="B", season_number=1)
+    match_repo.save(match)
+    db_session.add(
+        models.MatchStat(match_id=match.id, player_id=p1.id, team="A", goals=0, points_earned=1)
+    )
+    db_session.add(
+        models.MatchStat(match_id=match.id, player_id=p2.id, team="B", goals=0, points_earned=1)
+    )
+    db_session.commit()
 
     access_token = security.create_access_token({"sub": l.slug})
     client.cookies.set("access_token", f"Bearer {access_token}")

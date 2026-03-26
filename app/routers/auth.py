@@ -106,11 +106,34 @@ def user_login_submit(
         .first()
     )
     if not user or not security.verify_password(password, user.hashed_password):
-        return templates.TemplateResponse(
+        csrf_bad = get_or_create_csrf_token_from_request(request)
+        resp_bad = templates.TemplateResponse(
             request=request,
             name="auth/login.html",
-            context={"error": "Email or password incorrect", "is_admin": False},
+            context={
+                "error": "Email or password incorrect",
+                "is_admin": False,
+                "csrf_token": csrf_bad,
+            },
         )
+        set_csrf_cookie(resp_bad, csrf_bad)
+        return resp_bad
+
+    if not user.is_verified:
+        csrf = get_or_create_csrf_token_from_request(request)
+        resp = templates.TemplateResponse(
+            request=request,
+            name="auth/login.html",
+            context={
+                "error": "يجب تفعيل البريد الإلكتروني قبل تسجيل الدخول. راجع رسالة التفعيل أو أعد طلب الإرسال من الرابط أدناه.",
+                "needs_verification": True,
+                "pending_email": user.email,
+                "is_admin": False,
+                "csrf_token": csrf,
+            },
+        )
+        set_csrf_cookie(resp, csrf)
+        return resp
 
     token = security.create_access_token(data={"sub": str(user.id), "scope": "user"})
     redirect = RedirectResponse(url="/dashboard", status_code=303)

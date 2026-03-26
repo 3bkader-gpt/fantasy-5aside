@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Query
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..core import security
@@ -25,7 +26,14 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 def _require_owned_league(db: Session, league_id: int, current_user) -> models.League:
-    league = db.query(models.League).filter(models.League.id == int(league_id)).first()
+    league = (
+        db.query(models.League)
+        .filter(
+            models.League.id == int(league_id),
+            models.League.deleted_at.is_(None),
+        )
+        .first()
+    )
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
     if league.owner_user_id != current_user.id:
@@ -39,15 +47,31 @@ def start(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Option B: treat onboarding as complete if user already owns a league.
-    has_owned_league = (
-        db.query(models.League.id)
-        .filter(models.League.owner_user_id == current_user.id)
+    # UX resilience: if user already owns a league, decide where they should resume
+    # based on whether they already created players (wizard step 3/4 state).
+    last_league = (
+        db.query(models.League)
+        .filter(
+            models.League.owner_user_id == current_user.id,
+            models.League.deleted_at.is_(None),
+        )
+        .order_by(models.League.created_at.desc())
         .first()
-        is not None
     )
-    if has_owned_league:
-        return RedirectResponse(url="/dashboard", status_code=303)
+    if last_league is not None:
+        has_players = (
+            db.query(models.Player.id)
+            .filter(models.Player.league_id == last_league.id)
+            .first()
+            is not None
+        )
+        if has_players:
+            return RedirectResponse(url="/dashboard", status_code=303)
+        # League exists but wizard was abandoned before adding players
+        return RedirectResponse(
+            url=f"/onboarding/players?league_id={last_league.id}&resumed=1",
+            status_code=303,
+        )
 
     token = get_or_create_csrf_token_from_request(request)
     resp = templates.TemplateResponse(
@@ -105,7 +129,13 @@ def league_submit(
             status_code=400,
         )
 
-    if league_repo.get_by_slug(slug) is not None:
+    # Must check across all leagues (including soft-deleted) because slug/name are unique at DB level.
+    existing_any = (
+        db.query(models.League)
+        .filter(func.lower(models.League.slug) == slug.lower())
+        .first()
+    )
+    if existing_any is not None:
         return templates.TemplateResponse(
             request=request,
             name="onboarding/league.html",

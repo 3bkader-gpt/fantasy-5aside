@@ -10,6 +10,7 @@ from ..repositories.interfaces import (
 )
 from ..repositories.db_repository import LeagueRepository
 from ..use_cases.generate_cup import GenerateCupUseCase
+from ..domain.season_boundary import get_active_cup_season
 
 
 class CupService(ICupService):
@@ -84,7 +85,7 @@ class CupService(ICupService):
     # ------------------------------------------------------------------
     def auto_resolve_cups(self, league_id: int, match_id: int) -> None:
         league = self.league_repo.get_by_id(league_id)
-        season_number = (league.season_number if league and league.season_number else 1)
+        season_number = get_active_cup_season(league, self.cup_repo)
         active_matchups = self.cup_repo.get_active_matchups(league_id, season_number=season_number)
         match = self.match_repo.get_by_id(match_id)
         if not match:
@@ -93,37 +94,49 @@ class CupService(ICupService):
         player_points: Dict[int, int] = {
             stat.player_id: stat.points_earned for stat in match.stats
         }
-        player_team: Dict[int, str] = {
-            stat.player_id: stat.team for stat in match.stats
+        player_is_winner: Dict[int, bool] = {
+            stat.player_id: bool(stat.is_winner) for stat in match.stats
         }
 
-        active_cup_players = self._count_active_cup_players(league_id)
+        current_league_matches = self.match_repo.count_matches_for_league_season(
+            league_id, season_number
+        )
+        for matchup in active_matchups:
+            if not matchup.player2_id:
+                continue
+            if matchup.league_match_count_baseline is None:
+                matchup.league_match_count_baseline = current_league_matches
+            elif current_league_matches - matchup.league_match_count_baseline >= 4:
+                winner_id, loser_id = self._winner_loser_on_tied_cup_points(
+                    league_id,
+                    matchup.player1_id,
+                    matchup.player2_id,
+                    False,
+                    False,
+                )
+                matchup.winner_id = winner_id
+                matchup.winner2_id = None
+                matchup.is_active = False
+                matchup.is_revealed = True
+                matchup.match_id = None
+                loser = self.player_repo.get_by_id(loser_id)
+                if loser:
+                    loser.is_active_in_cup = False
+                    self.player_repo.save(loser)
+
+        self.cup_repo.save_matchups(active_matchups)
+
+        active_matchups = self.cup_repo.get_active_matchups(league_id, season_number=season_number)
 
         for matchup in active_matchups:
             p1_in = matchup.player1_id in player_points
             p2_in = matchup.player2_id in player_points if matchup.player2_id else False
 
-            if not (p1_in and p2_in):
+            if not (p1_in or p2_in):
                 continue
 
-            p1_pts = player_points[matchup.player1_id]
-            p2_pts = player_points[matchup.player2_id]
-
-            is_final = self._is_bracket_final(
-                league_id, matchup.bracket_type, active_cup_players
-            )
-
-            if is_final:
-                t1 = player_team.get(matchup.player1_id)
-                t2 = player_team.get(matchup.player2_id)
-                # Co-op final rule: same team in final -> both win, no loser deactivated
-                if t1 and t2 and t1 == t2:
-                    matchup.winner_id = matchup.player1_id
-                    matchup.winner2_id = matchup.player2_id
-                    matchup.is_active = False
-                    matchup.is_revealed = True
-                    matchup.match_id = match_id
-                    continue
+            p1_pts = player_points.get(matchup.player1_id, 0)
+            p2_pts = player_points.get(matchup.player2_id, 0) if matchup.player2_id else 0
 
             if p1_pts > p2_pts:
                 winner_id = matchup.player1_id
@@ -132,17 +145,15 @@ class CupService(ICupService):
                 winner_id = matchup.player2_id
                 loser_id = matchup.player1_id
             else:
-                db_p1 = self.player_repo.get_by_id(matchup.player1_id)
-                db_p2 = self.player_repo.get_by_id(matchup.player2_id)
-                if db_p1 and db_p2 and db_p1.total_points > db_p2.total_points:
-                    winner_id = matchup.player1_id
-                    loser_id = matchup.player2_id
-                elif db_p2 and db_p1 and db_p2.total_points > db_p1.total_points:
-                    winner_id = matchup.player2_id
-                    loser_id = matchup.player1_id
-                else:
-                    winner_id = matchup.player1_id
-                    loser_id = matchup.player2_id
+                w1 = player_is_winner.get(matchup.player1_id, False)
+                w2 = player_is_winner.get(matchup.player2_id, False)
+                winner_id, loser_id = self._winner_loser_on_tied_cup_points(
+                    league_id,
+                    matchup.player1_id,
+                    matchup.player2_id,
+                    w1,
+                    w2,
+                )
 
             matchup.winner_id = winner_id
             matchup.is_active = False
@@ -159,34 +170,108 @@ class CupService(ICupService):
         self._advance_bracket(league_id, "outfield")
         self._advance_bracket(league_id, "goalkeeper")
 
+    def finalize_incomplete_cup(self, league_id: int) -> tuple[Optional[int], Optional[int]]:
+        """
+        Administratively close any pending H2H cup matchups and advance the bracket,
+        then return (outfield champion player id, goalkeeper champion player id) if determinable.
+        Intended to run before deleting cup rows at season end.
+        """
+        league = self.league_repo.get_by_id(league_id)
+        if not league:
+            return None, None
+
+        cup_season = get_active_cup_season(league, self.cup_repo)
+        all_m = self.cup_repo.get_all_for_league(league_id, season_number=cup_season)
+        if not all_m:
+            if (league.season_number or 1) > 1:
+                cup_season = league.season_number or 1
+                all_m = self.cup_repo.get_all_for_league(league_id, season_number=cup_season)
+            if not all_m:
+                return None, None
+
+        for _ in range(64):
+            active = self.cup_repo.get_active_matchups(league_id, season_number=cup_season)
+            h2h = [m for m in active if m.player2_id]
+            if not h2h:
+                break
+            for m in h2h:
+                winner_id, loser_id = self._winner_loser_on_tied_cup_points(
+                    league_id,
+                    m.player1_id,
+                    m.player2_id,
+                    False,
+                    False,
+                )
+                m.winner_id = winner_id
+                m.winner2_id = None
+                m.is_active = False
+                m.is_revealed = True
+                m.match_id = None
+                loser = self.player_repo.get_by_id(loser_id)
+                if loser:
+                    loser.is_active_in_cup = False
+                    self.player_repo.save(loser)
+            self.cup_repo.save_matchups(h2h)
+            self._advance_bracket(league_id, "outfield")
+            self._advance_bracket(league_id, "goalkeeper")
+
+        outfield_champ = self._extract_bracket_champion(league_id, cup_season, "outfield")
+        gk_champ = self._extract_bracket_champion(league_id, cup_season, "goalkeeper")
+        return outfield_champ, gk_champ
+
+    def _extract_bracket_champion(
+        self, league_id: int, cup_season: int, bracket_type: str
+    ) -> Optional[int]:
+        all_m = self.cup_repo.get_all_for_league(league_id, season_number=cup_season)
+        bm = [m for m in all_m if (getattr(m, "bracket_type", None) or "outfield") == bracket_type]
+        if not bm:
+            return None
+        finals = [
+            m
+            for m in bm
+            if m.winner_id
+            and not m.is_active
+            and ("نهائي" in (m.round_name or "") or "Final" in (m.round_name or ""))
+        ]
+        if finals:
+            return max(finals, key=lambda m: m.id).winner_id
+        resolved = [m for m in bm if m.winner_id and not m.is_active]
+        if not resolved:
+            return None
+        return max(resolved, key=lambda m: m.id).winner_id
+
     # ------------------------------------------------------------------
     # helpers
     # ------------------------------------------------------------------
-    def _count_active_cup_players(
-        self, league_id: int
-    ) -> Dict[str, int]:
-        """Count active cup players per bracket from active matchups."""
-        league = self.league_repo.get_by_id(league_id)
-        season_number = (league.season_number if league and league.season_number else 1)
-        active = self.cup_repo.get_active_matchups(league_id, season_number=season_number)
-        counts: Dict[str, int] = {"outfield": 0, "goalkeeper": 0}
-        seen: set = set()
-        for m in active:
-            bt = getattr(m, "bracket_type", "outfield") or "outfield"
-            if m.player1_id and m.player1_id not in seen:
-                counts[bt] = counts.get(bt, 0) + 1
-                seen.add(m.player1_id)
-            if m.player2_id and m.player2_id not in seen:
-                counts[bt] = counts.get(bt, 0) + 1
-                seen.add(m.player2_id)
-        return counts
-
-    def _is_bracket_final(
-        self, league_id: int, bracket_type: str, counts: Optional[Dict[str, int]] = None
-    ) -> bool:
-        if counts is None:
-            counts = self._count_active_cup_players(league_id)
-        return counts.get(bracket_type, 0) <= 2
+    def _winner_loser_on_tied_cup_points(
+        self,
+        league_id: int,
+        player1_id: int,
+        player2_id: int,
+        p1_is_winner: bool,
+        p2_is_winner: bool,
+    ) -> tuple[int, int]:
+        """
+        Same fantasy points in the resolving match:
+        1) If exactly one player's team won the match -> that player advances.
+        2) Otherwise (match draw, or both on the winning side) -> higher season
+           standing from get_leaderboard order (total_points, then total_goals).
+        """
+        if p1_is_winner and not p2_is_winner:
+            return player1_id, player2_id
+        if p2_is_winner and not p1_is_winner:
+            return player2_id, player1_id
+        board = self.player_repo.get_leaderboard(league_id)
+        rank_map = {p.id: i for i, p in enumerate(board)}
+        i1 = rank_map.get(player1_id, 10**9)
+        i2 = rank_map.get(player2_id, 10**9)
+        if i1 < i2:
+            return player1_id, player2_id
+        if i2 < i1:
+            return player2_id, player1_id
+        if player1_id <= player2_id:
+            return player1_id, player2_id
+        return player2_id, player1_id
 
     def _advance_bracket(self, league_id: int, bracket_type: str) -> None:
         """
@@ -194,7 +279,7 @@ class CupService(ICupService):
         that need to be paired for the next round.
         """
         league = self.league_repo.get_by_id(league_id)
-        season_number = (league.season_number if league and league.season_number else 1)
+        season_number = get_active_cup_season(league, self.cup_repo)
         all_matchups = self.cup_repo.get_all_for_league(league_id, season_number=season_number)
         bracket_matchups = [
             m for m in all_matchups
@@ -233,7 +318,9 @@ class CupService(ICupService):
         if len(winner_players) < 2:
             return
 
-        # Reuse the same pairing rules as generation (via use case helper)
-        next_fixtures = self._generate_use_case._pair(winner_players, league_id, bracket_type, season_number)
+        baseline = self.match_repo.count_matches_for_league_season(league_id, season_number)
+        next_fixtures = self._generate_use_case._pair(
+            winner_players, league_id, bracket_type, season_number, baseline
+        )
         if next_fixtures:
             self.cup_repo.save_matchups(next_fixtures)

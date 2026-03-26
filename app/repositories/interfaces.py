@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Set
 from ..models import models
 from ..schemas import schemas
 
@@ -42,6 +42,10 @@ class IPlayerRepository(ABC):
     def save(self, player: models.Player, commit: bool = True) -> models.Player: pass
 
 class IMatchRepository(ABC):
+    @abstractmethod
+    def count_matches_for_league_season(self, league_id: int, season_number: int) -> int: pass
+    @abstractmethod
+    def get_player_ids_appeared_in_league_season(self, league_id: int, season_number: int) -> set: pass
     @abstractmethod
     def get_by_id(self, match_id: int) -> Optional[models.Match]: pass
     @abstractmethod
@@ -94,6 +98,16 @@ class IVotingRepository(ABC):
     def get_vote_by_fingerprint(self, league_id: int, match_id: int, fingerprint: str, round_number: int) -> Optional[models.Vote]: pass
     @abstractmethod
     def delete_votes_for_round(self, league_id: int, match_id: int, round_number: int) -> int: pass
+    @abstractmethod
+    def delete_votes_outside_participants(
+        self,
+        league_id: int,
+        match_id: int,
+        round_number: int,
+        participant_ids: Set[int],
+        *,
+        commit: bool = False,
+    ) -> int: pass
 
 class ITeamRepository(ABC):
     @abstractmethod

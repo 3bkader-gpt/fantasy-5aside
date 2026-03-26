@@ -19,6 +19,13 @@ def normalize_vapid_key(raw: str | None) -> str:
     ):
         if s.lower().startswith(prefix.lower()):
             s = s[len(prefix) :].strip()
+
+    # pywebpush expects standard base64url padding.
+    # If developers paste keys without trailing '=', normalize by adding missing padding.
+    if s and "=" not in s:
+        pad = (-len(s)) % 4
+        if pad:
+            s = s + ("=" * pad)
     return s
 
 

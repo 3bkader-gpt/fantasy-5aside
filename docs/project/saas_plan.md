@@ -7,7 +7,7 @@
 | Already Done ✅ | Still Missing ❌ |
 |----------------|-----------------|
 | Multi-tenant DB (`league_id` on every table) | Plan limits & Billing |
-| Self-signup (`/create-league`) | Usage-limit enforcement (Free/Pro) |
+| Account-centric league creation (onboarding flow) | Usage-limit enforcement (Free/Pro) |
 | Per-league JWT auth | Super-admin dashboard |
 | Slug-based routing `/l/{slug}` | Proper marketing landing page |
 | CSRF protection (double-submit cookie) | Demo league (`/l/demo`) |
@@ -22,11 +22,13 @@
 | PWA basics (manifest + `/sw.js`) | |
 | Match media upload/delete endpoints | |
 | Web push subscription endpoints | |
+| Cup stability (Season Sync + Single Presence) | |
+
 
 ### Overall SaaS Progress
 
 - [x] Core multi-tenant fantasy engine (current repo)
-- [x] Phase 1 – Harden multi-tenancy (league-scoped repos + admin flows + create-league UX)
+- [x] Phase 1 – Harden multi-tenancy (league-scoped repos + admin flows + onboarding league creation UX)
 - [x] ✅ Phase 2 – User accounts & email-based auth
 - [ ] ❌ Phase 3 – Plans & usage limits (Free / Pro / Unlimited)
 - [ ] ❌ Phase 4 – Billing & subscriptions (Stripe / others)
@@ -52,10 +54,8 @@
 **Checklist:**
 - [x] Audit every query in `db_repository.py` — league-scoped helpers added where needed
 - [x] Audit all admin/voting/media routes — destructive operations now use league-scoped lookups
-- [x] Improve the `create-league` form:
-  - ✅ Capture `admin_email` (optional for now, stored on `leagues.admin_email`)
-  - ✅ Auto-suggest the slug from the league name on the client
-  - ✅ Real-time slug availability check via `/api/slug-available`
+- [x] Close the public league creation vector (no public create-league endpoint from landing).
+- [x] Keep onboarding as the canonical path to create an owned league (`/onboarding/league`) with slug autosuggest + availability check (`/api/slug-available`) and a confirmation page (`/l/{slug}/created`).
 - [x] Add a confirmation page after league creation (`/l/{slug}/created` with share link + next steps)
 
 **Files to change:**
@@ -63,8 +63,9 @@
 | File | Change |
 |------|--------|
 | `app/repositories/db_repository.py` | Review + hardening |
-| `app/templates/landing.html` | Improved create-league form |
-| `app/routers/public.py` | Confirmation redirect |
+| `app/routers/onboarding.py` | Onboarding create-league flow |
+| `app/routers/public.py` | Landing + slug availability + confirmation page |
+| `app/templates/onboarding/*.html` | Onboarding UI |
 
 ---
 
@@ -260,7 +261,7 @@ Step 4 → Done! Share your league link
 ### Rate Limiting (`slowapi` middleware)
 | Endpoint | Limit |
 |----------|-------|
-| `POST /create-league` | 3 leagues / IP / day |
+| `POST /onboarding/league` | user-auth gated; apply standard write protections (CSRF + auth). (No public create-league endpoint.) |
 | Public APIs | 60 req / min |
 | Voting API | Already protected (fingerprint) |
 

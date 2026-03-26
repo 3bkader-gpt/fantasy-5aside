@@ -58,21 +58,6 @@ def get_transfer_repository(db: Session = Depends(get_db)) -> ITransferRepositor
     return TransferRepository(db)
 
 # --- Services ---
-def get_league_service(
-    league_repo: ILeagueRepository = Depends(get_league_repository),
-    player_repo: IPlayerRepository = Depends(get_player_repository),
-    hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
-    cup_repo: ICupRepository = Depends(get_cup_repository)
-) -> ILeagueService:
-    return LeagueService(league_repo, player_repo, hof_repo, cup_repo)
-
-def get_voting_service(
-    voting_repo: IVotingRepository = Depends(get_voting_repository),
-    match_repo: IMatchRepository = Depends(get_match_repository),
-    player_repo: IPlayerRepository = Depends(get_player_repository)
-) -> IVotingService:
-    return VotingService(voting_repo, match_repo, player_repo)
-
 def get_cup_service(
     player_repo: IPlayerRepository = Depends(get_player_repository),
     cup_repo: ICupRepository = Depends(get_cup_repository),
@@ -81,6 +66,22 @@ def get_cup_service(
 ) -> ICupService:
     return CupService(league_repo, player_repo, cup_repo, match_repo)
 
+def get_league_service(
+    league_repo: ILeagueRepository = Depends(get_league_repository),
+    player_repo: IPlayerRepository = Depends(get_player_repository),
+    hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
+    cup_repo: ICupRepository = Depends(get_cup_repository),
+    cup_service: ICupService = Depends(get_cup_service),
+) -> ILeagueService:
+    return LeagueService(league_repo, player_repo, hof_repo, cup_repo, cup_service)
+
+def get_voting_service(
+    voting_repo: IVotingRepository = Depends(get_voting_repository),
+    match_repo: IMatchRepository = Depends(get_match_repository),
+    player_repo: IPlayerRepository = Depends(get_player_repository)
+) -> IVotingService:
+    return VotingService(voting_repo, match_repo, player_repo)
+
 def get_match_service(
     league_repo: ILeagueRepository = Depends(get_league_repository),
     match_repo: IMatchRepository = Depends(get_match_repository),
@@ -88,8 +89,17 @@ def get_match_service(
     cup_service: ICupService = Depends(get_cup_service),
     team_repo: ITeamRepository = Depends(get_team_repository),
     hof_repo: IHallOfFameRepository = Depends(get_hof_repository),
+    voting_repo: IVotingRepository = Depends(get_voting_repository),
 ) -> IMatchService:
-    return MatchService(league_repo, match_repo, player_repo, cup_service, team_repo, hof_repo)
+    return MatchService(
+        league_repo,
+        match_repo,
+        player_repo,
+        cup_service,
+        team_repo,
+        hof_repo,
+        voting_repo,
+    )
 
 def get_analytics_service(
     player_repo: IPlayerRepository = Depends(get_player_repository),

@@ -152,5 +152,6 @@ def test_onboarding_start_redirects_when_user_has_leagues(client, db_session):
     _set_user_cookie(client, user.id)
     r = client.get("/onboarding/start", follow_redirects=False)
     assert r.status_code in (302, 303, 307, 308)
-    assert r.headers.get("location") == "/dashboard"
+    # User owns a league but hasn't created players yet → resume at players step.
+    assert r.headers.get("location") == f"/onboarding/players?league_id={league.id}&resumed=1"
 

@@ -1,26 +1,83 @@
 from typing import Optional
+
+from fastapi import HTTPException
+
 from ..schemas import schemas
 from ..models import models
-from .interfaces import ILeagueService
+from .interfaces import ILeagueService, ICupService
 from ..repositories.interfaces import IPlayerRepository, IHallOfFameRepository, ICupRepository, ILeagueRepository
 
+
+def _award_key_current(primary: int, player: models.Player) -> tuple:
+    """Tie-break: primary stat desc, total_points desc, fewer matches better, id for totality."""
+    return (primary, player.total_points, -player.total_matches, player.id)
+
+
+def _award_key_last_season(primary: int, player: models.Player) -> tuple:
+    pts = int(getattr(player, "last_season_points", 0) or 0)
+    m = int(getattr(player, "last_season_matches", 0) or 0)
+    return (primary, pts, -m, player.id)
+
+
+_LAST_SEASON_FIELDS = (
+    "last_season_points",
+    "last_season_goals",
+    "last_season_assists",
+    "last_season_saves",
+    "last_season_clean_sheets",
+    "last_season_own_goals",
+    "last_season_matches",
+    "last_season_previous_rank",
+)
+
+
+def _any_player_has_last_season_snapshot(players: list[models.Player]) -> bool:
+    """True if at least one player still holds a post–end-season snapshot (undo is only safe then)."""
+    for p in players:
+        if any(int(getattr(p, name, 0) or 0) != 0 for name in _LAST_SEASON_FIELDS):
+            return True
+    return False
+
+
 class LeagueService(ILeagueService):
-    def __init__(self, league_repo: ILeagueRepository, player_repo: IPlayerRepository, hof_repo: IHallOfFameRepository, cup_repo: ICupRepository):
+    def __init__(
+        self,
+        league_repo: ILeagueRepository,
+        player_repo: IPlayerRepository,
+        hof_repo: IHallOfFameRepository,
+        cup_repo: ICupRepository,
+        cup_league_service: Optional[ICupService] = None,
+    ):
         self.league_repo = league_repo
         self.player_repo = player_repo
         self.hof_repo = hof_repo
         self.cup_repo = cup_repo
+        self._cup_league_service = cup_league_service
 
     def end_current_season(self, league_id: int, month_name: str, season_matches_count: int | None = None) -> None:
+        league = self.league_repo.get_by_id(league_id)
+        if not league or (league.current_season_matches or 0) < 1:
+            raise HTTPException(
+                status_code=400,
+                detail="لا يمكن إنهاء الموسم قبل تسجيل مباراة واحدة على الأقل في الموسم الحالي.",
+            )
+
+        cup_out_winner: Optional[int] = None
+        cup_gk_winner: Optional[int] = None
+        if self._cup_league_service is not None:
+            cup_out_winner, cup_gk_winner = self._cup_league_service.finalize_incomplete_cup(league_id)
+
         players = self.player_repo.get_leaderboard(league_id)
         if players:
             top_player = players[0]
             if top_player.total_points > 0:
-                # Compute seasonal awards based on current season aggregates
-                top_scorer = max(players, key=lambda p: p.total_goals)
-                top_assister = max(players, key=lambda p: p.total_assists)
-                # حارس الشهر = صاحب أعلى تصديات (من كل اللاعبين، مش فقط اللي مسجل حارس افتراضي)
-                top_gk = max(players, key=lambda p: p.total_saves) if players and any(p.total_saves > 0 for p in players) else None
+                top_scorer = max(players, key=lambda p: _award_key_current(p.total_goals, p))
+                top_assister = max(players, key=lambda p: _award_key_current(p.total_assists, p))
+                top_gk = (
+                    max(players, key=lambda p: _award_key_current(p.total_saves, p))
+                    if any(p.total_saves > 0 for p in players)
+                    else None
+                )
 
                 hof = models.HallOfFame(
                     league_id=league_id,
@@ -34,11 +91,12 @@ class LeagueService(ILeagueService):
                     top_assister_assists=top_assister.total_assists if top_assister else 0,
                     top_gk_id=top_gk.id if top_gk and top_gk.total_saves > 0 else None,
                     top_gk_saves=top_gk.total_saves if top_gk else 0,
+                    cup_outfield_winner_id=cup_out_winner,
+                    cup_gk_winner_id=cup_gk_winner,
                 )
                 self.hof_repo.save(hof)
 
         for player in players:
-            # Snapshot the current stats before clearing
             player.last_season_points = player.total_points
             player.last_season_goals = player.total_goals
             player.last_season_assists = player.total_assists
@@ -48,7 +106,6 @@ class LeagueService(ILeagueService):
             player.last_season_matches = player.total_matches
             player.last_season_previous_rank = player.previous_rank
 
-            # Add to all-time
             player.all_time_points += player.total_points
             player.all_time_goals += player.total_goals
             player.all_time_assists += player.total_assists
@@ -57,7 +114,6 @@ class LeagueService(ILeagueService):
             player.all_time_own_goals += player.total_own_goals
             player.all_time_matches += player.total_matches
 
-            # Reset totals
             player.total_points = 0
             player.total_goals = 0
             player.total_assists = 0
@@ -69,14 +125,8 @@ class LeagueService(ILeagueService):
             player.previous_rank = 0
             self.player_repo.save(player)
 
-        league = self.league_repo.get_by_id(league_id)
-        season_number = (league.season_number if league and league.season_number else 1)
-        self.cup_repo.delete_all_for_league(league_id, season_number=season_number)
-
     def fix_latest_hof_awards(self, league_id: int) -> None:
         """إصلاح جوائز آخر موسم في لوحة الشرف من بيانات last_season_* (مثلاً حارس الشهر بعد تعديل المنطق)."""
-        from fastapi import HTTPException
-
         latest_hof = self.hof_repo.get_latest_for_league(league_id)
         if not latest_hof:
             raise HTTPException(status_code=400, detail="لا يوجد سجل في لوحة الشرف")
@@ -85,9 +135,22 @@ class LeagueService(ILeagueService):
         if not players:
             return
 
-        top_scorer = max(players, key=lambda p: getattr(p, "last_season_goals", 0) or 0)
-        top_assister = max(players, key=lambda p: getattr(p, "last_season_assists", 0) or 0)
-        top_gk = max(players, key=lambda p: getattr(p, "last_season_saves", 0) or 0) if any((getattr(p, "last_season_saves", 0) or 0) > 0 for p in players) else None
+        top_scorer = max(
+            players,
+            key=lambda p: _award_key_last_season(int(getattr(p, "last_season_goals", 0) or 0), p),
+        )
+        top_assister = max(
+            players,
+            key=lambda p: _award_key_last_season(int(getattr(p, "last_season_assists", 0) or 0), p),
+        )
+        top_gk = (
+            max(
+                players,
+                key=lambda p: _award_key_last_season(int(getattr(p, "last_season_saves", 0) or 0), p),
+            )
+            if any((getattr(p, "last_season_saves", 0) or 0) > 0 for p in players)
+            else None
+        )
 
         latest_hof.top_scorer_id = top_scorer.id if (getattr(top_scorer, "last_season_goals", 0) or 0) > 0 else None
         latest_hof.top_scorer_goals = getattr(top_scorer, "last_season_goals", 0) or 0
@@ -100,14 +163,23 @@ class LeagueService(ILeagueService):
 
     def undo_end_season(self, league_id: int) -> None:
         """Reverse the last end_current_season call.
-        
+
         Uses the last_season_* snapshot to restore totals and correct all-time stats.
         """
-        from fastapi import HTTPException
-
         latest_hof = self.hof_repo.get_latest_for_league(league_id)
         if not latest_hof:
             raise HTTPException(status_code=400, detail="لا يوجد شهر منتهي يمكن التراجع عنه")
+
+        players = self.player_repo.get_all_for_league(league_id)
+        if not _any_player_has_last_season_snapshot(players):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "لا يمكن التراجع: لا توجد لقطة موسم على اللاعبين (last_season_*). "
+                    "التراجع عن إنهاء الموسم مدعوم مرة واحدة بعد كل إنهاء؛ "
+                    "تكرار التراجع دون إنهاء موسم جديد يفسد الإحصائيات."
+                ),
+            )
 
         self.hof_repo.delete(latest_hof.id)
 
@@ -118,9 +190,7 @@ class LeagueService(ILeagueService):
                 league.season_number -= 1
             self.league_repo.save(league)
 
-        players = self.player_repo.get_all_for_league(league_id)
         for player in players:
-            # Restore totals from snapshot
             player.total_points = player.last_season_points
             player.total_goals = player.last_season_goals
             player.total_assists = player.last_season_assists
@@ -129,7 +199,6 @@ class LeagueService(ILeagueService):
             player.total_own_goals = player.last_season_own_goals
             player.total_matches = player.last_season_matches
 
-            # Subtract from all-time (correcting the previous addition)
             player.all_time_points = max(0, player.all_time_points - player.last_season_points)
             player.all_time_goals = max(0, player.all_time_goals - player.last_season_goals)
             player.all_time_assists = max(0, player.all_time_assists - player.last_season_assists)
@@ -138,10 +207,8 @@ class LeagueService(ILeagueService):
             player.all_time_own_goals = max(0, player.all_time_own_goals - player.last_season_own_goals)
             player.all_time_matches = max(0, player.all_time_matches - player.last_season_matches)
 
-            # Restore previous_rank from snapshot
             player.previous_rank = player.last_season_previous_rank
 
-            # Clear snapshot
             player.last_season_points = 0
             player.last_season_goals = 0
             player.last_season_assists = 0
@@ -155,6 +222,6 @@ class LeagueService(ILeagueService):
 
     def update_settings(self, league_id: int, update_data: schemas.LeagueUpdate) -> Optional[models.League]:
         return self.league_repo.update(league_id, update_data)
-        
+
     def delete_league(self, league_id: int) -> bool:
         return self.league_repo.delete(league_id)

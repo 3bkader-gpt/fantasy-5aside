@@ -19,6 +19,35 @@ class VotingService(IVotingService):
         self.player_repo = player_repo
 
     @staticmethod
+    def resolve_round_winner_candidate_id(
+        match: models.Match,
+        round_results: List[dict],
+    ) -> Optional[int]:
+        """
+        Pick the winning candidate for a round. When vote counts tie, break using
+        match stats: points_earned, goals, lower goals_conceded, lower player id.
+        """
+        if not round_results:
+            return None
+        top_count = round_results[0]["count"]
+        tied_ids = [r["candidate_id"] for r in round_results if r["count"] == top_count]
+        if len(tied_ids) == 1:
+            return tied_ids[0]
+        stats = list(match.stats) if match.stats is not None else []
+        stat_by_player = {s.player_id: s for s in stats}
+
+        def tie_key(cid: int) -> tuple:
+            st = stat_by_player.get(cid)
+            if st is None:
+                return (0, 0, 0, -cid)
+            pe = st.points_earned or 0
+            g = st.goals or 0
+            gc = st.goals_conceded or 0
+            return (pe, g, -gc, -cid)
+
+        return max(tied_ids, key=tie_key)
+
+    @staticmethod
     def _parse_allowed_voter_ids(raw: Optional[str]) -> Optional[List[int]]:
         if not raw:
             return None
@@ -51,15 +80,15 @@ class VotingService(IVotingService):
         # Excluded players are those who won previous rounds
         excluded_ids = []
         if match.voting_round > 1:
-            # Round 1 winner
             r1_results = self.voting_repo.get_round_results(match.league_id, match_id, 1)
-            if r1_results:
-                excluded_ids.append(r1_results[0]["candidate_id"])
+            w1 = self.resolve_round_winner_candidate_id(match, r1_results)
+            if w1 is not None:
+                excluded_ids.append(w1)
         if match.voting_round > 2:
-            # Round 2 winner
             r2_results = self.voting_repo.get_round_results(match.league_id, match_id, 2)
-            if r2_results:
-                excluded_ids.append(r2_results[0]["candidate_id"])
+            w2 = self.resolve_round_winner_candidate_id(match, r2_results)
+            if w2 is not None:
+                excluded_ids.append(w2)
         return schemas.VotingStatusResponse(
             is_open=True,
             current_round=match.voting_round,
@@ -247,7 +276,7 @@ class VotingService(IVotingService):
                 self.match_repo.save(match)
                 return {"status": "closed"}
 
-        winner_id = round_results[0]["candidate_id"]
+        winner_id = self.resolve_round_winner_candidate_id(match, round_results)
         winner = self.player_repo.get_by_id(winner_id)
         
         # Award bonus points (voting replaces legacy BPS)

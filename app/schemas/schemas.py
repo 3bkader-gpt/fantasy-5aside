@@ -25,14 +25,14 @@ class TeamResponse(TeamBase):
 
 # --- Transfer Schemas ---
 class TransferCreate(BaseModel):
-    to_team_id: int
+    to_team_id: Optional[int] = None  # None / omit = release to free agent
     reason: Optional[str] = None
 
 class TransferResponse(BaseModel):
     id: int
     player_id: int
     from_team_id: Optional[int] = None
-    to_team_id: int
+    to_team_id: Optional[int] = None
     reason: Optional[str] = None
     created_at: datetime
     from_team_name: Optional[str] = None

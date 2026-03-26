@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone, date
 from typing import Optional
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError
 import json
 import http.client
 
@@ -119,6 +121,10 @@ def get_provider_from_settings() -> EmailProvider:
     For now only a log provider is implemented; real providers (Resend/Brevo)
     can be plugged in later without touching queue/worker logic.
     """
+    # Tests should never hit real external email providers.
+    if getattr(settings, "testing", False):
+        return LogEmailProvider()
+
     provider_name = (settings.email_provider or "log").lower()
 
     if provider_name == "brevo" and settings.brevo_api_key and settings.brevo_sender_email:
@@ -222,28 +228,60 @@ class EmailService:
 # --- Background worker helpers ---
 
 def _get_or_create_daily_usage(db: Session, day: date) -> EmailDailyUsage:
-    usage = db.query(EmailDailyUsage).filter(EmailDailyUsage.date == day).one_or_none()
-    if usage is not None:
-        return usage
+    # Small retry loop for SQLite: concurrent inserts can raise "database is locked".
+    # For Postgres, the regular pattern below is sufficient and fast.
+    for attempt in range(8):
+        usage = db.query(EmailDailyUsage).filter(EmailDailyUsage.date == day).one_or_none()
+        if usage is not None:
+            return usage
 
-    # Use a simple upsert-ish pattern that tolerates concurrent inserts.
-    usage = EmailDailyUsage(date=day, sent_count=0)
-    db.add(usage)
-    try:
-        db.commit()
-    except Exception:
-        db.rollback()
-        usage = (
-            db.query(EmailDailyUsage)
-            .filter(EmailDailyUsage.date == day)
-            .one()
-        )
-    else:
-        db.refresh(usage)
-    return usage
+        usage = EmailDailyUsage(date=day, sent_count=0, reserved_count=0)
+        db.add(usage)
+        try:
+            db.commit()
+            db.refresh(usage)
+            return usage
+        except OperationalError as exc:
+            db.rollback()
+            msg = str(exc).lower()
+            if "database is locked" in msg and attempt < 7:
+                time.sleep(0.05 * (attempt + 1))
+                continue
+            # Fall back to reading the row if another worker inserted it.
+            existing = (
+                db.query(EmailDailyUsage)
+                .filter(EmailDailyUsage.date == day)
+                .one_or_none()
+            )
+            if existing is not None:
+                return existing
+            raise
+        except Exception:
+            db.rollback()
+            existing = (
+                db.query(EmailDailyUsage)
+                .filter(EmailDailyUsage.date == day)
+                .one_or_none()
+            )
+            if existing is not None:
+                return existing
+            raise
+
+    # Should be unreachable, but keep it defensive.
+    existing = (
+        db.query(EmailDailyUsage).filter(EmailDailyUsage.date == day).one_or_none()
+    )
+    if existing is None:
+        raise RuntimeError("Failed to create EmailDailyUsage row.")
+    return existing
 
 
-def process_email_queue_once(db: Session, provider: Optional[EmailProvider] = None) -> int:
+def process_email_queue_once(
+    db: Session,
+    provider: Optional[EmailProvider] = None,
+    email_type: Optional[str] = None,
+    batch_limit: Optional[int] = None,
+) -> int:
     """
     Process the email queue once, respecting the configured daily limit.
 
@@ -251,53 +289,120 @@ def process_email_queue_once(db: Session, provider: Optional[EmailProvider] = No
     """
     provider = provider or get_provider_from_settings()
 
-    # Determine today's usage
-    today = datetime.now(timezone.utc).date()
-    usage = _get_or_create_daily_usage(db, today)
+    now = datetime.now(timezone.utc)
+    today = now.date()
     daily_limit = settings.email_daily_limit
-    remaining = max(daily_limit - (usage.sent_count or 0), 0)
 
+    # Ensure EmailDailyUsage row exists (may commit/rollback; that's fine).
+    usage = _get_or_create_daily_usage(db, today)
+
+    # ---- Phase 1: claim (short transaction) ----
+    dialect = db.get_bind().dialect.name
+    usage_q = db.query(EmailDailyUsage).filter(EmailDailyUsage.id == usage.id)
+    if dialect == "postgresql":
+        usage_q = usage_q.with_for_update()
+    locked_usage: EmailDailyUsage = usage_q.one()
+
+    reserved = locked_usage.reserved_count or 0
+    remaining = max(daily_limit - ((locked_usage.sent_count or 0) + reserved), 0)
     if remaining <= 0:
-        logger.info("Email daily limit reached (%s); skipping queue processing.", daily_limit)
+        logger.info(
+            "Email daily limit reached (%s); skipping queue processing.",
+            daily_limit,
+        )
+        db.rollback()
         return 0
 
-    # Fetch pending items ordered by priority and scheduled time
-    q = (
+    effective_limit = remaining if batch_limit is None else min(remaining, int(batch_limit))
+    if effective_limit <= 0:
+        db.rollback()
+        return 0
+
+    item_q = (
         db.query(EmailQueue)
         .filter(EmailQueue.status == "pending")
-        .order_by(EmailQueue.priority.desc(), EmailQueue.scheduled_at.asc(), EmailQueue.id.asc())
-        .limit(remaining)
+        .order_by(
+            EmailQueue.priority.desc(),
+            EmailQueue.scheduled_at.asc(),
+            EmailQueue.id.asc(),
+        )
     )
-    items: list[EmailQueue] = list(q)
-    if not items:
+    if email_type:
+        item_q = item_q.filter(EmailQueue.email_type == email_type)
+
+    if dialect == "postgresql":
+        # Prevent multiple Gunicorn workers from claiming the same rows.
+        item_q = item_q.with_for_update(skip_locked=True)
+
+    claimed_items: list[EmailQueue] = list(item_q.limit(effective_limit))
+    claimed_count = len(claimed_items)
+    if claimed_count <= 0:
+        db.rollback()
         return 0
 
+    # Mark claimed rows as processing before releasing the transaction.
+    claimed_ids = [item.id for item in claimed_items]
+    for item in claimed_items:
+        item.status = "processing"
+        item.processing_started_at = now
+
+    locked_usage.reserved_count = reserved + claimed_count
+    db.commit()
+
+    # ---- Phase 2: send (no DB locks held) ----
+    # We capture send results first, then finalize in one transaction.
+    send_results: dict[int, SendResult] = {}
+    for item in claimed_items:
+        try:
+            result = provider.send_email(
+                to=item.to_email,
+                subject=item.subject,
+                body=item.body,
+                email_type=item.email_type,
+            )
+        except Exception as exc:  # pragma: no cover - defensive; providers should not raise
+            logger.warning("Email provider raised for id=%s: %s", item.id, exc)
+            result = SendResult(success=False, provider=getattr(provider, "name", "unknown"), error=str(exc))
+        send_results[item.id] = result
+
+    # ---- Phase 3: finalize (short transaction) ----
     sent_count = 0
-    for item in items:
-        result = provider.send_email(
-            to=item.to_email,
-            subject=item.subject,
-            body=item.body,
-            email_type=item.email_type,
-        )
-        if result.success:
+    usage_q = db.query(EmailDailyUsage).filter(EmailDailyUsage.id == usage.id)
+    if dialect == "postgresql":
+        usage_q = usage_q.with_for_update()
+    locked_usage = usage_q.one()
+
+    # Decrement reserved_count for all claimed items regardless of success.
+    locked_usage.reserved_count = max((locked_usage.reserved_count or 0) - claimed_count, 0)
+
+    items_by_id = {i.id: i for i in db.query(EmailQueue).filter(EmailQueue.id.in_(claimed_ids)).all()}
+
+    for item_id in claimed_ids:
+        item = items_by_id[item_id]
+        result = send_results.get(item_id)
+        if result and result.success:
             item.status = "sent"
-            item.sent_at = datetime.now(timezone.utc)
+            item.sent_at = now
             item.provider = result.provider
-            usage.sent_count = (usage.sent_count or 0) + 1
+            item.processing_started_at = None
             sent_count += 1
         else:
             logger.warning(
                 "Email send failed via %s for id=%s: %s",
-                result.provider,
-                item.id,
-                result.error or "unknown error",
+                (result.provider if result else None),
+                item_id,
+                (result.error if result else None) or "unknown error",
             )
             item.retries_count = (item.retries_count or 0) + 1
+            item.processing_started_at = None
             if item.retries_count >= 3:
                 item.status = "failed"
+            else:
+                item.status = "pending"
 
+    locked_usage.sent_count = (locked_usage.sent_count or 0) + sent_count
     db.commit()
+
     return sent_count
 
 

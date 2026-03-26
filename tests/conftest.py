@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
 from app.database import Base, get_db
@@ -16,11 +17,13 @@ from app.repositories.db_repository import (
     PlayerRepository,
     TeamRepository,
     TransferRepository,
+    VotingRepository,
 )
 from app.services.analytics_service import AnalyticsService
 from app.services.cup_service import CupService
 from app.services.league_service import LeagueService
 from app.services.match_service import MatchService
+from app.services.voting_service import VotingService
 
 
 def _get_test_db_url() -> str:
@@ -68,8 +71,15 @@ def engine_fixture() -> "create_engine":
         db_dir = os.path.dirname(db_path)
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
-
-    engine = create_engine(database_url)
+        # One shared connection: TestClient runs the app in a worker thread; without this,
+        # a second connection may not see uncommitted test-session work or may race.
+        engine = create_engine(
+            database_url,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    else:
+        engine = create_engine(database_url)
 
     # Ensure all tables exist (drop/create to start fresh for test session)
     from app.models import models  # noqa: F401
@@ -146,12 +156,20 @@ def cup_service(player_repo, cup_repo, match_repo):
     return CupService(player_repo, cup_repo, match_repo)
 
 @pytest.fixture
-def match_service(league_repo, match_repo, player_repo, cup_service, team_repo):
-    return MatchService(league_repo, match_repo, player_repo, cup_service, team_repo)
+def match_service(league_repo, match_repo, player_repo, cup_service, team_repo, voting_repo):
+    return MatchService(
+        league_repo,
+        match_repo,
+        player_repo,
+        cup_service,
+        team_repo,
+        None,
+        voting_repo,
+    )
 
 @pytest.fixture
-def league_service(league_repo, player_repo, hof_repo, cup_repo):
-    return LeagueService(league_repo, player_repo, hof_repo, cup_repo)
+def league_service(league_repo, player_repo, hof_repo, cup_repo, cup_service):
+    return LeagueService(league_repo, player_repo, hof_repo, cup_repo, cup_service)
 
 @pytest.fixture
 def analytics_service(player_repo, match_repo):
@@ -164,3 +182,11 @@ def team_repo(db_session):
 @pytest.fixture
 def transfer_repo(db_session):
     return TransferRepository(db_session)
+
+@pytest.fixture
+def voting_repo(db_session):
+    return VotingRepository(db_session)
+
+@pytest.fixture
+def voting_service(voting_repo, match_repo, player_repo):
+    return VotingService(voting_repo, match_repo, player_repo)

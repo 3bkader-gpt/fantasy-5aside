@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -7,6 +8,8 @@ from ..models import models
 from ..core.config import settings
 from ..core.vapid import normalize_vapid_key
 from .interfaces import INotificationService
+
+logger = logging.getLogger("uvicorn.error")
 
 
 class NotificationService(INotificationService):
@@ -73,4 +76,13 @@ class NotificationService(INotificationService):
                 # If the endpoint is gone/invalid, remove it
                 self.db.delete(sub)
                 self.db.commit()
+            except Exception as exc:
+                # Any other unexpected failure must not break delivery to remaining subscribers.
+                logger.warning(
+                    "Web push unexpected failure (league_id=%s, endpoint=%s): %s",
+                    league_id,
+                    sub.endpoint,
+                    exc,
+                )
+                continue
 

@@ -1,11 +1,20 @@
 import re
+from typing import Optional
+
 from fastapi import HTTPException
 from ..models import models
 from ..schemas import schemas
 from ..services import points
 from ..core.security import verify_password
 from .interfaces import IMatchService, ICupService
-from ..repositories.interfaces import ILeagueRepository, IMatchRepository, IPlayerRepository, ITeamRepository, IHallOfFameRepository
+from ..repositories.interfaces import (
+    ILeagueRepository,
+    IMatchRepository,
+    IPlayerRepository,
+    ITeamRepository,
+    IHallOfFameRepository,
+    IVotingRepository,
+)
 
 class MatchService(IMatchService):
     def __init__(
@@ -16,6 +25,7 @@ class MatchService(IMatchService):
         cup_service: ICupService,
         team_repo: ITeamRepository = None,
         hof_repo: IHallOfFameRepository = None,
+        voting_repo: Optional[IVotingRepository] = None,
     ):
         self.league_repo = league_repo
         self.match_repo = match_repo
@@ -23,6 +33,7 @@ class MatchService(IMatchService):
         self.cup_service = cup_service
         self.team_repo = team_repo
         self.hof_repo = hof_repo
+        self.voting_repo = voting_repo
 
     def _snapshot_ranks(self, league_id: int):
         players = self.player_repo.get_leaderboard(league_id)
@@ -327,6 +338,17 @@ class MatchService(IMatchService):
                 self._apply_combined_stats_to_match_all_time(match, combined_stats)
             else:
                 self._apply_combined_stats_to_match(match, combined_stats)
+
+            if self.voting_repo is not None and match.voting_round in (1, 2, 3):
+                participant_ids = {s["player"].id for s in combined_stats}
+                self.voting_repo.delete_votes_outside_participants(
+                    match.league_id,
+                    match.id,
+                    match.voting_round,
+                    participant_ids,
+                    commit=False,
+                )
+
             self.match_repo.db.commit()
             self.match_repo.db.refresh(match)
             self.cup_service.auto_resolve_cups(league_id, match.id)

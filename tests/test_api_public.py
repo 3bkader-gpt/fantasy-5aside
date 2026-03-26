@@ -6,7 +6,8 @@ class TestPublicAPI:
         response = client.get("/")
         assert response.status_code == 200
         # Check for non-Arabic structural element to avoid encoding issues in tests
-        assert 'action="/create-league"' in response.text
+        # Public league creation is removed; landing should not expose /create-league.
+        assert 'action="/create-league"' not in response.text
 
     def test_create_league_flow(self, client):
         r = client.get("/")
@@ -20,8 +21,7 @@ class TestPublicAPI:
             "csrf_token": csrf,
         }
         response = client.post("/create-league", data=data, follow_redirects=False)
-        assert response.status_code == 303
-        assert response.headers["location"].endswith("/l/api-league-unique/created")
+        assert response.status_code in (404, 405)
 
     def test_slug_available_endpoint(self, client, league_repo):
         # Existing league -> not available

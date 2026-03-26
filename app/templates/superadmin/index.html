@@ -38,7 +38,7 @@
             <td>{{ match_counts.get(league.id, 0) }}</td>
             <td>{{ league.created_at[:10] if league.created_at else "—" }}</td>
             <td style="text-align:left;">
-              <a href="/superadmin/league/{{ league.id }}/delete" class="btn btn-sm btn-outline-danger">حذف</a>
+              <a href="/superadmin/league/{{ league.id }}/delete" class="btn btn-sm btn-outline-warning">تعطيل</a>
             </td>
           </tr>
           {% endfor %}

@@ -189,3 +189,31 @@ class TestRepositories:
         assert len(history) == 1
         assert history[0].from_team_id == team_a.id
         assert history[0].to_team_id == team_b.id
+
+    def test_transfer_release_has_null_to_team(self, db_session, league_repo, player_repo, team_repo, transfer_repo):
+        league = league_repo.create(
+            schemas.LeagueCreate(name="Release League", slug="rl", admin_password="pw"), "pw"
+        )
+        team = team_repo.create(league.id, "Old", "OLD", None)
+        player = player_repo.create("Released", league.id)
+        player.team_id = team.id
+        player_repo.save(player)
+
+        release = models.Transfer(
+            league_id=league.id,
+            player_id=player.id,
+            from_team_id=team.id,
+            to_team_id=None,
+            reason="release",
+        )
+        transfer_repo.save(release)
+        player.team_id = None
+        player_repo.save(player)
+
+        history = transfer_repo.get_all_for_player(player.id)
+        assert len(history) == 1
+        assert history[0].from_team_id == team.id
+        assert history[0].to_team_id is None
+
+        refreshed = player_repo.get_by_id(player.id)
+        assert refreshed.team_id is None

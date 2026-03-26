@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from fastapi import HTTPException
 from typing import List, Optional
 from ..models import models
@@ -75,18 +75,69 @@ class VotingRepository(IVotingRepository):
         self.db.commit()
         return count
 
+    def delete_votes_outside_participants(
+        self,
+        league_id: int,
+        match_id: int,
+        round_number: int,
+        participant_ids: set,
+        *,
+        commit: bool = False,
+    ) -> int:
+        """Remove votes in a round where voter or candidate is not in participant_ids."""
+        q = self.db.query(models.Vote).filter(
+            models.Vote.league_id == league_id,
+            models.Vote.match_id == match_id,
+            models.Vote.round_number == round_number,
+        )
+        if participant_ids:
+            q = q.filter(
+                or_(
+                    ~models.Vote.voter_id.in_(participant_ids),
+                    ~models.Vote.candidate_id.in_(participant_ids),
+                )
+            )
+        count = q.count()
+        q.delete(synchronize_session=False)
+        if commit:
+            self.db.commit()
+        return count
+
 class LeagueRepository(ILeagueRepository):
     def __init__(self, db: Session): self.db = db
     def get_by_slug(self, slug: str) -> Optional[models.League]:
         if not slug: return None
-        return self.db.query(models.League).filter(func.lower(models.League.slug) == slug.lower()).first()
+        return (
+            self.db.query(models.League)
+            .filter(
+                func.lower(models.League.slug) == slug.lower(),
+                models.League.deleted_at.is_(None),
+            )
+            .first()
+        )
     def get_by_name(self, name: str) -> Optional[models.League]:
         if not name: return None
-        return self.db.query(models.League).filter(func.lower(models.League.name) == name.lower()).first()
+        return (
+            self.db.query(models.League)
+            .filter(
+                func.lower(models.League.name) == name.lower(),
+                models.League.deleted_at.is_(None),
+            )
+            .first()
+        )
     def get_by_id(self, league_id: int) -> Optional[models.League]:
-        return self.db.query(models.League).filter(models.League.id == league_id).first()
+        return (
+            self.db.query(models.League)
+            .filter(models.League.id == league_id, models.League.deleted_at.is_(None))
+            .first()
+        )
     def get_all(self) -> List[models.League]:
-        return self.db.query(models.League).order_by(models.League.created_at.desc()).all()
+        return (
+            self.db.query(models.League)
+            .filter(models.League.deleted_at.is_(None))
+            .order_by(models.League.created_at.desc())
+            .all()
+        )
     def update(self, league_id: int, update_data: schemas.LeagueUpdate, commit: bool = True) -> Optional[models.League]:
         league = self.get_by_id(league_id)
         if not league:
@@ -196,6 +247,32 @@ class PlayerRepository(IPlayerRepository):
 
 class MatchRepository(IMatchRepository):
     def __init__(self, db: Session): self.db = db
+
+    def _season_filter(self, season_number: int):
+        if season_number <= 1:
+            return or_(models.Match.season_number == 1, models.Match.season_number.is_(None))
+        return models.Match.season_number == season_number
+
+    def count_matches_for_league_season(self, league_id: int, season_number: int) -> int:
+        return int(
+            self.db.query(func.count(models.Match.id))
+            .filter(
+                models.Match.league_id == league_id,
+                self._season_filter(season_number),
+            )
+            .scalar()
+            or 0
+        )
+
+    def get_player_ids_appeared_in_league_season(self, league_id: int, season_number: int) -> set:
+        qry = (
+            self.db.query(models.MatchStat.player_id)
+            .join(models.Match, models.MatchStat.match_id == models.Match.id)
+            .filter(models.Match.league_id == league_id, self._season_filter(season_number))
+            .distinct()
+        )
+        return {row[0] for row in qry.all() if row[0] is not None}
+
     def get_by_id(self, match_id: int) -> Optional[models.Match]: return self.db.query(models.Match).filter(models.Match.id == match_id).first()
     def get_by_id_for_league(self, league_id: int, match_id: int) -> Optional[models.Match]:
         return (

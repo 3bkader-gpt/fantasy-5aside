@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from app.domain.cup_seeding import minimize_same_team_pairs
 from app.domain.season_boundary import determine_cup_season_target
@@ -28,28 +28,51 @@ class GenerateCupUseCase:
 
     def execute(self, league_id: int) -> List[models.CupMatchup]:
         league = self.league_repo.get_by_id(league_id)
+        if not league:
+            return []
+
         target = determine_cup_season_target(league)
-
-        # Reset cup for the target season only
-        self.cup_repo.delete_all_for_league(league_id, season_number=target.season_number)
-
         all_players = self.player_repo.get_all_for_league(league_id)
+        appeared = self.match_repo.get_player_ids_appeared_in_league_season(
+            league_id, target.season_number
+        )
+        eligible_players = [p for p in all_players if p.id in appeared]
 
         points_getter = points_getter_for_scope(target.standings_scope)
-        selected = top_players_by_points(all_players, points_getter, limit=10)
-        selected_ids = {p.id for p in selected if p.id is not None}
+        selected = top_players_by_points(eligible_players, points_getter, limit=10)
 
-        # Side-effect: mark cup participation
+        if len(selected) < 2:
+            self.cup_repo.delete_all_for_league(league_id, season_number=target.season_number)
+            for p in all_players:
+                if p.is_active_in_cup:
+                    p.is_active_in_cup = False
+                    self.player_repo.save(p)
+            return []
+
+        self.cup_repo.delete_all_for_league(league_id, season_number=target.season_number)
+
+        selected_ids = {p.id for p in selected if p.id is not None}
         for p in all_players:
-            p.is_active_in_cup = (p.id in selected_ids)
+            p.is_active_in_cup = p.id in selected_ids
             self.player_repo.save(p)
 
         goalkeepers = [p for p in selected if p.default_is_gk]
         outfield = [p for p in selected if not p.default_is_gk]
+        if len(goalkeepers) < 2:
+            outfield = list(selected)
+            goalkeepers = []
+
+        baseline = self.match_repo.count_matches_for_league_season(
+            league_id, target.season_number
+        )
 
         fixtures: List[models.CupMatchup] = []
-        fixtures.extend(self._pair(goalkeepers, league_id, "goalkeeper", target.season_number))
-        fixtures.extend(self._pair(outfield, league_id, "outfield", target.season_number))
+        fixtures.extend(
+            self._pair(goalkeepers, league_id, "goalkeeper", target.season_number, baseline)
+        )
+        fixtures.extend(
+            self._pair(outfield, league_id, "outfield", target.season_number, baseline)
+        )
 
         if fixtures:
             self.cup_repo.save_matchups(fixtures)
@@ -62,6 +85,7 @@ class GenerateCupUseCase:
         league_id: int,
         bracket_type: str,
         season_number: int,
+        league_match_count_baseline: Optional[int] = None,
     ) -> List[models.CupMatchup]:
         if len(players) < 2:
             return []
@@ -82,6 +106,7 @@ class GenerateCupUseCase:
                     bracket_type=bracket_type,
                     is_active=True,
                     is_revealed=False,
+                    league_match_count_baseline=league_match_count_baseline,
                 )
             )
             i += 2
@@ -98,6 +123,7 @@ class GenerateCupUseCase:
                     is_active=False,
                     is_revealed=True,
                     winner_id=ordered[i].id,
+                    league_match_count_baseline=league_match_count_baseline,
                 )
             )
 
@@ -112,4 +138,3 @@ class GenerateCupUseCase:
         if count <= 8:
             return "ربع النهائي (Quarter-Final)"
         return f"دور الـ {count}"
-

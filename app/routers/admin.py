@@ -1,7 +1,8 @@
 import json
 import re
+import os
 from typing import Optional
-from fastapi import APIRouter, Depends, Request, HTTPException, Form, Response, UploadFile, File
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, HTTPException, Form, Response, UploadFile, File
 
 SLUG_PATTERN = r"^[a-zA-Z0-9_-]+$"
 from fastapi.responses import RedirectResponse, JSONResponse, StreamingResponse
@@ -17,8 +18,10 @@ from ..core.csrf import (
     verify_csrf,
     verify_csrf_token,
 )
-from ..database import get_db
+from ..database import SessionLocal, get_db
 from sqlalchemy.orm import Session
+from ..core.config import settings
+from ..services.notification_service import NotificationService
 from ..dependencies import (
     get_league_service, get_cup_service, get_match_service,
     get_league_repository, get_player_repository, get_match_repository,
@@ -39,6 +42,9 @@ from ..core.logging import log_event
 router = APIRouter(prefix="/l/{slug}/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
 
+UPLOAD_DIR = "uploads"
+BUCKET_MATCH_MEDIA = "match-media"
+
 
 def _canonical_admin_redirect(request: Request, provided_slug: str, canonical_slug: str) -> RedirectResponse:
     path = request.url.path
@@ -56,6 +62,58 @@ def _current_season_matches_from_db(match_repo: IMatchRepository, hof_repo: IHal
     hof_records = hof_repo.get_all_for_league(league_id)
     completed_season_matches = sum(h.season_matches_count or 0 for h in hof_records)
     return max(0, len(matches) - completed_season_matches)
+
+
+def _notify_league_background(league_id: int, title: str, body: str, url: str) -> None:
+    """Best-effort background push delivery (fresh DB session)."""
+    try:
+        with SessionLocal() as db:
+            NotificationService(db).notify_league(
+                league_id=league_id,
+                title=title,
+                body=body,
+                url=url,
+            )
+    except Exception:
+        pass
+
+
+def _is_supabase_storage_path(filename: str) -> bool:
+    return "/" in (filename or "")
+
+
+def _cleanup_media_files(filenames: list[str]) -> None:
+    """Best-effort deletion of media files referenced by MatchMedia.filename.
+
+    - Supabase: filename is a storage path like {league_id}/{match_id}/{uuid}.ext
+    - Local: filename is {uuid}.ext and is stored under uploads/
+    """
+    supabase_paths: list[str] = [f for f in filenames if _is_supabase_storage_path(f)]
+    local_filenames: list[str] = [f for f in filenames if not _is_supabase_storage_path(f)]
+
+    # Supabase batch delete (best-effort)
+    if supabase_paths and settings.supabase_project_url and settings.supabase_service_role_key:
+        try:
+            from supabase import create_client
+
+            client = create_client(settings.supabase_project_url, settings.supabase_service_role_key)
+            bucket = client.storage.from_(BUCKET_MATCH_MEDIA)
+
+            batch_size = 100
+            for i in range(0, len(supabase_paths), batch_size):
+                bucket.remove(supabase_paths[i : i + batch_size])
+        except Exception:
+            # Never break caller flows
+            pass
+
+    # Local delete (best-effort)
+    for name in local_filenames:
+        try:
+            path = os.path.join(UPLOAD_DIR, name)
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception:
+            continue
 
 
 @router.get("/")
@@ -136,6 +194,7 @@ def create_match(
         season_ended = False
         league.current_season_matches += 1
         if league.current_season_matches >= 4:
+            league_repo.save(league)
             month_name = f"الموسم {league.season_number}"
             league_service.end_current_season(league.id, month_name, season_matches_count=league.current_season_matches)
             season_ended = True
@@ -202,6 +261,7 @@ def delete_cup_for_current_season(
 @router.post("/season/end")
 def end_season(
     request: Request,
+    background_tasks: BackgroundTasks,
     month_name: str = Form(...),
     csrf_token: str = Form(None),
     league: models.League = Depends(get_current_admin_league),
@@ -229,15 +289,26 @@ def end_season(
         )
 
         try:
-            notification_service.notify_league(
-                league_id=league.id,
-                title="انتهى الموسم! 🏆",
-                body=f"تم إنهاء الموسم '{month_name}' وتحديث لوحة الشرف.",
-                url=f"/l/{league.slug}/hall-of-fame",
-            )
+            if getattr(settings, "testing", False):
+                notification_service.notify_league(
+                    league_id=league.id,
+                    title="انتهى الموسم! 🏆",
+                    body=f"تم إنهاء الموسم '{month_name}' وتحديث لوحة الشرف.",
+                    url=f"/l/{league.slug}/hall-of-fame",
+                )
+            else:
+                background_tasks.add_task(
+                    _notify_league_background,
+                    league.id,
+                    "انتهى الموسم! 🏆",
+                    f"تم إنهاء الموسم '{month_name}' وتحديث لوحة الشرف.",
+                    f"/l/{league.slug}/hall-of-fame",
+                )
         except Exception:
             pass
         return RedirectResponse(url=f"/l/{league.slug}/admin", status_code=303)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -426,18 +497,30 @@ def recompute_player_totals_from_matches(
 @router.delete("/match/{match_id}")
 def delete_match(
     match_id: int,
+    background_tasks: BackgroundTasks,
     _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
     match_service: IMatchService = Depends(get_match_service),
     league_repo: ILeagueRepository = Depends(get_league_repository),
+    db: Session = Depends(get_db),
     audit=Depends(get_audit_logger),
 ):
     try:
+        filenames = [
+            r[0]
+            for r in (
+                db.query(models.MatchMedia.filename)
+                .filter_by(league_id=league.id, match_id=match_id)
+                .all()
+            )
+        ]
         match_service.delete_match(match_id, league.id)
         if league.current_season_matches > 0:
             league.current_season_matches -= 1
             league_repo.save(league)
         audit(league.id, "delete_match", league.slug, {"match_id": match_id})
+        if filenames:
+            background_tasks.add_task(_cleanup_media_files, filenames)
         return {"success": True, "message": "تم حذف المباراة بنجاح"}
     except HTTPException as e:
         raise e
@@ -649,6 +732,7 @@ def export_league_backup(
 
 @router.post("/import/backup")
 async def import_league_backup(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     _csrf: None = Depends(verify_csrf),
     league: models.League = Depends(get_current_admin_league),
@@ -674,6 +758,16 @@ async def import_league_backup(
     from datetime import datetime
 
     try:
+        # Collect existing media filenames before deleting DB rows, then clean up files after import.
+        old_media_filenames = [
+            r[0]
+            for r in (
+                db.query(models.MatchMedia.filename)
+                .filter_by(league_id=league.id)
+                .all()
+            )
+        ]
+
         with db.begin():
             # Clear existing league data (order matters for FKs)
             db.query(models.CupMatchup).filter_by(league_id=league.id).delete(synchronize_session=False)
@@ -777,6 +871,11 @@ async def import_league_backup(
             league_repo.save(league)
 
         audit(league.id, "import_backup", league.slug, {"players": len(payload.players), "matches": len(payload.matches)})
+        if old_media_filenames:
+            if getattr(settings, "testing", False):
+                _cleanup_media_files(old_media_filenames)
+            else:
+                background_tasks.add_task(_cleanup_media_files, old_media_filenames)
         return {"success": True, "message": "تم استعادة النسخة الاحتياطية بنجاح."}
 
     except HTTPException:
@@ -980,8 +1079,17 @@ def transfer_player(
     if not player or player.league_id != league.id:
         raise HTTPException(status_code=404, detail="اللاعب غير موجود")
 
-    # "بدون فريق" (no team): to_team_id is 0 or None
+    # "بدون فريق" (no team): to_team_id is 0 or None — record a Transfer row when leaving a team (timeline)
     if to_team_id is None or to_team_id == 0:
+        if player.team_id is not None:
+            release = models.Transfer(
+                league_id=league.id,
+                player_id=player.id,
+                from_team_id=player.team_id,
+                to_team_id=None,
+                reason=reason,
+            )
+            transfer_repo.save(release)
         player.team_id = None
         player_repo.save(player)
         audit(league.id, "transfer_player", league.slug, {"player_id": player_id, "to_team_id": None})

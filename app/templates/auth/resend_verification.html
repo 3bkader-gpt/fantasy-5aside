@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-sm login-page-container">
+    <div class="login-header mb-3">
+        <h1 class="login-title">إعادة إرسال التحقق 📧</h1>
+        <p class="login-subtitle text-secondary">
+            أدخل البريد المسجّل وسنرسل رابط تفعيل جديدًا إن كان الحساب موجودًا وغير مفعّل.
+        </p>
+    </div>
+
+    <div class="card login-card mb-3">
+        <form action="/resend-verification" method="POST" class="text-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="mb-2">
+                <label class="form-label fw-bold">البريد الإلكتروني:</label>
+                <input type="email" name="email" required value="{{ email }}"
+                       class="form-control" style="padding: 0.6rem; font-size: 0.95rem;">
+            </div>
+            <button type="submit" class="btn btn-primary login-submit-btn">
+                إرسال
+            </button>
+        </form>
+    </div>
+
+    <div class="text-end">
+        <a href="/login" class="login-back-link">العودة لتسجيل الدخول</a>
+    </div>
+</div>
+{% endblock %}
