@@ -1,5 +1,5 @@
 # Local / CI dev dependencies (install: pip install -r requirements-dev.txt)
 pytest>=8.0.0
 pytest-asyncio>=0.24.0
-mkdocs-material>=9.6.0
+mkdocs-material>=9.7.6
 mkdocs-mermaid2-plugin>=1.2.0
